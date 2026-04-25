@@ -397,11 +397,21 @@ function newLesson() {
 }
 
 // ─── MESSAGE HANDLING ─────────────────────────────────────
+// Unlock Chrome TTS on first user gesture — must happen in click handler
+let ttsUnlocked = false;
+function unlockTTS() {
+  if (ttsUnlocked || !window.speechSynthesis) return;
+  const u = new SpeechSynthesisUtterance('');
+  window.speechSynthesis.speak(u);
+  ttsUnlocked = true;
+}
+
 async function sendMessage() {
   const input = document.getElementById('user-input');
   const text = input.value.trim();
   if (!text) return;
 
+  unlockTTS();
   input.value = '';
   appendMessage('user', text);
   state.messages.push({ role: 'user', content: text });
@@ -410,6 +420,7 @@ async function sendMessage() {
 }
 
 function sendQuick(text) {
+  unlockTTS();
   document.getElementById('user-input').value = text;
   sendMessage();
 }
@@ -459,9 +470,9 @@ async function sendToMorah(messages) {
     state.messages.push({ role: 'assistant', content: rawContent });
     saveProgress();
 
+    const { teach } = parseMorahResponse(cleanContent);
     const newMsgId = appendMessage('morah', cleanContent, wordsData);
-    // Auto-speak Morah's response after a short delay
-    setTimeout(() => speakMessage(newMsgId), 500);
+    autoSpeak(teach || cleanContent);
 
     if (wordsData.length > 0) {
       addWordsToProgress(wordsData);
@@ -571,90 +582,111 @@ function autoScroll() {
 }
 
 // ─── TEXT TO SPEECH ───────────────────────────────────────
-const msgContentMap = {};   // msgId -> plain text for speech
+const msgContentMap = {};
 let msgCounter = 0;
-let activeUtterance = null;
-let activeBtn = null;
+let ttsVoices = [];
+let activeSpeakBtn = null;
 
-// Preload voices — Chrome loads them async
+// Chrome loads voices asynchronously — keep a cached list
+function loadVoices() {
+  ttsVoices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+}
+loadVoices();
 if (window.speechSynthesis) {
-  window.speechSynthesis.getVoices();
-  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+}
+
+function getBestVoice() {
+  if (!ttsVoices.length) loadVoices();
+  return (
+    ttsVoices.find(v => v.lang.startsWith('he')) ||
+    ttsVoices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
+    ttsVoices.find(v => v.lang === 'en-US') ||
+    ttsVoices.find(v => v.lang.startsWith('en')) ||
+    ttsVoices[0] ||
+    null
+  );
 }
 
 function stripForSpeech(text) {
   return text
+    .replace(/\[TEACH\]/g, '').replace(/\[\/TEACH\]/g, '')
+    .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
     .replace(/📚 WORDS LEARNED:.*/s, '')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
     .replace(/[#`~_>]/g, '')
     .replace(/—/g, ', ')
-    .replace(/\n+/g, ' ')
+    .replace(/\s+/g, ' ')
     .trim();
 }
 
+// Called by the 🔊 button — toggles speak/stop for a specific message
 function speakMessage(msgId) {
   if (!window.speechSynthesis) {
-    showToast('Text-to-speech is not supported in this browser.');
+    showToast('Text-to-speech not supported in this browser. Try Chrome.');
     return;
   }
-
   const btn = document.querySelector(`[data-speak-id="${msgId}"]`);
   const text = msgContentMap[msgId];
-  if (!text || !btn) return;
+  if (!text) return;
 
-  // Toggle off if already speaking this message
-  if (activeBtn === btn) {
+  if (window.speechSynthesis.speaking) {
     window.speechSynthesis.cancel();
-    resetSpeakBtn(btn);
-    activeUtterance = null;
-    activeBtn = null;
-    return;
+    resetAllSpeakBtns();
+    // If the button pressed was already active, just stop
+    if (activeSpeakBtn === btn) return;
   }
 
-  // Stop any other active speech
-  if (activeUtterance) {
-    window.speechSynthesis.cancel();
-    if (activeBtn) resetSpeakBtn(activeBtn);
-  }
+  doSpeak(stripForSpeech(text), btn);
+}
 
-  const clean = stripForSpeech(text);
+// Auto-speak after Morah sends a message — called from sendToMorah
+function autoSpeak(text) {
+  if (!window.speechSynthesis) return;
+  window.speechSynthesis.cancel();
+  doSpeak(stripForSpeech(text), null);
+}
+
+function doSpeak(clean, btn) {
+  if (!clean) return;
+
   const utterance = new SpeechSynthesisUtterance(clean);
-
-  const voices = window.speechSynthesis.getVoices();
-  const preferred = voices.find(v => v.lang.startsWith('en-')) || voices[0];
-  if (preferred) utterance.voice = preferred;
+  const voice = getBestVoice();
+  if (voice) {
+    utterance.voice = voice;
+    utterance.lang = voice.lang;
+  } else {
+    utterance.lang = 'en-US';
+  }
   utterance.rate = 0.88;
   utterance.pitch = 1.05;
-  utterance.lang = 'en-US';
+  utterance.volume = 1;
 
   utterance.onstart = () => {
-    btn.textContent = '⏹';
-    btn.title = 'Stop reading';
-    btn.classList.add('speaking');
-    activeBtn = btn;
+    if (btn) {
+      btn.textContent = '⏹';
+      btn.title = 'Stop';
+      btn.classList.add('speaking');
+      activeSpeakBtn = btn;
+    }
   };
-  utterance.onend = () => {
-    resetSpeakBtn(btn);
-    activeUtterance = null;
-    activeBtn = null;
-  };
+  utterance.onend = () => { resetAllSpeakBtns(); };
   utterance.onerror = (e) => {
     if (e.error !== 'interrupted') console.warn('TTS error:', e.error);
-    resetSpeakBtn(btn);
-    activeUtterance = null;
-    activeBtn = null;
+    resetAllSpeakBtns();
   };
 
-  activeUtterance = utterance;
   window.speechSynthesis.speak(utterance);
 }
 
-function resetSpeakBtn(btn) {
-  if (!btn) return;
-  btn.textContent = '🔊';
-  btn.title = 'Read aloud';
-  btn.classList.remove('speaking');
+function resetAllSpeakBtns() {
+  document.querySelectorAll('.btn-speak').forEach(b => {
+    b.textContent = '🔊';
+    b.title = 'Read aloud';
+    b.classList.remove('speaking');
+  });
+  activeSpeakBtn = null;
 }
 
 // ─── CHALLENGE STORE ─────────────────────────────────────
