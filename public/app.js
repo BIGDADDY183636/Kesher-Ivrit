@@ -604,9 +604,6 @@ function autoScroll() {
 const msgContentMap = {};
 let msgCounter = 0;
 let activeSpeakBtn = null;
-
-// ─── TEXT TO SPEECH ───────────────────────────────────────
-let activeSpeakBtn = null;
 let ttsChainActive = false;
 
 // Eagerly load voices — Chrome is async, retry until they arrive
