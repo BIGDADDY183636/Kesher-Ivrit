@@ -582,6 +582,9 @@ function cleanForSpeech(text) {
     .replace(/\*+([^*\n]+)\*+/g, '$1')
     .replace(/[#`~_>]/g, '')
     .replace(/—/g, ', ')
+    // Strip all emoji so they aren't read aloud
+    .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FEFF}]/gu, '')
+    .replace(/[✀-⟿]/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -607,23 +610,23 @@ function speakMessage(msgId) {
   const clean = cleanForSpeech(raw);
   if (!clean) return;
 
-  // Use Web Speech API — minimal, guaranteed to work in Chrome
   const u = new SpeechSynthesisUtterance(clean);
-  u.lang = 'en-US';
   u.rate = 0.88;
   u.pitch = 1.05;
   u.volume = 1;
 
-  // Try to pick a good voice — non-blocking, voices may or may not be loaded
+  // Voice priority: he-IL → he → en-US Google → en-US → any en
   const voices = window.speechSynthesis.getVoices();
-  if (voices.length) {
-    const pick =
+  const pick = voices.length
+    ? voices.find(v => v.lang === 'he-IL') ||
       voices.find(v => v.lang.startsWith('he')) ||
       voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
       voices.find(v => v.lang === 'en-US') ||
-      voices.find(v => v.lang.startsWith('en'));
-    if (pick) { u.voice = pick; u.lang = pick.lang; }
-  }
+      voices.find(v => v.lang.startsWith('en'))
+    : null;
+
+  if (pick) { u.voice = pick; u.lang = pick.lang; }
+  else { u.lang = 'he-IL'; } // hint browser to use Hebrew if no voices loaded yet
 
   u.onstart = () => {
     activeSpeakBtn = btn;
