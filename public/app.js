@@ -397,21 +397,11 @@ function newLesson() {
 }
 
 // ─── MESSAGE HANDLING ─────────────────────────────────────
-// Unlock Chrome TTS on first user gesture — must happen in click handler
-let ttsUnlocked = false;
-function unlockTTS() {
-  if (ttsUnlocked || !window.speechSynthesis) return;
-  const u = new SpeechSynthesisUtterance('');
-  window.speechSynthesis.speak(u);
-  ttsUnlocked = true;
-}
-
 async function sendMessage() {
   const input = document.getElementById('user-input');
   const text = input.value.trim();
   if (!text) return;
 
-  unlockTTS();
   input.value = '';
   appendMessage('user', text);
   state.messages.push({ role: 'user', content: text });
@@ -420,7 +410,6 @@ async function sendMessage() {
 }
 
 function sendQuick(text) {
-  unlockTTS();
   document.getElementById('user-input').value = text;
   sendMessage();
 }
@@ -470,9 +459,7 @@ async function sendToMorah(messages) {
     state.messages.push({ role: 'assistant', content: rawContent });
     saveProgress();
 
-    const { teach } = parseMorahResponse(cleanContent);
-    const newMsgId = appendMessage('morah', cleanContent, wordsData);
-    autoSpeak(teach || cleanContent);
+    appendMessage('morah', cleanContent, wordsData);
 
     if (wordsData.length > 0) {
       addWordsToProgress(wordsData);
@@ -584,28 +571,20 @@ function autoScroll() {
 // ─── TEXT TO SPEECH ───────────────────────────────────────
 const msgContentMap = {};
 let msgCounter = 0;
-let ttsVoices = [];
 let activeSpeakBtn = null;
 
-// Chrome loads voices asynchronously — keep a cached list
-function loadVoices() {
-  ttsVoices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+// Chrome loads voices async — populate on change
+let cachedVoices = [];
+function getVoices() {
+  if (!window.speechSynthesis) return [];
+  const v = window.speechSynthesis.getVoices();
+  if (v.length) cachedVoices = v;
+  return cachedVoices;
 }
-loadVoices();
 if (window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = loadVoices;
-}
-
-function getBestVoice() {
-  if (!ttsVoices.length) loadVoices();
-  return (
-    ttsVoices.find(v => v.lang.startsWith('he')) ||
-    ttsVoices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
-    ttsVoices.find(v => v.lang === 'en-US') ||
-    ttsVoices.find(v => v.lang.startsWith('en')) ||
-    ttsVoices[0] ||
-    null
-  );
+  window.speechSynthesis.onvoiceschanged = () => {
+    cachedVoices = window.speechSynthesis.getVoices();
+  };
 }
 
 function stripForSpeech(text) {
@@ -615,78 +594,66 @@ function stripForSpeech(text) {
     .replace(/📚 WORDS LEARNED:.*/s, '')
     .replace(/\*\*([^*]+)\*\*/g, '$1')
     .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/[#`~_>]/g, '')
+    .replace(/[#`~_>*]/g, '')
     .replace(/—/g, ', ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-// Called by the 🔊 button — toggles speak/stop for a specific message
+// Single speak function — must be called from a user gesture (button click)
 function speakMessage(msgId) {
   if (!window.speechSynthesis) {
-    showToast('Text-to-speech not supported in this browser. Try Chrome.');
+    showToast('Speech not supported. Use Chrome or Edge.');
     return;
   }
-  const btn = document.querySelector(`[data-speak-id="${msgId}"]`);
-  const text = msgContentMap[msgId];
-  if (!text) return;
 
-  if (window.speechSynthesis.speaking) {
+  const btn = document.querySelector(`[data-speak-id="${msgId}"]`);
+  const raw = msgContentMap[msgId];
+  if (!raw) return;
+
+  // Toggle off if already speaking this message
+  if (window.speechSynthesis.speaking && activeSpeakBtn === btn) {
     window.speechSynthesis.cancel();
-    resetAllSpeakBtns();
-    // If the button pressed was already active, just stop
-    if (activeSpeakBtn === btn) return;
+    return;
   }
 
-  doSpeak(stripForSpeech(text), btn);
-}
-
-// Auto-speak after Morah sends a message — called from sendToMorah
-function autoSpeak(text) {
-  if (!window.speechSynthesis) return;
+  // Stop anything else
   window.speechSynthesis.cancel();
-  doSpeak(stripForSpeech(text), null);
-}
 
-function doSpeak(clean, btn) {
+  // Reset all button states
+  document.querySelectorAll('[data-speak-id]').forEach(b => {
+    b.innerHTML = '🔊 <span>Hear Morah</span>';
+    b.classList.remove('speaking');
+  });
+
+  const clean = stripForSpeech(raw);
   if (!clean) return;
 
   const utterance = new SpeechSynthesisUtterance(clean);
-  const voice = getBestVoice();
-  if (voice) {
-    utterance.voice = voice;
-    utterance.lang = voice.lang;
-  } else {
-    utterance.lang = 'en-US';
-  }
+  const voices = getVoices();
+  const voice =
+    voices.find(v => v.lang.startsWith('he')) ||
+    voices.find(v => v.lang === 'en-US' && /Google|Samantha|Karen/.test(v.name)) ||
+    voices.find(v => v.lang === 'en-US') ||
+    voices.find(v => v.lang.startsWith('en')) ||
+    null;
+
+  if (voice) { utterance.voice = voice; utterance.lang = voice.lang; }
+  else { utterance.lang = 'en-US'; }
   utterance.rate = 0.88;
   utterance.pitch = 1.05;
   utterance.volume = 1;
 
   utterance.onstart = () => {
-    if (btn) {
-      btn.textContent = '⏹';
-      btn.title = 'Stop';
-      btn.classList.add('speaking');
-      activeSpeakBtn = btn;
-    }
+    activeSpeakBtn = btn;
+    if (btn) { btn.innerHTML = '⏹ <span>Stop</span>'; btn.classList.add('speaking'); }
   };
-  utterance.onend = () => { resetAllSpeakBtns(); };
-  utterance.onerror = (e) => {
-    if (e.error !== 'interrupted') console.warn('TTS error:', e.error);
-    resetAllSpeakBtns();
+  utterance.onend = utterance.onerror = () => {
+    activeSpeakBtn = null;
+    if (btn) { btn.innerHTML = '🔊 <span>Hear Morah</span>'; btn.classList.remove('speaking'); }
   };
 
   window.speechSynthesis.speak(utterance);
-}
-
-function resetAllSpeakBtns() {
-  document.querySelectorAll('.btn-speak').forEach(b => {
-    b.textContent = '🔊';
-    b.title = 'Read aloud';
-    b.classList.remove('speaking');
-  });
-  activeSpeakBtn = null;
 }
 
 // ─── CHALLENGE STORE ─────────────────────────────────────
@@ -738,10 +705,10 @@ function appendMessage(role, content, wordBadges = []) {
           ${badgesHtml}
           ${cId ? `<div class="challenge-widget" id="challenge-${cId}"></div>` : ''}
         </div>
-        <div class="msg-footer">
-          <span class="msg-time">${time}</span>
-          <button class="btn-speak" data-speak-id="${msgId}" title="Read aloud" onclick="speakMessage(${msgId})">🔊</button>
-        </div>
+        <button class="btn-hear-morah" data-speak-id="${msgId}" onclick="speakMessage(${msgId})">
+          🔊 <span>Hear Morah</span>
+        </button>
+        <div class="msg-footer"><span class="msg-time">${time}</span></div>
       </div>`;
 
     container.appendChild(el);
