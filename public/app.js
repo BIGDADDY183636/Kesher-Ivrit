@@ -20,6 +20,13 @@ let state = {
   userProfile: null,
   messages: [],
   currentTopic: 'Greetings',
+  session: {
+    wordsThisSession: [],   // words taught so far this lesson
+    consecutiveCorrect: 0,
+    consecutiveWrong: 0,
+    totalCorrect: 0,
+    totalWrong: 0
+  },
   progress: {
     points: 0,
     wordsLearned: [],
@@ -423,8 +430,9 @@ function renderWordsList() {
 
 async function startLesson() {
   state.messages = [];
+  state.session = { wordsThisSession: [], consecutiveCorrect: 0, consecutiveWrong: 0, totalCorrect: 0, totalWrong: 0 };
   document.getElementById('chat-messages').innerHTML = '';
-  setMorahStatus('Starting your lesson... 📖');
+  setMorahStatus('Starting your lesson...');
   await sendToMorah([{ role: 'user', content: 'Please start our lesson! Greet me and let\'s begin.' }]);
 }
 
@@ -474,7 +482,7 @@ async function sendToMorah(messages) {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ messages, userProfile: { ...state.userProfile, currentTopic: state.currentTopic } })
+      body: JSON.stringify({ messages, userProfile: { ...state.userProfile, currentTopic: state.currentTopic, session: state.session } })
     });
 
     if (!response.ok) {
@@ -536,6 +544,7 @@ function addWordsToProgress(words) {
     const exists = state.progress.wordsLearned.some(w => w.hebrew === word.hebrew);
     if (!exists) {
       state.progress.wordsLearned.push(word);
+      state.session.wordsThisSession.push(word.transliteration || word.english);
       newPoints += (word.points || 10);
       newWords++;
     }
@@ -622,12 +631,38 @@ if (window.speechSynthesis) {
   setTimeout(loadVoices, 1500);
 }
 
+function isFemale(v) {
+  var n = v.name.toLowerCase();
+  return n.indexOf('female') !== -1 || n.indexOf('samantha') !== -1 ||
+         n.indexOf('karen') !== -1  || n.indexOf('victoria') !== -1 ||
+         n.indexOf('moira') !== -1  || n.indexOf('fiona') !== -1;
+}
+
 function pickVoice() {
   if (!voices.length) loadVoices();
-  for (var i = 0; i < voices.length; i++) {
+  var i;
+  // 1. Female Hebrew voice (he-IL)
+  for (i = 0; i < voices.length; i++) {
+    if (voices[i].lang === 'he-IL' && isFemale(voices[i])) return voices[i];
+  }
+  // 2. Any Hebrew voice
+  for (i = 0; i < voices.length; i++) {
     if (voices[i].lang === 'he-IL') return voices[i];
   }
-  for (var i = 0; i < voices.length; i++) {
+  // 3. Google UK English Female
+  for (i = 0; i < voices.length; i++) {
+    if (voices[i].name === 'Google UK English Female') return voices[i];
+  }
+  // 4. Samantha (macOS clear female)
+  for (i = 0; i < voices.length; i++) {
+    if (voices[i].name === 'Samantha') return voices[i];
+  }
+  // 5. Any female-named English voice
+  for (i = 0; i < voices.length; i++) {
+    if (voices[i].lang.indexOf('en') === 0 && isFemale(voices[i])) return voices[i];
+  }
+  // 6. Any English voice
+  for (i = 0; i < voices.length; i++) {
     if (voices[i].lang === 'en-US') return voices[i];
   }
   return voices[0] || null;
@@ -704,10 +739,10 @@ function speakMessage(msgId) {
     var u = new SpeechSynthesisUtterance(sentences[idx++]);
     if (voice) { u.voice = voice; u.lang = voice.lang; }
     else { u.lang = 'he-IL'; }
-    u.rate   = 0.9;
+    u.rate   = 0.85;
     u.pitch  = 1.0;
     u.volume = 1.0;
-    u.onend  = function() { setTimeout(next, 180); };
+    u.onend  = function() { setTimeout(next, 250); };
     u.onerror = function(e) {
       if (e.error !== 'interrupted') console.warn('TTS:', e.error);
       ttsActive = false;
@@ -1029,6 +1064,17 @@ function showChallengeFeedback(cId, correct, explanation) {
 }
 
 function awardChallengePoints(correct, pts) {
+  // Track session streak for difficulty adaptation
+  if (correct) {
+    state.session.consecutiveCorrect++;
+    state.session.consecutiveWrong = 0;
+    state.session.totalCorrect++;
+  } else {
+    state.session.consecutiveWrong++;
+    state.session.consecutiveCorrect = 0;
+    state.session.totalWrong++;
+  }
+
   if (!correct || pts <= 0) return;
   state.progress.points += pts;
   updateStats();

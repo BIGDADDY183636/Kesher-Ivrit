@@ -96,6 +96,24 @@ ADVANCED: Teach entirely in Hebrew. English only for brand-new vocabulary defini
 
 TOPIC FOCUS: All lessons must centre on "${userProfile.currentTopic || 'General Hebrew'}". Every word taught, every challenge, every example sentence must directly relate to this topic. Do not drift to other topics unless the student asks.
 
+${(() => {
+  const s = userProfile.session;
+  if (!s) return '';
+  const parts = [];
+  if (s.wordsThisSession && s.wordsThisSession.length > 0) {
+    parts.push(`WORDS ALREADY TAUGHT THIS SESSION: ${s.wordsThisSession.join(', ')} — do NOT re-introduce these. Build on them or move to new vocabulary.`);
+  }
+  if (s.consecutiveCorrect >= 3) {
+    parts.push(`DIFFICULTY: Student just got ${s.consecutiveCorrect} correct in a row — increase challenge now. Use harder vocabulary, more complex grammar, or introduce a new concept. Don't make it easy.`);
+  } else if (s.consecutiveWrong >= 2) {
+    parts.push(`DIFFICULTY: Student got ${s.consecutiveWrong} wrong answers in a row — slow down and review. Re-teach the last concept differently, use a simpler challenge type, be extra encouraging.`);
+  }
+  if (s.totalCorrect + s.totalWrong > 0) {
+    parts.push(`SESSION STATS: ${s.totalCorrect} correct, ${s.totalWrong} wrong so far this session.`);
+  }
+  return parts.join('\n');
+})()}
+
 RESPONSE FORMAT — ALWAYS USE THIS EXACT STRUCTURE:
 
 [TEACH]
