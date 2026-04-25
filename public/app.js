@@ -4,12 +4,25 @@
 ═══════════════════════════════════════════════════════════ */
 
 // ─── STATE ───────────────────────────────────────────────
+const TOPICS = [
+  { id: 'Greetings',             label: 'Greetings' },
+  { id: 'Verbs',                 label: 'Verbs' },
+  { id: 'Infinitives',           label: 'Infinitives' },
+  { id: 'Nouns',                 label: 'Nouns' },
+  { id: 'Adjectives',            label: 'Adjectives' },
+  { id: 'Numbers',               label: 'Numbers' },
+  { id: 'Days and Months',       label: 'Days/Months' },
+  { id: 'Sentences',             label: 'Sentences' },
+  { id: 'Reading Comprehension', label: 'Reading' },
+];
+
 let state = {
   userProfile: null,
-  messages: [],        // [{role, content}]
+  messages: [],
+  currentTopic: 'Greetings',
   progress: {
     points: 0,
-    wordsLearned: [],  // [{hebrew, transliteration, english, points}]
+    wordsLearned: [],
     streak: 0,
     lastLessonDate: null,
     lessonsCompleted: 0,
@@ -361,6 +374,24 @@ function setupLessonScreen() {
 
   updateStats();
   renderWordsList();
+  renderTopics();
+}
+
+function renderTopics() {
+  const grid = document.getElementById('topic-grid');
+  if (!grid) return;
+  grid.innerHTML = TOPICS.map(t => `
+    <button class="topic-chip ${state.currentTopic === t.id ? 'active' : ''}"
+      onclick="selectTopic('${t.id}')">
+      ${t.label}
+    </button>`).join('');
+}
+
+function selectTopic(topicId) {
+  state.currentTopic = topicId;
+  renderTopics();
+  showToast(`Topic: ${topicId} — starting fresh lesson!`);
+  startLesson();
 }
 
 function updateStats() {
@@ -438,7 +469,7 @@ async function sendToMorah(messages) {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ messages, userProfile: state.userProfile })
+      body: JSON.stringify({ messages, userProfile: { ...state.userProfile, currentTopic: state.currentTopic } })
     });
 
     if (!response.ok) {
@@ -574,20 +605,74 @@ const msgContentMap = {};
 let msgCounter = 0;
 let activeSpeakBtn = null;
 
-function cleanForSpeech(text) {
-  return text
+// ─── TEXT TO SPEECH ───────────────────────────────────────
+let activeSpeakBtn = null;
+let ttsChainActive = false;
+
+// Eagerly load voices — Chrome is async, retry until they arrive
+let cachedVoices = [];
+function initVoices() {
+  const v = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+  if (v.length) cachedVoices = v;
+  return cachedVoices;
+}
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = () => { cachedVoices = window.speechSynthesis.getVoices(); };
+  setTimeout(initVoices, 200);
+  setTimeout(initVoices, 1000);
+}
+
+function pickVoice() {
+  if (!cachedVoices.length) cachedVoices = window.speechSynthesis.getVoices();
+  for (const v of cachedVoices) { if (v.lang === 'he-IL') return v; }
+  for (const v of cachedVoices) { if (v.lang.startsWith('he')) return v; }
+  for (const v of cachedVoices) { if (v.lang === 'en-US' && v.name.includes('Google')) return v; }
+  for (const v of cachedVoices) { if (v.lang === 'en-US') return v; }
+  return null;
+}
+
+function cleanForSpeech(raw) {
+  return raw
     .replace(/\[TEACH\]|\[\/TEACH\]/g, '')
     .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
     .replace(/📚 WORDS LEARNED:.*/s, '')
-    .replace(/\*+([^*\n]+)\*+/g, '$1')
-    .replace(/[#`~_>]/g, '')
-    .replace(/—/g, ', ')
-    // Strip all emoji and pictographic symbols
-    .replace(/\p{Emoji}/gu, '')
-    // Strip any remaining non-ASCII non-Hebrew characters (symbols, arrows, etc.)
-    .replace(/[^\w\sְ-׿א-ת.,!?;:()\-']/g, '')
+    .replace(/\*+([^*\n]+)\*+/g, '$1')   // strip bold/italic markdown
+    .replace(/\p{Emoji}/gu, '')           // remove all emoji
+    .replace(/[#`~_>*|\\]/g, '')          // strip remaining markdown symbols
+    .replace(/—/g, ',')                   // em-dash → comma pause
+    .replace(/[^\w\sא-תְ-ֽ.,!?;:()\-']/g, '') // keep only words, Hebrew, punctuation
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+function splitSentences(text) {
+  // Split at sentence-ending punctuation for natural pauses
+  return text
+    .split(/(?<=[.!?])\s+/)
+    .map(s => s.trim())
+    .filter(s => s.length > 1);
+}
+
+function applyVoiceSettings(u) {
+  u.rate   = 0.85;
+  u.pitch  = 1.05;
+  u.volume = 1;
+  const voice = pickVoice();
+  if (voice) { u.voice = voice; u.lang = voice.lang; }
+  else        { u.lang = 'he-IL'; }
+}
+
+function setSpeakBtnState(btn, speaking) {
+  if (!btn) return;
+  btn.innerHTML = speaking ? '⏹ <span>Stop</span>' : '🔊 <span>Hear Morah</span>';
+  btn.classList.toggle('speaking', speaking);
+}
+
+function stopTTS() {
+  ttsChainActive = false;
+  window.speechSynthesis.cancel();
+  setSpeakBtnState(activeSpeakBtn, false);
+  activeSpeakBtn = null;
 }
 
 function speakMessage(msgId) {
@@ -597,72 +682,43 @@ function speakMessage(msgId) {
   const raw = msgContentMap[msgId];
   if (!raw) return;
 
-  // Stop / toggle off
-  if (window.speechSynthesis.speaking) {
-    window.speechSynthesis.cancel();
-    document.querySelectorAll('[data-speak-id]').forEach(b => {
-      b.innerHTML = '🔊 <span>Hear Morah</span>';
-      b.classList.remove('speaking');
-    });
-    activeSpeakBtn = null;
-    if (activeSpeakBtn === btn) return; // was already this button — just stop
-  }
+  // Toggle off if already speaking
+  if (ttsChainActive) { stopTTS(); return; }
 
   const clean = cleanForSpeech(raw);
   if (!clean) return;
 
-  const u = new SpeechSynthesisUtterance(clean);
-  u.rate = 0.9;
-  u.pitch = 1.1;
-  u.volume = 1;
+  const sentences = splitSentences(clean);
+  if (!sentences.length) return;
 
-  // Loop through available voices to find he-IL, then he, then English fallback
-  const allVoices = window.speechSynthesis.getVoices();
-  let picked = null;
-  for (const v of allVoices) {
-    if (v.lang === 'he-IL') { picked = v; break; }
-  }
-  if (!picked) {
-    for (const v of allVoices) {
-      if (v.lang.startsWith('he')) { picked = v; break; }
+  ttsChainActive = true;
+  activeSpeakBtn = btn;
+  setSpeakBtnState(btn, true);
+
+  let idx = 0;
+  function speakNext() {
+    if (!ttsChainActive || idx >= sentences.length) {
+      ttsChainActive = false;
+      setSpeakBtnState(btn, false);
+      activeSpeakBtn = null;
+      return;
     }
+    const sentence = sentences[idx++];
+    const u = new SpeechSynthesisUtterance(sentence);
+    applyVoiceSettings(u);
+    // Pause after commas (shorter) vs sentence end (longer)
+    const delay = sentence.endsWith(',') ? 120 : 220;
+    u.onend  = () => setTimeout(speakNext, delay);
+    u.onerror = (e) => {
+      if (e.error !== 'interrupted') console.warn('TTS:', e.error);
+      ttsChainActive = false;
+      setSpeakBtnState(btn, false);
+      activeSpeakBtn = null;
+    };
+    window.speechSynthesis.speak(u);
   }
-  if (!picked) {
-    for (const v of allVoices) {
-      if (v.lang === 'en-US' && v.name.includes('Google')) { picked = v; break; }
-    }
-  }
-  if (!picked) {
-    for (const v of allVoices) {
-      if (v.lang === 'en-US') { picked = v; break; }
-    }
-  }
 
-  if (picked) { u.voice = picked; u.lang = picked.lang; }
-  else { u.lang = 'he-IL'; }
-
-  u.onstart = () => {
-    activeSpeakBtn = btn;
-    if (btn) { btn.innerHTML = '⏹ <span>Stop</span>'; btn.classList.add('speaking'); }
-  };
-  u.onend = u.onerror = () => {
-    activeSpeakBtn = null;
-    if (btn) { btn.innerHTML = '🔊 <span>Hear Morah</span>'; btn.classList.remove('speaking'); }
-  };
-
-  window.speechSynthesis.speak(u);
-}
-
-// Chrome loads voices asynchronously — trigger early and cache on change
-if (window.speechSynthesis) {
-  // Initial trigger — may return empty on first call, that's expected
-  window.speechSynthesis.getVoices();
-  // Cache fires once voices are ready
-  window.speechSynthesis.onvoiceschanged = () => {
-    window.speechSynthesis.getVoices(); // ensure internal cache is populated
-  };
-  // Also retry after a short delay since Chrome can be slow on first load
-  setTimeout(() => window.speechSynthesis.getVoices(), 1000);
+  speakNext();
 }
 
 // ─── CHALLENGE STORE ─────────────────────────────────────

@@ -515,6 +515,35 @@ body {
   margin-bottom: 10px;
 }
 
+.topic-grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 4px;
+}
+.topic-chip {
+  background: rgba(255,255,255,0.08);
+  border: 1px solid rgba(255,255,255,0.15);
+  color: rgba(255,255,255,0.7);
+  padding: 5px 10px;
+  border-radius: 20px;
+  font-size: 0.72rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-eng);
+  transition: all 0.18s;
+  white-space: nowrap;
+}
+.topic-chip:hover {
+  background: rgba(255,255,255,0.18);
+  color: var(--white);
+}
+.topic-chip.active {
+  background: var(--gold);
+  border-color: var(--gold);
+  color: var(--text-dark);
+}
+
 .words-list {
   display: flex;
   flex-direction: column;
