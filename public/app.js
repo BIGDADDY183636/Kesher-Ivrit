@@ -459,7 +459,9 @@ async function sendToMorah(messages) {
     state.messages.push({ role: 'assistant', content: rawContent });
     saveProgress();
 
-    appendMessage('morah', cleanContent, wordsData);
+    const newMsgId = appendMessage('morah', cleanContent, wordsData);
+    // Auto-speak Morah's response after a short delay
+    setTimeout(() => speakMessage(newMsgId), 500);
 
     if (wordsData.length > 0) {
       addWordsToProgress(wordsData);
@@ -712,6 +714,8 @@ function appendMessage(role, content, wordBadges = []) {
 
     container.appendChild(el);
     if (cId) renderChallenge(cId);
+    autoScroll();
+    return msgId;
 
   } else {
     el.innerHTML = `
@@ -721,9 +725,9 @@ function appendMessage(role, content, wordBadges = []) {
         <div class="msg-footer"><span class="msg-time">${time}</span></div>
       </div>`;
     container.appendChild(el);
+    autoScroll();
+    return null;
   }
-
-  autoScroll();
 }
 
 function appendErrorMessage(errText) {
@@ -1164,6 +1168,7 @@ function stopMic() {
   if (btn) {
     btn.classList.remove('listening');
     btn.querySelector('.mic-icon').textContent = '🎤';
+    btn.querySelector('.mic-label').textContent = 'דַּבֵּר';
   }
   document.getElementById('mic-status').style.display = 'none';
 }

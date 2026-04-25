@@ -814,7 +814,7 @@ body {
   animation: micPulseBtn 1.2s ease infinite;
 }
 .mic-icon { font-size: 1.3rem; line-height: 1; }
-.mic-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; }
+.mic-label { font-size: 0.75rem; font-family: var(--font-heb); letter-spacing: 0; }
 
 @keyframes micPulseBtn {
   0%, 100% { box-shadow: 0 0 0 0 rgba(192,57,43,0.4); }
