@@ -631,37 +631,61 @@ if (window.speechSynthesis) {
   setTimeout(loadVoices, 1500);
 }
 
+// All known female voice name fragments across Chrome, Edge, Safari, Firefox
+var FEMALE_NAMES = [
+  'female','samantha','karen','victoria','moira','fiona','tessa','veena',
+  'allison','ava','susan','zira','hazel','eva','emily','sara','linda',
+  'joanna','salli','kimberly','kendra','ivy','ruth','helena','alice',
+  'amelie','anna','carmit','damayanti','ioana','kyoko','laura','lekha',
+  'luciana','maged','mariska','mei-jia','melina','milena','nora','paulina',
+  'sin-ji','soledad','tamar','ting-ting','zosia','google uk english female',
+  'microsoft zira','microsoft hazel','microsoft helena','google us english'
+];
+
 function isFemale(v) {
   var n = v.name.toLowerCase();
-  return n.indexOf('female') !== -1 || n.indexOf('samantha') !== -1 ||
-         n.indexOf('karen') !== -1  || n.indexOf('victoria') !== -1 ||
-         n.indexOf('moira') !== -1  || n.indexOf('fiona') !== -1;
+  for (var k = 0; k < FEMALE_NAMES.length; k++) {
+    if (n.indexOf(FEMALE_NAMES[k]) !== -1) return true;
+  }
+  return false;
 }
 
 function pickVoice() {
   if (!voices.length) loadVoices();
   var i;
-  // 1. Female Hebrew voice (he-IL)
+  // 1. Female he-IL
   for (i = 0; i < voices.length; i++) {
     if (voices[i].lang === 'he-IL' && isFemale(voices[i])) return voices[i];
   }
-  // 2. Any Hebrew voice
+  // 2. Any he-IL
   for (i = 0; i < voices.length; i++) {
     if (voices[i].lang === 'he-IL') return voices[i];
   }
-  // 3. Google UK English Female
+  // 3. Any Hebrew (he-*)
+  for (i = 0; i < voices.length; i++) {
+    if (voices[i].lang.indexOf('he') === 0 && isFemale(voices[i])) return voices[i];
+  }
+  // 4. Google UK English Female (exact)
   for (i = 0; i < voices.length; i++) {
     if (voices[i].name === 'Google UK English Female') return voices[i];
   }
-  // 4. Samantha (macOS clear female)
+  // 5. Samantha (clearest macOS voice)
   for (i = 0; i < voices.length; i++) {
     if (voices[i].name === 'Samantha') return voices[i];
   }
-  // 5. Any female-named English voice
+  // 6. Any female en-GB
+  for (i = 0; i < voices.length; i++) {
+    if (voices[i].lang === 'en-GB' && isFemale(voices[i])) return voices[i];
+  }
+  // 7. Any female en-US
+  for (i = 0; i < voices.length; i++) {
+    if (voices[i].lang === 'en-US' && isFemale(voices[i])) return voices[i];
+  }
+  // 8. Any female English
   for (i = 0; i < voices.length; i++) {
     if (voices[i].lang.indexOf('en') === 0 && isFemale(voices[i])) return voices[i];
   }
-  // 6. Any English voice
+  // 9. Any en-US
   for (i = 0; i < voices.length; i++) {
     if (voices[i].lang === 'en-US') return voices[i];
   }
@@ -739,10 +763,10 @@ function speakMessage(msgId) {
     var u = new SpeechSynthesisUtterance(sentences[idx++]);
     if (voice) { u.voice = voice; u.lang = voice.lang; }
     else { u.lang = 'he-IL'; }
-    u.rate   = 0.85;
-    u.pitch  = 1.0;
+    u.rate   = 0.82;
+    u.pitch  = 1.15;
     u.volume = 1.0;
-    u.onend  = function() { setTimeout(next, 250); };
+    u.onend  = function() { setTimeout(next, 300); };
     u.onerror = function(e) {
       if (e.error !== 'interrupted') console.warn('TTS:', e.error);
       ttsActive = false;
@@ -1079,26 +1103,56 @@ function awardChallengePoints(correct, pts) {
   state.progress.points += pts;
   updateStats();
   saveProgress();
-  showPointsPop(pts);
+  playCorrectTone();
+  showCorrectBurst(pts);
   triggerConfetti();
 }
 
 function triggerConfetti() {
-  const colors = ['#0038B8','#FFD700','#FFFFFF','#4A90D9','#2E8B57'];
-  for (let i = 0; i < 22; i++) {
+  const colors = ['#0038B8','#FFD700','#FFFFFF','#4A90D9','#2E8B57','#FF6B6B','#C0392B'];
+  for (let i = 0; i < 48; i++) {
     const c = document.createElement('div');
     c.className = 'confetti-piece';
     c.style.cssText = `
       left:${Math.random()*100}vw;
       background:${colors[Math.floor(Math.random()*colors.length)]};
-      width:${6+Math.random()*6}px;
-      height:${6+Math.random()*6}px;
-      animation-duration:${0.9+Math.random()*0.8}s;
-      animation-delay:${Math.random()*0.3}s;
-      border-radius:${Math.random()>0.5?'50%':'2px'};`;
+      width:${5+Math.random()*9}px;
+      height:${5+Math.random()*9}px;
+      animation-duration:${0.8+Math.random()*1}s;
+      animation-delay:${Math.random()*0.4}s;
+      border-radius:${Math.random()>0.4?'50%':'3px'};
+      transform:rotate(${Math.random()*360}deg);`;
     document.body.appendChild(c);
-    setTimeout(() => c.remove(), 1800);
+    setTimeout(() => c.remove(), 2200);
   }
+}
+
+function playCorrectTone() {
+  try {
+    const ctx = new (window.AudioContext || window.webkitAudioContext)();
+    const notes = [523, 659, 784]; // C5-E5-G5 major chord
+    notes.forEach(function(freq, i) {
+      const osc = ctx.createOscillator();
+      const gain = ctx.createGain();
+      osc.connect(gain);
+      gain.connect(ctx.destination);
+      osc.type = 'sine';
+      osc.frequency.value = freq;
+      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.1);
+      gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + i * 0.1 + 0.02);
+      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.35);
+      osc.start(ctx.currentTime + i * 0.1);
+      osc.stop(ctx.currentTime + i * 0.1 + 0.4);
+    });
+  } catch(e) {}
+}
+
+function showCorrectBurst(pts) {
+  const el = document.createElement('div');
+  el.className = 'correct-burst';
+  el.innerHTML = '<span class="burst-check">✓</span><span class="burst-pts">+' + pts + '</span>';
+  document.body.appendChild(el);
+  setTimeout(function() { el.remove(); }, 1200);
 }
 
 function formatMessage(text) {
