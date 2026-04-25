@@ -1016,6 +1016,63 @@ body {
 .modal-streak-box h2 { font-size: 1.6rem; color: var(--text-dark); }
 .modal-streak-box p { font-size: 0.95rem; margin: 10px auto 24px; max-width: 320px; }
 
+/* ═══ VOCABULARY TOOLTIP ═══ */
+.vocab-tooltip {
+  position: fixed;
+  z-index: 5000;
+  background: var(--blue-deep);
+  color: var(--white);
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  min-width: 190px;
+  max-width: 240px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.35);
+  transform: translateX(-50%) translateY(-108%);
+  animation: tooltipPop 0.2s cubic-bezier(0.175,0.885,0.32,1.275);
+}
+.vocab-tooltip::after {
+  content: '';
+  position: absolute;
+  bottom: -7px;
+  left: 50%;
+  transform: translateX(-50%);
+  border: 7px solid transparent;
+  border-bottom: none;
+  border-top-color: var(--blue-deep);
+}
+@keyframes tooltipPop {
+  from { opacity: 0; transform: translateX(-50%) translateY(-95%); }
+  to   { opacity: 1; transform: translateX(-50%) translateY(-108%); }
+}
+.tt-close {
+  position: absolute;
+  top: 6px; right: 8px;
+  background: none; border: none;
+  color: rgba(255,255,255,0.45);
+  font-size: 0.75rem; cursor: pointer;
+  padding: 2px 5px; border-radius: 4px;
+}
+.tt-close:hover { color: var(--white); background: rgba(255,255,255,0.1); }
+.tt-hebrew {
+  font-family: var(--font-heb);
+  font-size: 1.8rem; font-weight: 700;
+  direction: rtl; text-align: center;
+  margin-bottom: 5px; line-height: 1.2;
+}
+.tt-trans {
+  font-size: 0.85rem; font-style: italic;
+  color: var(--gold-light); text-align: center;
+  margin-bottom: 4px; min-height: 1.1em;
+}
+.tt-english {
+  font-size: 0.92rem; font-weight: 700;
+  text-align: center; margin-bottom: 3px;
+}
+.tt-pos {
+  font-size: 0.68rem; color: rgba(255,255,255,0.45);
+  text-align: center; text-transform: uppercase; letter-spacing: 0.08em;
+}
+
 /* ═══════════════════════════════════
    TOAST
 ═══════════════════════════════════ */

@@ -344,6 +344,7 @@ function finishQuiz() {
 function setupLessonScreen() {
   if (!state.userProfile) return;
   initScrollWatcher();
+  initTooltips();
 
   const avatarMap = {
     complete_beginner: '🌱', some_exposure: '🌿', basic: '🌳',
@@ -573,87 +574,73 @@ const msgContentMap = {};
 let msgCounter = 0;
 let activeSpeakBtn = null;
 
-// Chrome loads voices async — populate on change
-let cachedVoices = [];
-function getVoices() {
-  if (!window.speechSynthesis) return [];
-  const v = window.speechSynthesis.getVoices();
-  if (v.length) cachedVoices = v;
-  return cachedVoices;
-}
-if (window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = () => {
-    cachedVoices = window.speechSynthesis.getVoices();
-  };
-}
-
-function stripForSpeech(text) {
+function cleanForSpeech(text) {
   return text
-    .replace(/\[TEACH\]/g, '').replace(/\[\/TEACH\]/g, '')
+    .replace(/\[TEACH\]|\[\/TEACH\]/g, '')
     .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
     .replace(/📚 WORDS LEARNED:.*/s, '')
-    .replace(/\*\*([^*]+)\*\*/g, '$1')
-    .replace(/\*([^*]+)\*/g, '$1')
-    .replace(/[#`~_>*]/g, '')
+    .replace(/\*+([^*\n]+)\*+/g, '$1')
+    .replace(/[#`~_>]/g, '')
     .replace(/—/g, ', ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-// Single speak function — must be called from a user gesture (button click)
 function speakMessage(msgId) {
-  if (!window.speechSynthesis) {
-    showToast('Speech not supported. Use Chrome or Edge.');
-    return;
-  }
+  if (!window.speechSynthesis) { showToast('Speech not supported in this browser.'); return; }
 
   const btn = document.querySelector(`[data-speak-id="${msgId}"]`);
   const raw = msgContentMap[msgId];
   if (!raw) return;
 
-  // Toggle off if already speaking this message
-  if (window.speechSynthesis.speaking && activeSpeakBtn === btn) {
+  // Stop / toggle off
+  if (window.speechSynthesis.speaking) {
     window.speechSynthesis.cancel();
-    return;
+    document.querySelectorAll('[data-speak-id]').forEach(b => {
+      b.innerHTML = '🔊 <span>Hear Morah</span>';
+      b.classList.remove('speaking');
+    });
+    activeSpeakBtn = null;
+    if (activeSpeakBtn === btn) return; // was already this button — just stop
   }
 
-  // Stop anything else
-  window.speechSynthesis.cancel();
-
-  // Reset all button states
-  document.querySelectorAll('[data-speak-id]').forEach(b => {
-    b.innerHTML = '🔊 <span>Hear Morah</span>';
-    b.classList.remove('speaking');
-  });
-
-  const clean = stripForSpeech(raw);
+  const clean = cleanForSpeech(raw);
   if (!clean) return;
 
-  const utterance = new SpeechSynthesisUtterance(clean);
-  const voices = getVoices();
-  const voice =
-    voices.find(v => v.lang.startsWith('he')) ||
-    voices.find(v => v.lang === 'en-US' && /Google|Samantha|Karen/.test(v.name)) ||
-    voices.find(v => v.lang === 'en-US') ||
-    voices.find(v => v.lang.startsWith('en')) ||
-    null;
+  // Use Web Speech API — minimal, guaranteed to work in Chrome
+  const u = new SpeechSynthesisUtterance(clean);
+  u.lang = 'en-US';
+  u.rate = 0.88;
+  u.pitch = 1.05;
+  u.volume = 1;
 
-  if (voice) { utterance.voice = voice; utterance.lang = voice.lang; }
-  else { utterance.lang = 'en-US'; }
-  utterance.rate = 0.88;
-  utterance.pitch = 1.05;
-  utterance.volume = 1;
+  // Try to pick a good voice — non-blocking, voices may or may not be loaded
+  const voices = window.speechSynthesis.getVoices();
+  if (voices.length) {
+    const pick =
+      voices.find(v => v.lang.startsWith('he')) ||
+      voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
+      voices.find(v => v.lang === 'en-US') ||
+      voices.find(v => v.lang.startsWith('en'));
+    if (pick) { u.voice = pick; u.lang = pick.lang; }
+  }
 
-  utterance.onstart = () => {
+  u.onstart = () => {
     activeSpeakBtn = btn;
     if (btn) { btn.innerHTML = '⏹ <span>Stop</span>'; btn.classList.add('speaking'); }
   };
-  utterance.onend = utterance.onerror = () => {
+  u.onend = u.onerror = () => {
     activeSpeakBtn = null;
     if (btn) { btn.innerHTML = '🔊 <span>Hear Morah</span>'; btn.classList.remove('speaking'); }
   };
 
-  window.speechSynthesis.speak(utterance);
+  window.speechSynthesis.speak(u);
+}
+
+// Pre-populate voice list once browser fires the event
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices(); // trigger async load
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
 }
 
 // ─── CHALLENGE STORE ─────────────────────────────────────
@@ -1182,6 +1169,86 @@ function toggleMicLang() {
     recognition?.stop();
     setTimeout(() => { recognition = initRecognition(); recognition?.start(); }, 300);
   }
+}
+
+// ─── VOCABULARY TOOLTIPS ─────────────────────────────────
+const HEB_RE = /[א-תְ-ֽיִ-פֿ]/;  // Hebrew letter/vowel range
+let tooltipTimeout = null;
+let tooltipVisible = false;
+
+function initTooltips() {
+  const chatEl = document.getElementById('chat-messages');
+  if (!chatEl) return;
+
+  const onSelect = () => {
+    clearTimeout(tooltipTimeout);
+    const sel = window.getSelection();
+    const word = sel?.toString().trim();
+    if (!word || !HEB_RE.test(word) || word.length > 50) {
+      closeTooltip();
+      return;
+    }
+    const range = sel.getRangeAt(0);
+    const rect = range.getBoundingClientRect();
+    if (rect.width === 0 && rect.height === 0) return;
+
+    tooltipTimeout = setTimeout(() => showTooltip(word, rect), 350);
+  };
+
+  document.addEventListener('mouseup', onSelect);
+  document.addEventListener('touchend', onSelect);
+
+  // Close when clicking elsewhere
+  document.addEventListener('mousedown', (e) => {
+    if (!e.target.closest('#vocab-tooltip')) closeTooltip();
+  });
+}
+
+async function showTooltip(word, rect) {
+  const tip = document.getElementById('vocab-tooltip');
+  if (!tip) return;
+
+  // Position above the selection
+  const scrollY = window.scrollY;
+  const tipTop = rect.top + scrollY - 10;
+  const tipLeft = Math.min(rect.left + rect.width / 2, window.innerWidth - 220);
+  tip.style.top = `${tipTop}px`;
+  tip.style.left = `${Math.max(8, tipLeft)}px`;
+  tip.style.display = 'block';
+  tooltipVisible = true;
+
+  document.getElementById('tt-hebrew').textContent = word;
+  document.getElementById('tt-trans').textContent = '…';
+  document.getElementById('tt-english').textContent = '';
+  document.getElementById('tt-pos').textContent = '';
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    const apiKey = getApiKey();
+    if (apiKey) headers['x-api-key'] = apiKey;
+
+    const res = await fetch('/api/tooltip', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ word })
+    });
+    if (!res.ok) throw new Error('lookup failed');
+    const data = await res.json();
+
+    if (!tooltipVisible) return; // closed while loading
+    document.getElementById('tt-trans').textContent = data.transliteration || '';
+    document.getElementById('tt-english').textContent = data.english || '';
+    document.getElementById('tt-pos').textContent = data.partOfSpeech || '';
+  } catch (e) {
+    document.getElementById('tt-trans').textContent = 'Could not look up word';
+  }
+}
+
+function closeTooltip() {
+  const tip = document.getElementById('vocab-tooltip');
+  if (tip) tip.style.display = 'none';
+  tooltipVisible = false;
+  clearTimeout(tooltipTimeout);
 }
 
 // ─── API KEY MANAGEMENT ───────────────────────────────────

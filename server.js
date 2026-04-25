@@ -163,6 +163,31 @@ app.post('/api/feedback', async (req, res) => {
   res.json({ success: true, message: 'Todah rabah! Thank you for your feedback!' });
 });
 
+app.post('/api/tooltip', async (req, res) => {
+  const { word } = req.body;
+  const apiKey = process.env.ANTHROPIC_API_KEY || req.headers['x-api-key'];
+  if (!apiKey) return res.status(401).json({ error: 'NO_API_KEY' });
+  if (!word || word.trim().length === 0 || word.length > 60) return res.status(400).json({ error: 'Invalid word' });
+
+  try {
+    const client = apiKey === process.env.ANTHROPIC_API_KEY ? anthropic : new Anthropic({ apiKey });
+    const response = await client.messages.create({
+      model: 'claude-sonnet-4-6',
+      max_tokens: 80,
+      messages: [{
+        role: 'user',
+        content: `Hebrew word or phrase: "${word.trim()}"\nReply with ONLY a JSON object, no other text:\n{"transliteration":"...","english":"...","partOfSpeech":"noun/verb/adjective/phrase/etc"}`
+      }]
+    });
+    const raw = response.content[0].text;
+    const match = raw.match(/\{[\s\S]*\}/);
+    if (!match) return res.status(500).json({ error: 'Parse error' });
+    res.json(JSON.parse(match[0]));
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
 app.get('/api/status', (req, res) => {
   res.json({ configured: !!process.env.ANTHROPIC_API_KEY });
 });
