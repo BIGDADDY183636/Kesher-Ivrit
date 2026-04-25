@@ -582,9 +582,10 @@ function cleanForSpeech(text) {
     .replace(/\*+([^*\n]+)\*+/g, '$1')
     .replace(/[#`~_>]/g, '')
     .replace(/—/g, ', ')
-    // Strip all emoji so they aren't read aloud
-    .replace(/[\u{1F000}-\u{1FFFF}\u{2600}-\u{27BF}\u{FE00}-\u{FEFF}]/gu, '')
-    .replace(/[✀-⟿]/g, '')
+    // Strip all emoji and pictographic symbols
+    .replace(/\p{Emoji}/gu, '')
+    // Strip any remaining non-ASCII non-Hebrew characters (symbols, arrows, etc.)
+    .replace(/[^\w\sְ-׿א-ת.,!?;:()\-']/g, '')
     .replace(/\s+/g, ' ')
     .trim();
 }
@@ -611,22 +612,34 @@ function speakMessage(msgId) {
   if (!clean) return;
 
   const u = new SpeechSynthesisUtterance(clean);
-  u.rate = 0.88;
-  u.pitch = 1.05;
+  u.rate = 0.9;
+  u.pitch = 1.1;
   u.volume = 1;
 
-  // Voice priority: he-IL → he → en-US Google → en-US → any en
-  const voices = window.speechSynthesis.getVoices();
-  const pick = voices.length
-    ? voices.find(v => v.lang === 'he-IL') ||
-      voices.find(v => v.lang.startsWith('he')) ||
-      voices.find(v => v.lang === 'en-US' && v.name.includes('Google')) ||
-      voices.find(v => v.lang === 'en-US') ||
-      voices.find(v => v.lang.startsWith('en'))
-    : null;
+  // Loop through available voices to find he-IL, then he, then English fallback
+  const allVoices = window.speechSynthesis.getVoices();
+  let picked = null;
+  for (const v of allVoices) {
+    if (v.lang === 'he-IL') { picked = v; break; }
+  }
+  if (!picked) {
+    for (const v of allVoices) {
+      if (v.lang.startsWith('he')) { picked = v; break; }
+    }
+  }
+  if (!picked) {
+    for (const v of allVoices) {
+      if (v.lang === 'en-US' && v.name.includes('Google')) { picked = v; break; }
+    }
+  }
+  if (!picked) {
+    for (const v of allVoices) {
+      if (v.lang === 'en-US') { picked = v; break; }
+    }
+  }
 
-  if (pick) { u.voice = pick; u.lang = pick.lang; }
-  else { u.lang = 'he-IL'; } // hint browser to use Hebrew if no voices loaded yet
+  if (picked) { u.voice = picked; u.lang = picked.lang; }
+  else { u.lang = 'he-IL'; }
 
   u.onstart = () => {
     activeSpeakBtn = btn;
@@ -640,10 +653,16 @@ function speakMessage(msgId) {
   window.speechSynthesis.speak(u);
 }
 
-// Pre-populate voice list once browser fires the event
+// Chrome loads voices asynchronously — trigger early and cache on change
 if (window.speechSynthesis) {
-  window.speechSynthesis.getVoices(); // trigger async load
-  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+  // Initial trigger — may return empty on first call, that's expected
+  window.speechSynthesis.getVoices();
+  // Cache fires once voices are ready
+  window.speechSynthesis.onvoiceschanged = () => {
+    window.speechSynthesis.getVoices(); // ensure internal cache is populated
+  };
+  // Also retry after a short delay since Chrome can be slow on first load
+  setTimeout(() => window.speechSynthesis.getVoices(), 1000);
 }
 
 // ─── CHALLENGE STORE ─────────────────────────────────────
