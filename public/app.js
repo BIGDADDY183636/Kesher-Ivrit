@@ -655,47 +655,74 @@ function resetSpeakBtn(btn) {
   btn.classList.remove('speaking');
 }
 
+// ─── CHALLENGE STORE ─────────────────────────────────────
+const challengeStore = {};  // challengeId -> { challenge, answered }
+let challengeCounter = 0;
+
+function parseMorahResponse(raw) {
+  const teachMatch = raw.match(/\[TEACH\]([\s\S]*?)\[\/TEACH\]/);
+  const challengeMatch = raw.match(/\[CHALLENGE\]([\s\S]*?)\[\/CHALLENGE\]/);
+  const teach = teachMatch ? teachMatch[1].trim() : raw.replace(/📚 WORDS LEARNED:.*/s, '').trim();
+  let challenge = null;
+  if (challengeMatch) {
+    try { challenge = JSON.parse(challengeMatch[1].trim()); } catch (e) { /* malformed JSON */ }
+  }
+  return { teach, challenge };
+}
+
 // ─── RENDERING ───────────────────────────────────────────
 function appendMessage(role, content, wordBadges = []) {
   const container = document.getElementById('chat-messages');
   const el = document.createElement('div');
   el.className = `message ${role}`;
-
-  const avatar = role === 'morah' ? '👩‍🏫' : (state.userProfile?.name?.[0] || '👤');
   const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
-  let badgesHtml = '';
-  if (wordBadges.length > 0) {
-    badgesHtml = `<div class="word-badges">`;
-    wordBadges.forEach((w, i) => {
-      badgesHtml += `<div class="word-badge" style="animation-delay:${i * 0.1}s">
-        <span class="word-badge-heb">${escapeHtml(w.hebrew)}</span>
-        <span class="word-badge-trans">${escapeHtml(w.transliteration)}</span>
-        <span class="word-badge-eng">${escapeHtml(w.english)}</span>
-      </div>`;
-    });
-    badgesHtml += `</div>`;
-  }
-
-  let speakBtn = '';
   if (role === 'morah') {
+    const { teach, challenge } = parseMorahResponse(content);
     const msgId = ++msgCounter;
-    msgContentMap[msgId] = content;
-    speakBtn = `<button class="btn-speak" data-speak-id="${msgId}" title="Read aloud" onclick="speakMessage(${msgId})">🔊</button>`;
+    msgContentMap[msgId] = teach;
+
+    let badgesHtml = '';
+    if (wordBadges.length > 0) {
+      badgesHtml = `<div class="word-badges">` +
+        wordBadges.map((w, i) => `
+          <div class="word-badge" style="animation-delay:${i * 0.1}s">
+            <span class="word-badge-heb">${escapeHtml(w.hebrew)}</span>
+            <span class="word-badge-trans">${escapeHtml(w.transliteration)}</span>
+            <span class="word-badge-eng">${escapeHtml(w.english)}</span>
+          </div>`).join('') + `</div>`;
+    }
+
+    const cId = challenge ? ++challengeCounter : null;
+    if (cId) challengeStore[cId] = { challenge, answered: false };
+
+    el.innerHTML = `
+      <div class="msg-avatar">👩‍🏫</div>
+      <div style="flex:1;min-width:0;">
+        <div class="msg-bubble">
+          ${formatMessage(teach)}
+          ${badgesHtml}
+          ${cId ? `<div class="challenge-widget" id="challenge-${cId}"></div>` : ''}
+        </div>
+        <div class="msg-footer">
+          <span class="msg-time">${time}</span>
+          <button class="btn-speak" data-speak-id="${msgId}" title="Read aloud" onclick="speakMessage(${msgId})">🔊</button>
+        </div>
+      </div>`;
+
+    container.appendChild(el);
+    if (cId) renderChallenge(cId);
+
+  } else {
+    el.innerHTML = `
+      <div class="msg-avatar">${state.userProfile?.name?.[0] || '👤'}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="msg-bubble">${formatMessage(content)}</div>
+        <div class="msg-footer"><span class="msg-time">${time}</span></div>
+      </div>`;
+    container.appendChild(el);
   }
 
-  el.innerHTML = `
-    <div class="msg-avatar">${role === 'morah' ? '👩‍🏫' : avatar}</div>
-    <div style="flex:1;min-width:0;">
-      <div class="msg-bubble">${formatMessage(content)}${badgesHtml}</div>
-      <div class="msg-footer">
-        <span class="msg-time">${time}</span>
-        ${speakBtn}
-      </div>
-    </div>
-  `;
-
-  container.appendChild(el);
   autoScroll();
 }
 
@@ -706,12 +733,11 @@ function appendErrorMessage(errText) {
   el.innerHTML = `
     <div class="msg-avatar">⚠️</div>
     <div>
-      <div class="msg-bubble" style="border-color:#C0392B; background:#FFF5F5; color:#C0392B;">
+      <div class="msg-bubble" style="border-color:#C0392B;background:#FFF5F5;color:#C0392B;">
         <strong style="background:none;color:#C0392B;">Error:</strong> ${escapeHtml(errText)}
-        <br/><br/>Make sure your <code>.env</code> file has <code>ANTHROPIC_API_KEY=your_key_here</code>
+        <br/><br/>Check that your <code>ANTHROPIC_API_KEY</code> is set correctly.
       </div>
-    </div>
-  `;
+    </div>`;
   container.appendChild(el);
   autoScroll();
 }
@@ -720,43 +746,249 @@ function renderAllMessages() {
   const container = document.getElementById('chat-messages');
   container.innerHTML = '';
   for (const msg of state.messages) {
-    if (msg.role === 'user') {
-      appendMessage('user', msg.content);
+    const raw = msg.content;
+    const words = extractWordsLearned(raw);
+    appendMessage(msg.role, raw, []);
+  }
+}
+
+// ─── CHALLENGE RENDERERS ──────────────────────────────────
+function renderChallenge(cId) {
+  const { challenge } = challengeStore[cId];
+  const container = document.getElementById(`challenge-${cId}`);
+  if (!container || !challenge) return;
+
+  switch (challenge.type) {
+    case 'multiple_choice': renderMultipleChoice(cId, challenge, container); break;
+    case 'fill_blank':      renderFillBlank(cId, challenge, container);      break;
+    case 'true_false':      renderTrueFalse(cId, challenge, container);      break;
+    case 'match':           renderMatch(cId, challenge, container);          break;
+    default: break;
+  }
+}
+
+function renderMultipleChoice(cId, c, container) {
+  container.innerHTML = `
+    <div class="challenge-question">${escapeHtml(c.question)}</div>
+    <div class="challenge-options mc-options">
+      ${c.options.map((opt, i) => `
+        <button class="mc-btn" data-idx="${i}" onclick="answerMC(${cId},${i})">
+          ${escapeHtml(opt)}
+        </button>`).join('')}
+    </div>
+    <div class="challenge-feedback" id="cf-${cId}"></div>`;
+}
+
+function answerMC(cId, selected) {
+  const { challenge, answered } = challengeStore[cId];
+  if (answered) return;
+  challengeStore[cId].answered = true;
+
+  const correct = selected === challenge.correct;
+  const container = document.getElementById(`challenge-${cId}`);
+  const btns = container.querySelectorAll('.mc-btn');
+
+  btns.forEach((btn, i) => {
+    btn.disabled = true;
+    if (i === challenge.correct) btn.classList.add('mc-correct');
+    else if (i === selected && !correct) btn.classList.add('mc-wrong');
+  });
+
+  showChallengeFeedback(cId, correct, challenge.explanation);
+  awardChallengePoints(correct, 10);
+}
+
+function renderFillBlank(cId, c, container) {
+  container.innerHTML = `
+    <div class="challenge-question">${escapeHtml(c.question)}</div>
+    ${c.hint ? `<div class="challenge-hint">💡 Hint: ${escapeHtml(c.hint)}</div>` : ''}
+    <div class="fill-row">
+      <input class="fill-input" id="fill-${cId}" placeholder="Type your answer…"
+        onkeydown="if(event.key==='Enter') answerFill(${cId})" autocomplete="off" />
+      <button class="fill-submit" onclick="answerFill(${cId})">Check →</button>
+    </div>
+    <div class="challenge-feedback" id="cf-${cId}"></div>`;
+  setTimeout(() => document.getElementById(`fill-${cId}`)?.focus(), 100);
+}
+
+function answerFill(cId) {
+  const { challenge, answered } = challengeStore[cId];
+  if (answered) return;
+
+  const input = document.getElementById(`fill-${cId}`);
+  const val = input.value.trim().toLowerCase();
+  const expected = challenge.answer.toLowerCase();
+  // Allow close matches (strip spaces/dashes)
+  const correct = val === expected || val.replace(/[\s-]/g,'') === expected.replace(/[\s-]/g,'');
+
+  challengeStore[cId].answered = true;
+  input.disabled = true;
+  input.classList.add(correct ? 'fill-correct' : 'fill-wrong');
+  document.querySelector(`#challenge-${cId} .fill-submit`).disabled = true;
+
+  showChallengeFeedback(cId, correct, challenge.explanation);
+  awardChallengePoints(correct, 10);
+}
+
+function renderTrueFalse(cId, c, container) {
+  container.innerHTML = `
+    <div class="challenge-question">${escapeHtml(c.statement)}</div>
+    <div class="challenge-options mc-options">
+      <button class="mc-btn tf-true"  onclick="answerTF(${cId}, true)">✅ True</button>
+      <button class="mc-btn tf-false" onclick="answerTF(${cId}, false)">❌ False</button>
+    </div>
+    <div class="challenge-feedback" id="cf-${cId}"></div>`;
+}
+
+function answerTF(cId, selected) {
+  const { challenge, answered } = challengeStore[cId];
+  if (answered) return;
+  challengeStore[cId].answered = true;
+
+  const correct = selected === challenge.correct;
+  const container = document.getElementById(`challenge-${cId}`);
+  container.querySelectorAll('.mc-btn').forEach(btn => {
+    btn.disabled = true;
+    const isTrueBtn = btn.classList.contains('tf-true');
+    if (isTrueBtn === challenge.correct) btn.classList.add('mc-correct');
+    else if (isTrueBtn === selected && !correct) btn.classList.add('mc-wrong');
+  });
+
+  showChallengeFeedback(cId, correct, challenge.explanation);
+  awardChallengePoints(correct, 10);
+}
+
+function renderMatch(cId, c, container) {
+  const pairs = c.pairs;
+  const shuffledEng = [...pairs].sort(() => Math.random() - 0.5);
+  container.dataset.selected = '';
+  container.dataset.matched = '[]';
+
+  container.innerHTML = `
+    <div class="challenge-question">${escapeHtml(c.instruction || 'Match the Hebrew to its meaning')}</div>
+    <div class="match-grid">
+      <div class="match-col" id="match-heb-${cId}">
+        ${pairs.map((p, i) => `
+          <button class="match-btn match-heb" data-idx="${i}" data-cid="${cId}" onclick="selectMatch(this,'heb')">
+            <span class="match-heb-word">${escapeHtml(p.hebrew)}</span>
+            <span class="match-trans">${escapeHtml(p.transliteration)}</span>
+          </button>`).join('')}
+      </div>
+      <div class="match-col" id="match-eng-${cId}">
+        ${shuffledEng.map((p, i) => {
+          const origIdx = pairs.indexOf(p);
+          return `<button class="match-btn match-eng" data-idx="${origIdx}" data-cid="${cId}" onclick="selectMatch(this,'eng')">
+            ${escapeHtml(p.english)}
+          </button>`;
+        }).join('')}
+      </div>
+    </div>
+    <div class="challenge-feedback" id="cf-${cId}"></div>`;
+}
+
+let matchSelected = { heb: null, eng: null };
+
+function selectMatch(btn, side) {
+  const cId = parseInt(btn.dataset.cid);
+  const { answered } = challengeStore[cId];
+  if (answered) return;
+
+  // Deselect same side if already selected
+  if (matchSelected[side]) matchSelected[side].classList.remove('match-selected');
+  matchSelected[side] = btn;
+  btn.classList.add('match-selected');
+
+  // If both sides selected, check pair
+  if (matchSelected.heb && matchSelected.eng) {
+    const hebIdx = parseInt(matchSelected.heb.dataset.idx);
+    const engIdx = parseInt(matchSelected.eng.dataset.idx);
+    const correct = hebIdx === engIdx;
+
+    matchSelected.heb.classList.remove('match-selected');
+    matchSelected.eng.classList.remove('match-selected');
+
+    if (correct) {
+      matchSelected.heb.classList.add('match-done-correct');
+      matchSelected.eng.classList.add('match-done-correct');
+      matchSelected.heb.disabled = true;
+      matchSelected.eng.disabled = true;
+      awardChallengePoints(true, 5);
+
+      // Check if all matched
+      const container = document.getElementById(`challenge-${cId}`);
+      const total = challengeStore[cId].challenge.pairs.length;
+      const done = container.querySelectorAll('.match-done-correct').length / 2;
+      if (done >= total) {
+        challengeStore[cId].answered = true;
+        showChallengeFeedback(cId, true, 'Perfect match! Metzuyan! מְצֻיָּן!');
+      }
     } else {
-      const rawContent = msg.content;
-      const words = extractWordsLearned(rawContent);
-      const clean = rawContent.replace(/📚 WORDS LEARNED:.*$/s, '').trim();
-      appendMessage('morah', clean, []);
+      matchSelected.heb.classList.add('match-flash-wrong');
+      matchSelected.eng.classList.add('match-flash-wrong');
+      setTimeout(() => {
+        matchSelected.heb?.classList.remove('match-flash-wrong');
+        matchSelected.eng?.classList.remove('match-flash-wrong');
+      }, 600);
+      awardChallengePoints(false, 0);
     }
+    matchSelected = { heb: null, eng: null };
+  }
+}
+
+function showChallengeFeedback(cId, correct, explanation) {
+  const fb = document.getElementById(`cf-${cId}`);
+  if (!fb) return;
+  fb.className = `challenge-feedback ${correct ? 'fb-correct' : 'fb-wrong'}`;
+  fb.innerHTML = correct
+    ? `<span class="fb-icon">🎉</span> <strong>Correct!</strong> ${escapeHtml(explanation || '')}`
+    : `<span class="fb-icon">❌</span> <strong>Not quite.</strong> ${escapeHtml(explanation || '')}`;
+  fb.style.display = 'flex';
+  autoScroll();
+}
+
+function awardChallengePoints(correct, pts) {
+  if (!correct || pts <= 0) return;
+  state.progress.points += pts;
+  updateStats();
+  saveProgress();
+  showPointsPop(pts);
+  triggerConfetti();
+}
+
+function triggerConfetti() {
+  const colors = ['#0038B8','#FFD700','#FFFFFF','#4A90D9','#2E8B57'];
+  for (let i = 0; i < 22; i++) {
+    const c = document.createElement('div');
+    c.className = 'confetti-piece';
+    c.style.cssText = `
+      left:${Math.random()*100}vw;
+      background:${colors[Math.floor(Math.random()*colors.length)]};
+      width:${6+Math.random()*6}px;
+      height:${6+Math.random()*6}px;
+      animation-duration:${0.9+Math.random()*0.8}s;
+      animation-delay:${Math.random()*0.3}s;
+      border-radius:${Math.random()>0.5?'50%':'2px'};`;
+    document.body.appendChild(c);
+    setTimeout(() => c.remove(), 1800);
   }
 }
 
 function formatMessage(text) {
-  // Escape HTML first, then apply formatting
-  let html = escapeHtml(text);
+  // Strip [TEACH]/[CHALLENGE]/WORDS LEARNED blocks — show only clean text
+  let clean = text
+    .replace(/\[TEACH\]/g, '').replace(/\[\/TEACH\]/g, '')
+    .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
+    .replace(/📚 WORDS LEARNED:.*/s, '')
+    .trim();
 
-  // Bold Hebrew (**text**)
+  let html = escapeHtml(clean);
   html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-
-  // Italic transliteration (*text*)
   html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
-
-  // Em dash formatting for definitions
   html = html.replace(/—\s*&quot;([^&]+)&quot;/g, '— <code>$1</code>');
   html = html.replace(/—\s*"([^"]+)"/g, '— <code>$1</code>');
-
-  // Line breaks
   html = html.replace(/\n\n/g, '</p><p>');
   html = html.replace(/\n/g, '<br/>');
-
-  // Wrap in paragraphs
-  html = `<p>${html}</p>`;
-  html = html.replace(/<p><\/p>/g, '');
-
-  // Bullet points
-  html = html.replace(/<br\/>•\s*/g, '</li><li>');
-  html = html.replace(/<br\/>-\s*/g, '</li><li>');
-
+  html = `<p>${html}</p>`.replace(/<p><\/p>/g, '');
   return html;
 }
 
