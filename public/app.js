@@ -607,25 +607,55 @@ function autoScroll() {
   }
 }
 
-// ─── TEXT TO SPEECH (OpenAI TTS) ─────────────────────────
+// ─── TEXT TO SPEECH (Web Speech API) ─────────────────────
 const msgContentMap = {};
 let msgCounter = 0;
 let activeSpeakBtn = null;
-let currentAudio = null;
+let ttsActive = false;
 
+// Load voices early — Chrome populates them async
+let voices = [];
+function loadVoices() { voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : []; }
+if (window.speechSynthesis) {
+  window.speechSynthesis.onvoiceschanged = loadVoices;
+  setTimeout(loadVoices, 200);
+  setTimeout(loadVoices, 1500);
+}
+
+function pickVoice() {
+  if (!voices.length) loadVoices();
+  for (var i = 0; i < voices.length; i++) {
+    if (voices[i].lang === 'he-IL') return voices[i];
+  }
+  for (var i = 0; i < voices.length; i++) {
+    if (voices[i].lang === 'en-US') return voices[i];
+  }
+  return voices[0] || null;
+}
+
+// Strip all markdown, emojis, and symbols — leave only spoken words and punctuation
 function cleanForSpeech(raw) {
   return raw
     .replace(/\[TEACH\]|\[\/TEACH\]/g, '')
     .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
     .replace(/📚 WORDS LEARNED:[\s\S]*/g, '')
-    .replace(/\*/g, '')
-    .replace(/[\u{1F300}-\u{1F9FF}]/gu, '')
-    .replace(/[\u{2600}-\u{27BF}]/gu, '')
-    .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')
-    .replace(/[#`~_>|\\]/g, '')
-    .replace(/—/g, ',')
+    .replace(/\*/g, '')                          // asterisks
+    .replace(/[#`~_>|\\]/g, '')                  // markdown symbols
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')      // emoji block 1
+    .replace(/[\u{2600}-\u{27BF}]/gu, '')        // emoji block 2 (misc symbols)
+    .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')      // flag emoji
+    .replace(/—/g, '.')                          // em-dash → full pause
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// Split at sentence boundaries for clean Alexa-style delivery
+function toSentences(text) {
+  return text
+    .replace(/([.!?])\s+/g, '$1\n')
+    .split('\n')
+    .map(function(s) { return s.trim(); })
+    .filter(function(s) { return s.length > 1; });
 }
 
 function setSpeakBtnState(btn, active) {
@@ -634,79 +664,60 @@ function setSpeakBtnState(btn, active) {
   btn.classList.toggle('speaking', active);
 }
 
-async function speakMessage(msgId) {
-  const btn = document.querySelector('[data-speak-id="' + msgId + '"]');
-  const raw = msgContentMap[msgId];
+function stopSpeech() {
+  ttsActive = false;
+  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  setSpeakBtnState(activeSpeakBtn, false);
+  activeSpeakBtn = null;
+}
+
+function speakMessage(msgId) {
+  if (!window.speechSynthesis) return;
+
+  var btn = document.querySelector('[data-speak-id="' + msgId + '"]');
+  var raw = msgContentMap[msgId];
   if (!raw) return;
 
-  // Stop if already playing
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio.src = '';
-    currentAudio = null;
-    setSpeakBtnState(activeSpeakBtn, false);
-    activeSpeakBtn = null;
-    return;
-  }
+  // Toggle off if already speaking
+  if (ttsActive) { stopSpeech(); return; }
 
-  const clean = cleanForSpeech(raw);
+  var clean = cleanForSpeech(raw);
   if (!clean) return;
 
-  setSpeakBtnState(btn, true);
+  var sentences = toSentences(clean);
+  if (!sentences.length) return;
+
+  ttsActive = true;
   activeSpeakBtn = btn;
+  setSpeakBtnState(btn, true);
 
-  try {
-    const headers = { 'Content-Type': 'application/json' };
-    const apiKey = getApiKey();
-    if (apiKey) headers['x-api-key'] = apiKey;
+  var voice = pickVoice();
+  var idx = 0;
 
-    const res = await fetch('/api/speak', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ text: clean })
-    });
-
-    if (!res.ok) {
-      const err = await res.json().catch(() => ({ error: 'Audio error' }));
-      // If ElevenLabs not configured, fall back silently
-      if (res.status === 401) {
-        console.warn('OpenAI TTS not configured:', err.error);
-        showToast('Add OPENAI_API_KEY to .env for voice.');
-      } else {
-        showToast('Voice error: ' + (err.error || res.status));
-      }
+  function next() {
+    if (!ttsActive || idx >= sentences.length) {
+      ttsActive = false;
       setSpeakBtnState(btn, false);
       activeSpeakBtn = null;
       return;
     }
-
-    const blob = await res.blob();
-    const url = URL.createObjectURL(blob);
-    const audio = new Audio(url);
-    currentAudio = audio;
-
-    audio.onended = function() {
-      URL.revokeObjectURL(url);
-      currentAudio = null;
+    var u = new SpeechSynthesisUtterance(sentences[idx++]);
+    if (voice) { u.voice = voice; u.lang = voice.lang; }
+    else { u.lang = 'he-IL'; }
+    u.rate   = 0.9;
+    u.pitch  = 1.0;
+    u.volume = 1.0;
+    u.onend  = function() { setTimeout(next, 180); };
+    u.onerror = function(e) {
+      if (e.error !== 'interrupted') console.warn('TTS:', e.error);
+      ttsActive = false;
       setSpeakBtnState(btn, false);
       activeSpeakBtn = null;
     };
-    audio.onerror = function() {
-      URL.revokeObjectURL(url);
-      currentAudio = null;
-      setSpeakBtnState(btn, false);
-      activeSpeakBtn = null;
-      showToast('Audio playback error.');
-    };
-
-    audio.play();
-
-  } catch (err) {
-    console.error('speakMessage error:', err);
-    setSpeakBtnState(btn, false);
-    activeSpeakBtn = null;
-    showToast('Voice unavailable: ' + err.message);
+    window.speechSynthesis.speak(u);
   }
+
+  next();
 }
 
 // ─── CHALLENGE STORE ─────────────────────────────────────
