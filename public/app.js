@@ -1093,6 +1093,93 @@ async function submitFeedback() {
   }
 }
 
+// ─── VOICE INPUT ─────────────────────────────────────────
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+let recognition = null;
+let micActive = false;
+let micLang = 'en-US'; // toggles between en-US and he-IL
+
+function initRecognition() {
+  if (!SpeechRecognition) return null;
+  const r = new SpeechRecognition();
+  r.continuous = false;
+  r.interimResults = true;
+  r.lang = micLang;
+
+  r.onstart = () => {
+    micActive = true;
+    document.getElementById('btn-mic').classList.add('listening');
+    document.getElementById('btn-mic').querySelector('.mic-icon').textContent = '🔴';
+    document.getElementById('mic-status').style.display = 'flex';
+    document.getElementById('mic-status-text').textContent =
+      micLang.startsWith('he') ? '…מקשיב, דבר בעברית' : 'Listening… speak in Hebrew or English';
+  };
+
+  r.onresult = (e) => {
+    const transcript = Array.from(e.results)
+      .map(r => r[0].transcript).join('');
+    const input = document.getElementById('user-input');
+    input.value = transcript;
+    // Auto-resize textarea
+    input.style.height = 'auto';
+    input.style.height = input.scrollHeight + 'px';
+  };
+
+  r.onend = () => {
+    stopMic();
+    // If there's text in the box, send automatically
+    const val = document.getElementById('user-input').value.trim();
+    if (val) sendMessage();
+  };
+
+  r.onerror = (e) => {
+    stopMic();
+    if (e.error === 'not-allowed') {
+      showToast('Microphone access denied. Please allow mic access in your browser.');
+    } else if (e.error !== 'no-speech') {
+      showToast(`Mic error: ${e.error}`);
+    }
+  };
+
+  return r;
+}
+
+function toggleVoiceInput() {
+  if (!SpeechRecognition) {
+    showToast('Voice input not supported in this browser. Try Chrome or Edge.');
+    return;
+  }
+  if (micActive) {
+    recognition?.stop();
+    stopMic();
+  } else {
+    recognition = initRecognition();
+    recognition?.start();
+  }
+}
+
+function stopMic() {
+  micActive = false;
+  const btn = document.getElementById('btn-mic');
+  if (btn) {
+    btn.classList.remove('listening');
+    btn.querySelector('.mic-icon').textContent = '🎤';
+  }
+  document.getElementById('mic-status').style.display = 'none';
+}
+
+function toggleMicLang() {
+  micLang = micLang.startsWith('he') ? 'en-US' : 'he-IL';
+  const toggle = document.getElementById('mic-lang-toggle');
+  if (toggle) toggle.textContent = micLang.startsWith('he') ? 'עב ✓ / EN' : 'עב / EN ✓';
+  showToast(micLang.startsWith('he') ? 'Switched to Hebrew input 🇮🇱' : 'Switched to English input 🇺🇸');
+  // Restart if currently listening
+  if (micActive) {
+    recognition?.stop();
+    setTimeout(() => { recognition = initRecognition(); recognition?.start(); }, 300);
+  }
+}
+
 // ─── API KEY MANAGEMENT ───────────────────────────────────
 async function checkApiKey() {
   try {

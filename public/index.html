@@ -161,9 +161,13 @@
           <span class="typing-text">Morah is thinking...</span>
         </div>
         <div class="input-row">
+          <button class="btn-mic" id="btn-mic" onclick="toggleVoiceInput()" title="Speak your answer">
+            <span class="mic-icon">🎤</span>
+            <span class="mic-label">Speak</span>
+          </button>
           <textarea
             id="user-input"
-            placeholder="Type your message or question in Hebrew or English... (Enter to send)"
+            placeholder="Type or speak in Hebrew or English… (Enter to send)"
             rows="2"
             onkeydown="handleInputKey(event)"
           ></textarea>
@@ -171,6 +175,11 @@
             <span>שְׁלַח</span>
             <span style="font-size:0.75rem;">Send</span>
           </button>
+        </div>
+        <div class="mic-status" id="mic-status" style="display:none;">
+          <span class="mic-pulse"></span>
+          <span id="mic-status-text">Listening… speak in Hebrew or English</span>
+          <button class="mic-lang-toggle" id="mic-lang-toggle" onclick="toggleMicLang()">עב / EN</button>
         </div>
         <div class="quick-prompts">
           <button class="quick-btn" onclick="sendQuick('Teach me something new today!')">🆕 Teach me something new</button>

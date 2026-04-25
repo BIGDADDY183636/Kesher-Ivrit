@@ -780,9 +780,91 @@ body {
 
 .input-row {
   display: flex;
-  gap: 12px;
+  gap: 10px;
   align-items: flex-end;
 }
+
+/* Mic button */
+.btn-mic {
+  background: var(--white);
+  border: 2px solid var(--border);
+  color: var(--text-mid);
+  padding: 10px 12px;
+  border-radius: 14px;
+  cursor: pointer;
+  font-family: var(--font-eng);
+  font-size: 0.75rem;
+  font-weight: 700;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+  min-width: 58px;
+  transition: all 0.2s;
+  flex-shrink: 0;
+  align-self: flex-end;
+  height: 58px;
+  justify-content: center;
+}
+.btn-mic:hover { border-color: var(--blue-light); background: var(--blue-pale); color: var(--blue-mid); }
+.btn-mic.listening {
+  background: #FFF0F0;
+  border-color: var(--danger);
+  color: var(--danger);
+  animation: micPulseBtn 1.2s ease infinite;
+}
+.mic-icon { font-size: 1.3rem; line-height: 1; }
+.mic-label { font-size: 0.65rem; text-transform: uppercase; letter-spacing: 0.05em; }
+
+@keyframes micPulseBtn {
+  0%, 100% { box-shadow: 0 0 0 0 rgba(192,57,43,0.4); }
+  50%       { box-shadow: 0 0 0 8px rgba(192,57,43,0); }
+}
+
+/* Mic status bar */
+.mic-status {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 14px;
+  background: #FFF5F5;
+  border: 1px solid #F5C0C0;
+  border-radius: 10px;
+  margin-bottom: 8px;
+  font-size: 0.82rem;
+  color: var(--danger);
+  font-weight: 600;
+  animation: fadeUp 0.25s ease;
+}
+
+.mic-pulse {
+  width: 10px; height: 10px;
+  background: var(--danger);
+  border-radius: 50%;
+  flex-shrink: 0;
+  animation: micPulseDot 1s ease infinite;
+}
+@keyframes micPulseDot {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50%       { opacity: 0.4; transform: scale(0.7); }
+}
+
+#mic-status-text { flex: 1; }
+
+.mic-lang-toggle {
+  background: var(--danger);
+  color: var(--white);
+  border: none;
+  padding: 4px 10px;
+  border-radius: 20px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-eng);
+  transition: opacity 0.2s;
+  flex-shrink: 0;
+}
+.mic-lang-toggle:hover { opacity: 0.85; }
 
 #user-input {
   flex: 1;
