@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Kesher Ivrit | קשר עברית</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 1: HOME
+═══════════════════════════════════════════ -->
+<div id="screen-home" class="screen active">
+  <div class="stars-bg"></div>
+  <div class="home-container">
+    <div class="flag-stripe top"></div>
+    <div class="home-hero">
+      <div class="logo-wrap">
+        <div class="star-of-david">✡</div>
+      </div>
+      <h1 class="hebrew-title">קֶשֶׁר עִבְרִית</h1>
+      <h2 class="english-title">Kesher Ivrit</h2>
+      <p class="tagline">Your Gateway to the Language of the Jewish People</p>
+      <p class="sub-tagline">Hebrew isn't just a language — it's a connection to 3,500 years of history, Torah, and the living miracle of modern Israel.</p>
+
+      <div class="home-features">
+        <div class="feature-pill">🤖 AI Tutor — Morah</div>
+        <div class="feature-pill">📖 Biblical & Modern Hebrew</div>
+        <div class="feature-pill">🇮🇱 Proudly Jewish & Zionist</div>
+        <div class="feature-pill">🔥 Daily Streaks</div>
+      </div>
+
+      <button class="btn-start" onclick="startOnboarding()">
+        Start Learning — <span class="hebrew-inline">בּוֹא נִלְמַד!</span>
+      </button>
+
+      <div id="returning-user-section" style="display:none;">
+        <div class="divider-or">— or —</div>
+        <button class="btn-continue" onclick="continueLearning()">
+          Continue as <span id="returning-name"></span> 🔥<span id="home-streak"></span>
+        </button>
+        <button class="btn-reset" onclick="resetProgress()">Start Fresh</button>
+      </div>
+    </div>
+    <div class="flag-stripe bottom"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 2: ONBOARDING QUIZ
+═══════════════════════════════════════════ -->
+<div id="screen-quiz" class="screen">
+  <div class="quiz-container">
+    <div class="quiz-header">
+      <div class="quiz-logo">קשר עברית</div>
+      <div class="quiz-progress-wrap">
+        <div class="quiz-progress-bar">
+          <div class="quiz-progress-fill" id="quiz-progress-fill"></div>
+        </div>
+        <span class="quiz-step-label" id="quiz-step-label">Step 1 of 7</span>
+      </div>
+    </div>
+
+    <div class="quiz-content" id="quiz-content">
+      <!-- Questions rendered by JS -->
+    </div>
+
+    <div class="quiz-nav">
+      <button class="btn-quiz-back" id="btn-quiz-back" onclick="quizBack()" style="display:none;">← Back</button>
+      <button class="btn-quiz-next" id="btn-quiz-next" onclick="quizNext()">Next →</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     SCREEN 3: LESSON (AI TUTOR)
+═══════════════════════════════════════════ -->
+<div id="screen-lesson" class="screen">
+  <div class="lesson-layout">
+
+    <!-- Sidebar -->
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="heb">קשר</span>
+        <span class="eng">Ivrit</span>
+      </div>
+
+      <div class="student-card">
+        <div class="student-avatar" id="student-avatar">👤</div>
+        <div class="student-name" id="student-name-display">Student</div>
+        <div class="student-level" id="student-level-display">Beginner</div>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-box">
+          <div class="stat-icon">🔥</div>
+          <div class="stat-value" id="streak-count">0</div>
+          <div class="stat-label">Day Streak</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-icon">📖</div>
+          <div class="stat-value" id="words-count">0</div>
+          <div class="stat-label">Words</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-icon">⭐</div>
+          <div class="stat-value" id="points-count">0</div>
+          <div class="stat-label">Points</div>
+        </div>
+        <div class="stat-box">
+          <div class="stat-icon">📅</div>
+          <div class="stat-value" id="lessons-count">0</div>
+          <div class="stat-label">Lessons</div>
+        </div>
+      </div>
+
+      <div class="sidebar-section">
+        <div class="section-title">Words Learned</div>
+        <div class="words-list" id="words-list">
+          <p class="empty-words">Start your first lesson to begin collecting Hebrew words!</p>
+        </div>
+      </div>
+
+      <div class="sidebar-actions">
+        <button class="btn-sidebar" onclick="showFeedback()">📝 Feedback</button>
+        <button class="btn-sidebar btn-secondary" onclick="goHome()">🏠 Home</button>
+      </div>
+    </aside>
+
+    <!-- Main chat area -->
+    <main class="chat-area">
+      <div class="chat-header">
+        <div class="morah-info">
+          <div class="morah-avatar">👩‍🏫</div>
+          <div>
+            <div class="morah-name">Morah <span class="heb-small">מורה</span></div>
+            <div class="morah-status" id="morah-status">Ready to teach! 🇮🇱</div>
+          </div>
+        </div>
+        <div class="chat-header-actions">
+          <button class="btn-icon" onclick="newLesson()" title="New Lesson">🔄 New Topic</button>
+        </div>
+      </div>
+
+      <div class="chat-messages" id="chat-messages">
+        <!-- Messages rendered by JS -->
+      </div>
+      <button class="btn-scroll-bottom" id="btn-scroll-bottom" onclick="scrollToBottom()" style="display:none;">
+        ↓ New messages
+      </button>
+
+      <div class="chat-input-area">
+        <div class="typing-indicator" id="typing-indicator" style="display:none;">
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+          <span class="typing-dot"></span>
+          <span class="typing-text">Morah is thinking...</span>
+        </div>
+        <div class="input-row">
+          <textarea
+            id="user-input"
+            placeholder="Type your message or question in Hebrew or English... (Enter to send)"
+            rows="2"
+            onkeydown="handleInputKey(event)"
+          ></textarea>
+          <button class="btn-send" onclick="sendMessage()" id="btn-send">
+            <span>שְׁלַח</span>
+            <span style="font-size:0.75rem;">Send</span>
+          </button>
+        </div>
+        <div class="quick-prompts">
+          <button class="quick-btn" onclick="sendQuick('Teach me something new today!')">🆕 Teach me something new</button>
+          <button class="quick-btn" onclick="sendQuick('Quiz me on what I\'ve learned!')">🎯 Quiz me!</button>
+          <button class="quick-btn" onclick="sendQuick('Tell me about Israeli culture or a Jewish holiday')">🇮🇱 Israeli culture</button>
+          <button class="quick-btn" onclick="sendQuick('Help me practice saying this correctly')">🗣️ Practice speaking</button>
+        </div>
+      </div>
+    </main>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: FEEDBACK
+═══════════════════════════════════════════ -->
+<div id="modal-feedback" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <button class="modal-close" onclick="closeFeedback()">✕</button>
+    <h2>📝 Lesson Feedback</h2>
+    <p>Your feedback helps Morah teach you better! <span class="heb-small">תודה רבה!</span></p>
+
+    <div class="feedback-rating">
+      <p>How was this lesson?</p>
+      <div class="stars-rating" id="stars-rating">
+        <span class="star" onclick="setRating(1)" data-val="1">★</span>
+        <span class="star" onclick="setRating(2)" data-val="2">★</span>
+        <span class="star" onclick="setRating(3)" data-val="3">★</span>
+        <span class="star" onclick="setRating(4)" data-val="4">★</span>
+        <span class="star" onclick="setRating(5)" data-val="5">★</span>
+      </div>
+    </div>
+
+    <div class="feedback-field">
+      <label>What went well?</label>
+      <textarea id="feedback-positive" placeholder="I liked when Morah explained..."></textarea>
+    </div>
+    <div class="feedback-field">
+      <label>What could be better?</label>
+      <textarea id="feedback-improve" placeholder="I wish we had covered..."></textarea>
+    </div>
+    <div class="feedback-field">
+      <label>Anything else?</label>
+      <textarea id="feedback-other" placeholder="Other thoughts..."></textarea>
+    </div>
+
+    <button class="btn-feedback-submit" onclick="submitFeedback()">
+      Submit — <span class="heb-small">הַגֵּשׁ!</span>
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: STREAK REMINDER / SHAME
+═══════════════════════════════════════════ -->
+<div id="modal-streak" class="modal-overlay" style="display:none;">
+  <div class="modal-box modal-streak-box">
+    <div class="streak-emoji" id="streak-emoji">😱</div>
+    <h2 id="streak-title">Oy Vey!</h2>
+    <p id="streak-message"></p>
+    <button class="btn-start" onclick="closeStreakModal()">OK, I'll do better! 🙏</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     MODAL: API KEY SETUP
+═══════════════════════════════════════════ -->
+<div id="modal-apikey" class="modal-overlay" style="display:none;">
+  <div class="modal-box">
+    <h2>🔑 API Key Required</h2>
+    <p>Kesher Ivrit needs your Anthropic API key to power Morah, your AI Hebrew tutor.</p>
+    <p style="margin-bottom:14px; padding:10px 14px; background:#FFF8E7; border-radius:8px; border:1px solid #FFD700; font-size:0.82rem; color:#7A5C00;">
+      <strong>Option A (Recommended):</strong> Create a file named <code>.env</code> in the app folder with:<br/>
+      <code>ANTHROPIC_API_KEY=sk-ant-...</code><br/><br/>
+      <strong>Option B:</strong> Enter your key below (stored in this browser session only).
+    </p>
+    <div class="feedback-field">
+      <label>Anthropic API Key</label>
+      <input type="password" id="apikey-input" class="quiz-name-input"
+        placeholder="sk-ant-api03-..." style="margin-bottom:10px;" />
+    </div>
+    <button class="btn-feedback-submit" onclick="saveApiKey()">Save & Continue — יַאַלָּה!</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TOAST NOTIFICATION
+═══════════════════════════════════════════ -->
+<div id="toast" class="toast" style="display:none;"></div>
+
+<script src="app.js"></script>
+</body>
+</html>

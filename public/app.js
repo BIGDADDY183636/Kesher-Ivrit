@@ -1,0 +1,893 @@
+/* ═══════════════════════════════════════════════════════════
+   KESHER IVRIT — Frontend App
+   קשר עברית
+═══════════════════════════════════════════════════════════ */
+
+// ─── STATE ───────────────────────────────────────────────
+let state = {
+  userProfile: null,
+  messages: [],        // [{role, content}]
+  progress: {
+    points: 0,
+    wordsLearned: [],  // [{hebrew, transliteration, english, points}]
+    streak: 0,
+    lastLessonDate: null,
+    lessonsCompleted: 0,
+    feedbackGiven: 0
+  },
+  currentQuizStep: 0,
+  quizAnswers: {},
+  feedbackRating: 0
+};
+
+// ─── QUIZ QUESTIONS ───────────────────────────────────────
+const QUIZ_QUESTIONS = [
+  {
+    id: 'name',
+    icon: '👋',
+    title: 'What\'s your name?',
+    subtitle: 'So Morah can greet you properly!',
+    type: 'text',
+    placeholder: 'Your name...'
+  },
+  {
+    id: 'level',
+    icon: '📊',
+    title: 'What\'s your Hebrew level?',
+    subtitle: 'Be honest — there\'s no wrong answer!',
+    type: 'choice',
+    options: [
+      { value: 'complete_beginner', icon: '🌱', text: 'Complete Beginner', sub: 'I don\'t know the alphabet yet' },
+      { value: 'some_exposure',     icon: '🌿', text: 'Some Exposure',     sub: 'I know the aleph-bet, a few words' },
+      { value: 'basic',             icon: '🌳', text: 'Basic',             sub: 'I can read and know simple phrases' },
+      { value: 'intermediate',      icon: '⭐', text: 'Intermediate',      sub: 'I can form sentences and hold simple conversations' },
+      { value: 'advanced',          icon: '🔥', text: 'Advanced',          sub: 'I want to reach near-fluency' }
+    ]
+  },
+  {
+    id: 'goal',
+    icon: '🎯',
+    title: 'What\'s your main goal?',
+    subtitle: 'This shapes your entire curriculum',
+    type: 'choice',
+    options: [
+      { value: 'prayer',       icon: '🕍', text: 'Prayer & Synagogue',    sub: 'Understand the Siddur and davening' },
+      { value: 'bible',        icon: '📜', text: 'Torah & Tanakh',         sub: 'Read the Bible in the original Hebrew' },
+      { value: 'conversation', icon: '💬', text: 'Modern Conversation',    sub: 'Speak with Israelis like a sabra' },
+      { value: 'heritage',     icon: '🕎', text: 'Jewish Heritage',        sub: 'Connect with my Jewish roots and culture' },
+      { value: 'aliyah',       icon: '✈️', text: 'Making Aliyah',          sub: 'Moving to Israel and need to survive' },
+      { value: 'travel',       icon: '🏖️', text: 'Traveling to Israel',    sub: 'Get around and enjoy the country' }
+    ]
+  },
+  {
+    id: 'learningStyle',
+    icon: '🧠',
+    title: 'How do you learn best?',
+    subtitle: 'Morah will adapt the lessons to your style',
+    type: 'choice',
+    options: [
+      { value: 'visual',      icon: '👁️', text: 'Visual',     sub: 'I love seeing words, charts, and colors' },
+      { value: 'stories',     icon: '📚', text: 'Stories',    sub: 'I absorb information through narratives' },
+      { value: 'games',       icon: '🎮', text: 'Games',      sub: 'Make it fun with challenges and points' },
+      { value: 'structured',  icon: '📋', text: 'Structured', sub: 'Give me grammar rules and clear progression' },
+      { value: 'audio',       icon: '🎧', text: 'Audio',      sub: 'I learn by hearing and repeating aloud' }
+    ]
+  },
+  {
+    id: 'background',
+    icon: '🕎',
+    title: 'What\'s your Jewish background?',
+    subtitle: 'Helps Morah make cultural connections',
+    type: 'choice',
+    options: [
+      { value: 'orthodox',    icon: '🕌', text: 'Orthodox',         sub: 'Torah observant, yeshiva/day school background' },
+      { value: 'conservative', icon: '🕍', text: 'Conservative',   sub: 'Masorti, traditional-but-not-Orthodox' },
+      { value: 'reform',      icon: '✡️', text: 'Reform/Progressive', sub: 'Liberal Jewish movement' },
+      { value: 'ashkenazi',   icon: '🥐', text: 'Ashkenazi',        sub: 'Eastern European Jewish heritage' },
+      { value: 'sephardi',    icon: '🫒', text: 'Sephardi/Mizrahi', sub: 'Middle Eastern or Mediterranean roots' },
+      { value: 'secular',     icon: '🌟', text: 'Secular Jewish',   sub: 'Jewish identity without religious practice' },
+      { value: 'non_jewish',  icon: '🌎', text: 'Non-Jewish',       sub: 'Interested in Hebrew and Jewish culture' }
+    ]
+  },
+  {
+    id: 'curriculum',
+    icon: '📚',
+    title: 'Which curriculum style?',
+    subtitle: 'How should Morah structure your lessons?',
+    type: 'choice',
+    options: [
+      { value: 'ulpan',    icon: '🇮🇱', text: 'Ulpan / Modern Hebrew',   sub: 'Israeli immersion method — modern first' },
+      { value: 'prayer',   icon: '📖', text: 'Prayer-Focused',           sub: 'Siddur, blessings, synagogue Hebrew' },
+      { value: 'biblical', icon: '📜', text: 'Biblical / Classical',     sub: 'Torah, Tanakh, ancient Hebrew texts' },
+      { value: 'mixed',    icon: '🔀', text: 'Mixed / Surprise Me',      sub: 'A blend of modern and classical Hebrew' }
+    ]
+  },
+  {
+    id: 'timeAvailable',
+    icon: '⏱️',
+    title: 'How much time per day?',
+    subtitle: 'Even 5 minutes a day makes a difference!',
+    type: 'choice',
+    options: [
+      { value: '5 minutes',      icon: '⚡', text: '5 Minutes',      sub: 'Quick daily vocabulary flash' },
+      { value: '10-15 minutes',  icon: '🌙', text: '10-15 Minutes',  sub: 'A focused mini-lesson' },
+      { value: '20-30 minutes',  icon: '📚', text: '20-30 Minutes',  sub: 'Full lesson with practice' },
+      { value: '45-60 minutes',  icon: '🔥', text: '45-60 Minutes',  sub: 'Intensive deep dive' },
+      { value: 'as long as I feel like', icon: '♾️', text: 'Open-Ended', sub: 'No limits — I\'m committed!' }
+    ]
+  }
+];
+
+// ─── INIT ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  loadProgress();
+  checkReturningUser();
+  await checkApiKey();
+});
+
+function loadProgress() {
+  try {
+    const saved = localStorage.getItem('kesher_progress');
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      state.progress = { ...state.progress, ...parsed };
+    }
+    const profile = localStorage.getItem('kesher_profile');
+    if (profile) {
+      state.userProfile = JSON.parse(profile);
+    }
+    const msgs = localStorage.getItem('kesher_messages');
+    if (msgs) {
+      state.messages = JSON.parse(msgs);
+    }
+  } catch (e) {
+    console.warn('Could not load saved progress:', e);
+  }
+}
+
+function saveProgress() {
+  try {
+    localStorage.setItem('kesher_progress', JSON.stringify(state.progress));
+    if (state.userProfile) {
+      localStorage.setItem('kesher_profile', JSON.stringify(state.userProfile));
+    }
+    if (state.messages.length) {
+      // Only save last 30 messages to avoid bloat
+      const recent = state.messages.slice(-30);
+      localStorage.setItem('kesher_messages', JSON.stringify(recent));
+    }
+  } catch (e) {
+    console.warn('Could not save progress:', e);
+  }
+}
+
+function checkReturningUser() {
+  if (state.userProfile && state.userProfile.name) {
+    document.getElementById('returning-user-section').style.display = 'block';
+    document.getElementById('returning-name').textContent = state.userProfile.name;
+    document.getElementById('home-streak').textContent = state.progress.streak;
+    checkStreak();
+  }
+}
+
+function checkStreak() {
+  const today = new Date().toDateString();
+  const last = state.progress.lastLessonDate;
+  if (!last) return;
+
+  const lastDate = new Date(last);
+  const todayDate = new Date(today);
+  const diffDays = Math.floor((todayDate - lastDate) / (1000 * 60 * 60 * 24));
+
+  if (diffDays > 1) {
+    const days = diffDays;
+    const shameMessages = [
+      `${days} days without Hebrew?! Your ancestors crossed the desert for this?`,
+      `Oy gevalt! ${days} days gone! Even Pharaoh studied for his job interviews!`,
+      `Shanda! ${days} missed days! The Maccabees didn't give up — neither should you!`,
+      `${days} days! You've been absent longer than the Jews in the desert... okay, not quite.`,
+      `Kvetch all you want, but those ${days} missed days won't bring back your streak! Let's go!`
+    ];
+    const msg = shameMessages[Math.floor(Math.random() * shameMessages.length)];
+    state.progress.streak = 0;
+    showStreakModal(
+      '😱',
+      'Oy Vey!',
+      msg
+    );
+    saveProgress();
+  }
+}
+
+// ─── NAVIGATION ───────────────────────────────────────────
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => {
+    s.classList.remove('active');
+    s.style.display = 'none';
+  });
+  const el = document.getElementById(id);
+  el.style.display = id === 'screen-lesson' ? 'flex' : 'flex';
+  el.classList.add('active');
+  el.style.flexDirection = id === 'screen-lesson' ? 'row' : 'column';
+}
+
+function startOnboarding() {
+  state.currentQuizStep = 0;
+  state.quizAnswers = {};
+  showScreen('screen-quiz');
+  renderQuizStep();
+}
+
+function goHome() {
+  showScreen('screen-home');
+  checkReturningUser();
+}
+
+function continueLearning() {
+  if (!state.userProfile) return;
+  showScreen('screen-lesson');
+  setupLessonScreen();
+  if (state.messages.length === 0) {
+    startLesson();
+  } else {
+    renderAllMessages();
+  }
+}
+
+function resetProgress() {
+  if (!confirm('Are you sure? This will clear all your progress, words learned, and streak. Chaval! (What a pity!)')) return;
+  localStorage.removeItem('kesher_progress');
+  localStorage.removeItem('kesher_profile');
+  localStorage.removeItem('kesher_messages');
+  state = {
+    userProfile: null,
+    messages: [],
+    progress: { points: 0, wordsLearned: [], streak: 0, lastLessonDate: null, lessonsCompleted: 0, feedbackGiven: 0 },
+    currentQuizStep: 0,
+    quizAnswers: {},
+    feedbackRating: 0
+  };
+  document.getElementById('returning-user-section').style.display = 'none';
+  showToast('Progress cleared. Time for a fresh start! חָדָשׁ!');
+}
+
+// ─── QUIZ ─────────────────────────────────────────────────
+function renderQuizStep() {
+  const q = QUIZ_QUESTIONS[state.currentQuizStep];
+  const total = QUIZ_QUESTIONS.length;
+  const pct = (state.currentQuizStep / total) * 100;
+
+  document.getElementById('quiz-progress-fill').style.width = pct + '%';
+  document.getElementById('quiz-step-label').textContent = `Step ${state.currentQuizStep + 1} of ${total}`;
+
+  const isLast = state.currentQuizStep === total - 1;
+  document.getElementById('btn-quiz-next').textContent = isLast ? 'Start Learning! 🇮🇱' : 'Next →';
+  document.getElementById('btn-quiz-back').style.display = state.currentQuizStep > 0 ? 'inline-block' : 'none';
+
+  let html = `<div class="quiz-question-wrap">
+    <div class="quiz-q-number">Question ${state.currentQuizStep + 1}</div>
+    <div class="quiz-q-icon">${q.icon}</div>
+    <div class="quiz-q-text">${q.title}</div>
+    <div class="quiz-q-sub">${q.subtitle}</div>`;
+
+  if (q.type === 'text') {
+    const val = state.quizAnswers[q.id] || '';
+    html += `<input type="text" class="quiz-name-input" id="quiz-text-input"
+      placeholder="${q.placeholder}" value="${escapeHtml(val)}"
+      onkeydown="if(event.key==='Enter') quizNext()" />`;
+  } else if (q.type === 'choice') {
+    html += `<div class="quiz-options">`;
+    for (const opt of q.options) {
+      const selected = state.quizAnswers[q.id] === opt.value ? 'selected' : '';
+      html += `<div class="quiz-option ${selected}" onclick="selectOption('${q.id}','${opt.value}',this)">
+        <span class="quiz-option-icon">${opt.icon}</span>
+        <div>
+          <div class="quiz-option-text">${opt.text}</div>
+          <div class="quiz-option-sub">${opt.sub}</div>
+        </div>
+      </div>`;
+    }
+    html += `</div>`;
+  }
+
+  html += `</div>`;
+  document.getElementById('quiz-content').innerHTML = html;
+
+  if (q.type === 'text') {
+    document.getElementById('quiz-text-input').focus();
+  }
+}
+
+function selectOption(questionId, value, el) {
+  state.quizAnswers[questionId] = value;
+  el.closest('.quiz-options').querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
+  el.classList.add('selected');
+}
+
+function quizNext() {
+  const q = QUIZ_QUESTIONS[state.currentQuizStep];
+
+  // Validate
+  if (q.type === 'text') {
+    const val = document.getElementById('quiz-text-input').value.trim();
+    if (!val) { showToast('Please enter your name!'); return; }
+    state.quizAnswers[q.id] = val;
+  } else if (q.type === 'choice') {
+    if (!state.quizAnswers[q.id]) { showToast('Please pick an option!'); return; }
+  }
+
+  if (state.currentQuizStep < QUIZ_QUESTIONS.length - 1) {
+    state.currentQuizStep++;
+    renderQuizStep();
+  } else {
+    finishQuiz();
+  }
+}
+
+function quizBack() {
+  if (state.currentQuizStep > 0) {
+    state.currentQuizStep--;
+    renderQuizStep();
+  }
+}
+
+function finishQuiz() {
+  state.userProfile = { ...state.quizAnswers };
+  saveProgress();
+  showToast(`Shalom, ${state.userProfile.name}! Let's learn! 🇮🇱`);
+  showScreen('screen-lesson');
+  setupLessonScreen();
+  startLesson();
+}
+
+// ─── LESSON / CHAT ────────────────────────────────────────
+function setupLessonScreen() {
+  if (!state.userProfile) return;
+  initScrollWatcher();
+
+  const avatarMap = {
+    complete_beginner: '🌱', some_exposure: '🌿', basic: '🌳',
+    intermediate: '⭐', advanced: '🔥'
+  };
+  const levelNames = {
+    complete_beginner: 'Complete Beginner', some_exposure: 'Some Exposure',
+    basic: 'Basic', intermediate: 'Intermediate', advanced: 'Advanced'
+  };
+
+  document.getElementById('student-name-display').textContent = state.userProfile.name || 'Student';
+  document.getElementById('student-avatar').textContent = avatarMap[state.userProfile.level] || '👤';
+  document.getElementById('student-level-display').textContent = levelNames[state.userProfile.level] || 'Learner';
+
+  updateStats();
+  renderWordsList();
+}
+
+function updateStats() {
+  document.getElementById('streak-count').textContent = state.progress.streak;
+  document.getElementById('words-count').textContent = state.progress.wordsLearned.length;
+  document.getElementById('points-count').textContent = state.progress.points;
+  document.getElementById('lessons-count').textContent = state.progress.lessonsCompleted;
+}
+
+function renderWordsList() {
+  const container = document.getElementById('words-list');
+  if (!state.progress.wordsLearned.length) {
+    container.innerHTML = '<p class="empty-words">Start your first lesson to begin collecting Hebrew words!</p>';
+    return;
+  }
+  const recent = [...state.progress.wordsLearned].reverse().slice(0, 25);
+  container.innerHTML = recent.map(w => `
+    <div class="word-chip" title="${escapeHtml(w.english)}">
+      <span class="word-chip-heb">${escapeHtml(w.hebrew)}</span>
+      <span class="word-chip-info">${escapeHtml(w.transliteration)} — ${escapeHtml(w.english)}</span>
+    </div>
+  `).join('');
+}
+
+async function startLesson() {
+  state.messages = [];
+  document.getElementById('chat-messages').innerHTML = '';
+  setMorahStatus('Starting your lesson... 📖');
+  await sendToMorah([{ role: 'user', content: 'Please start our lesson! Greet me and let\'s begin.' }]);
+}
+
+function newLesson() {
+  if (!confirm('Start a new topic? This will begin a fresh conversation with Morah.')) return;
+  startLesson();
+}
+
+// ─── MESSAGE HANDLING ─────────────────────────────────────
+async function sendMessage() {
+  const input = document.getElementById('user-input');
+  const text = input.value.trim();
+  if (!text) return;
+
+  input.value = '';
+  appendMessage('user', text);
+  state.messages.push({ role: 'user', content: text });
+
+  await sendToMorah(state.messages);
+}
+
+function sendQuick(text) {
+  document.getElementById('user-input').value = text;
+  sendMessage();
+}
+
+function handleInputKey(e) {
+  if (e.key === 'Enter' && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+}
+
+async function sendToMorah(messages) {
+  const sendBtn = document.getElementById('btn-send');
+  const typingIndicator = document.getElementById('typing-indicator');
+
+  sendBtn.disabled = true;
+  typingIndicator.style.display = 'flex';
+  setMorahStatus('Thinking... 💭');
+
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    const apiKey = getApiKey();
+    if (apiKey) headers['x-api-key'] = apiKey;
+
+    const response = await fetch('/api/chat', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ messages, userProfile: state.userProfile })
+    });
+
+    if (!response.ok) {
+      const err = await response.json();
+      if (err.error === 'NO_API_KEY') {
+        document.getElementById('modal-apikey').style.display = 'flex';
+        throw new Error('API key required. Please enter your Anthropic API key.');
+      }
+      throw new Error(err.error || 'Server error');
+    }
+
+    const data = await response.json();
+    const rawContent = data.content;
+
+    // Extract words learned from response
+    const wordsData = extractWordsLearned(rawContent);
+    const cleanContent = rawContent.replace(/📚 WORDS LEARNED:.*$/s, '').trim();
+
+    state.messages.push({ role: 'assistant', content: rawContent });
+    saveProgress();
+
+    appendMessage('morah', cleanContent, wordsData);
+
+    if (wordsData.length > 0) {
+      addWordsToProgress(wordsData);
+    }
+
+    // Update lesson count and streak
+    updateStreak();
+    setMorahStatus('Ready to teach! 🇮🇱');
+
+  } catch (error) {
+    console.error('Chat error:', error);
+    appendErrorMessage(error.message);
+    setMorahStatus('Something went wrong... try again');
+  } finally {
+    sendBtn.disabled = false;
+    typingIndicator.style.display = 'none';
+  }
+}
+
+function extractWordsLearned(content) {
+  const match = content.match(/📚 WORDS LEARNED:\s*(\[.*?\])/s);
+  if (!match) return [];
+  try {
+    return JSON.parse(match[1]);
+  } catch (e) {
+    return [];
+  }
+}
+
+function addWordsToProgress(words) {
+  let newPoints = 0;
+  let newWords = 0;
+
+  for (const word of words) {
+    const exists = state.progress.wordsLearned.some(w => w.hebrew === word.hebrew);
+    if (!exists) {
+      state.progress.wordsLearned.push(word);
+      newPoints += (word.points || 10);
+      newWords++;
+    }
+  }
+
+  if (newPoints > 0) {
+    state.progress.points += newPoints;
+    updateStats();
+    renderWordsList();
+    saveProgress();
+    showPointsPop(newPoints);
+    if (newWords > 0) {
+      showToast(`+${newWords} new word${newWords > 1 ? 's' : ''} learned! +${newPoints} points! 🎉`);
+    }
+  }
+}
+
+function updateStreak() {
+  const today = new Date().toDateString();
+  const last = state.progress.lastLessonDate;
+
+  if (last !== today) {
+    const lastDate = last ? new Date(last) : null;
+    const todayDate = new Date(today);
+    const diffDays = lastDate ? Math.floor((todayDate - lastDate) / (1000 * 60 * 60 * 24)) : 0;
+
+    if (diffDays <= 1) {
+      state.progress.streak++;
+    } else {
+      state.progress.streak = 1;
+    }
+    state.progress.lastLessonDate = today;
+    state.progress.lessonsCompleted++;
+    state.progress.points += 5; // Lesson participation bonus
+    updateStats();
+    saveProgress();
+
+    if (state.progress.streak > 1 && state.progress.streak % 7 === 0) {
+      showStreakModal('🔥', `${state.progress.streak}-Day Streak!`,
+        `Incredible! ${state.progress.streak} days in a row! You're practically a sabra! 🇮🇱 The Hebrew language is coming alive in you!`);
+    }
+  }
+}
+
+// ─── SCROLL MANAGEMENT ───────────────────────────────────
+function initScrollWatcher() {
+  const container = document.getElementById('chat-messages');
+  const btn = document.getElementById('btn-scroll-bottom');
+  container.addEventListener('scroll', () => {
+    const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+    btn.style.display = distFromBottom > 120 ? 'block' : 'none';
+  });
+}
+
+function scrollToBottom() {
+  const container = document.getElementById('chat-messages');
+  container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+  document.getElementById('btn-scroll-bottom').style.display = 'none';
+}
+
+function autoScroll() {
+  const container = document.getElementById('chat-messages');
+  const distFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight;
+  // Only auto-scroll if user is within 200px of the bottom
+  if (distFromBottom < 200) {
+    container.scrollTo({ top: container.scrollHeight, behavior: 'smooth' });
+  } else {
+    document.getElementById('btn-scroll-bottom').style.display = 'block';
+  }
+}
+
+// ─── TEXT TO SPEECH ───────────────────────────────────────
+const msgContentMap = {};   // msgId -> plain text for speech
+let msgCounter = 0;
+let activeUtterance = null;
+let activeBtn = null;
+
+// Preload voices — Chrome loads them async
+if (window.speechSynthesis) {
+  window.speechSynthesis.getVoices();
+  window.speechSynthesis.onvoiceschanged = () => window.speechSynthesis.getVoices();
+}
+
+function stripForSpeech(text) {
+  return text
+    .replace(/📚 WORDS LEARNED:.*/s, '')
+    .replace(/\*\*([^*]+)\*\*/g, '$1')
+    .replace(/\*([^*]+)\*/g, '$1')
+    .replace(/[#`~_>]/g, '')
+    .replace(/—/g, ', ')
+    .replace(/\n+/g, ' ')
+    .trim();
+}
+
+function speakMessage(msgId) {
+  if (!window.speechSynthesis) {
+    showToast('Text-to-speech is not supported in this browser.');
+    return;
+  }
+
+  const btn = document.querySelector(`[data-speak-id="${msgId}"]`);
+  const text = msgContentMap[msgId];
+  if (!text || !btn) return;
+
+  // Toggle off if already speaking this message
+  if (activeBtn === btn) {
+    window.speechSynthesis.cancel();
+    resetSpeakBtn(btn);
+    activeUtterance = null;
+    activeBtn = null;
+    return;
+  }
+
+  // Stop any other active speech
+  if (activeUtterance) {
+    window.speechSynthesis.cancel();
+    if (activeBtn) resetSpeakBtn(activeBtn);
+  }
+
+  const clean = stripForSpeech(text);
+  const utterance = new SpeechSynthesisUtterance(clean);
+
+  const voices = window.speechSynthesis.getVoices();
+  const preferred = voices.find(v => v.lang.startsWith('en-')) || voices[0];
+  if (preferred) utterance.voice = preferred;
+  utterance.rate = 0.88;
+  utterance.pitch = 1.05;
+  utterance.lang = 'en-US';
+
+  utterance.onstart = () => {
+    btn.textContent = '⏹';
+    btn.title = 'Stop reading';
+    btn.classList.add('speaking');
+    activeBtn = btn;
+  };
+  utterance.onend = () => {
+    resetSpeakBtn(btn);
+    activeUtterance = null;
+    activeBtn = null;
+  };
+  utterance.onerror = (e) => {
+    if (e.error !== 'interrupted') console.warn('TTS error:', e.error);
+    resetSpeakBtn(btn);
+    activeUtterance = null;
+    activeBtn = null;
+  };
+
+  activeUtterance = utterance;
+  window.speechSynthesis.speak(utterance);
+}
+
+function resetSpeakBtn(btn) {
+  if (!btn) return;
+  btn.textContent = '🔊';
+  btn.title = 'Read aloud';
+  btn.classList.remove('speaking');
+}
+
+// ─── RENDERING ───────────────────────────────────────────
+function appendMessage(role, content, wordBadges = []) {
+  const container = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = `message ${role}`;
+
+  const avatar = role === 'morah' ? '👩‍🏫' : (state.userProfile?.name?.[0] || '👤');
+  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+  let badgesHtml = '';
+  if (wordBadges.length > 0) {
+    badgesHtml = `<div class="word-badges">`;
+    wordBadges.forEach((w, i) => {
+      badgesHtml += `<div class="word-badge" style="animation-delay:${i * 0.1}s">
+        <span class="word-badge-heb">${escapeHtml(w.hebrew)}</span>
+        <span class="word-badge-trans">${escapeHtml(w.transliteration)}</span>
+        <span class="word-badge-eng">${escapeHtml(w.english)}</span>
+      </div>`;
+    });
+    badgesHtml += `</div>`;
+  }
+
+  let speakBtn = '';
+  if (role === 'morah') {
+    const msgId = ++msgCounter;
+    msgContentMap[msgId] = content;
+    speakBtn = `<button class="btn-speak" data-speak-id="${msgId}" title="Read aloud" onclick="speakMessage(${msgId})">🔊</button>`;
+  }
+
+  el.innerHTML = `
+    <div class="msg-avatar">${role === 'morah' ? '👩‍🏫' : avatar}</div>
+    <div style="flex:1;min-width:0;">
+      <div class="msg-bubble">${formatMessage(content)}${badgesHtml}</div>
+      <div class="msg-footer">
+        <span class="msg-time">${time}</span>
+        ${speakBtn}
+      </div>
+    </div>
+  `;
+
+  container.appendChild(el);
+  autoScroll();
+}
+
+function appendErrorMessage(errText) {
+  const container = document.getElementById('chat-messages');
+  const el = document.createElement('div');
+  el.className = 'message morah';
+  el.innerHTML = `
+    <div class="msg-avatar">⚠️</div>
+    <div>
+      <div class="msg-bubble" style="border-color:#C0392B; background:#FFF5F5; color:#C0392B;">
+        <strong style="background:none;color:#C0392B;">Error:</strong> ${escapeHtml(errText)}
+        <br/><br/>Make sure your <code>.env</code> file has <code>ANTHROPIC_API_KEY=your_key_here</code>
+      </div>
+    </div>
+  `;
+  container.appendChild(el);
+  autoScroll();
+}
+
+function renderAllMessages() {
+  const container = document.getElementById('chat-messages');
+  container.innerHTML = '';
+  for (const msg of state.messages) {
+    if (msg.role === 'user') {
+      appendMessage('user', msg.content);
+    } else {
+      const rawContent = msg.content;
+      const words = extractWordsLearned(rawContent);
+      const clean = rawContent.replace(/📚 WORDS LEARNED:.*$/s, '').trim();
+      appendMessage('morah', clean, []);
+    }
+  }
+}
+
+function formatMessage(text) {
+  // Escape HTML first, then apply formatting
+  let html = escapeHtml(text);
+
+  // Bold Hebrew (**text**)
+  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
+
+  // Italic transliteration (*text*)
+  html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+
+  // Em dash formatting for definitions
+  html = html.replace(/—\s*&quot;([^&]+)&quot;/g, '— <code>$1</code>');
+  html = html.replace(/—\s*"([^"]+)"/g, '— <code>$1</code>');
+
+  // Line breaks
+  html = html.replace(/\n\n/g, '</p><p>');
+  html = html.replace(/\n/g, '<br/>');
+
+  // Wrap in paragraphs
+  html = `<p>${html}</p>`;
+  html = html.replace(/<p><\/p>/g, '');
+
+  // Bullet points
+  html = html.replace(/<br\/>•\s*/g, '</li><li>');
+  html = html.replace(/<br\/>-\s*/g, '</li><li>');
+
+  return html;
+}
+
+// ─── UI HELPERS ───────────────────────────────────────────
+function setMorahStatus(text) {
+  document.getElementById('morah-status').textContent = text;
+}
+
+function showToast(msg, duration = 3500) {
+  const toast = document.getElementById('toast');
+  toast.textContent = msg;
+  toast.style.display = 'block';
+  setTimeout(() => { toast.style.display = 'none'; }, duration);
+}
+
+function showPointsPop(points) {
+  const el = document.createElement('div');
+  el.className = 'points-pop';
+  el.textContent = `+${points} pts!`;
+  const x = window.innerWidth * 0.75;
+  const y = window.innerHeight * 0.5;
+  el.style.left = x + 'px';
+  el.style.top = y + 'px';
+  document.body.appendChild(el);
+  setTimeout(() => el.remove(), 1600);
+}
+
+function showStreakModal(emoji, title, message) {
+  document.getElementById('streak-emoji').textContent = emoji;
+  document.getElementById('streak-title').textContent = title;
+  document.getElementById('streak-message').textContent = message;
+  document.getElementById('modal-streak').style.display = 'flex';
+}
+
+function closeStreakModal() {
+  document.getElementById('modal-streak').style.display = 'none';
+}
+
+// ─── FEEDBACK ─────────────────────────────────────────────
+function showFeedback() {
+  state.feedbackRating = 0;
+  document.getElementById('stars-rating').querySelectorAll('.star').forEach(s => s.classList.remove('active'));
+  document.getElementById('feedback-positive').value = '';
+  document.getElementById('feedback-improve').value = '';
+  document.getElementById('feedback-other').value = '';
+  document.getElementById('modal-feedback').style.display = 'flex';
+}
+
+function closeFeedback() {
+  document.getElementById('modal-feedback').style.display = 'none';
+}
+
+function setRating(val) {
+  state.feedbackRating = val;
+  document.getElementById('stars-rating').querySelectorAll('.star').forEach(s => {
+    s.classList.toggle('active', parseInt(s.dataset.val) <= val);
+  });
+}
+
+async function submitFeedback() {
+  const positive = document.getElementById('feedback-positive').value.trim();
+  const improve = document.getElementById('feedback-improve').value.trim();
+  const other = document.getElementById('feedback-other').value.trim();
+
+  if (!state.feedbackRating) { showToast('Please rate the lesson!'); return; }
+
+  try {
+    await fetch('/api/feedback', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        rating: state.feedbackRating,
+        positive, improve, other,
+        userProfile: state.userProfile,
+        lessonSummary: `${state.progress.wordsLearned.length} words learned, ${state.progress.lessonsCompleted} lessons`
+      })
+    });
+    state.progress.feedbackGiven++;
+    state.progress.points += 15; // Bonus for feedback
+    updateStats();
+    saveProgress();
+    closeFeedback();
+    showToast('Todah rabah! תּוֹדָה רַבָּה! Your feedback means everything! +15 bonus points!');
+  } catch (e) {
+    showToast('Feedback saved locally! Thank you!');
+    closeFeedback();
+  }
+}
+
+// ─── API KEY MANAGEMENT ───────────────────────────────────
+async function checkApiKey() {
+  try {
+    const r = await fetch('/api/status');
+    const d = await r.json();
+    if (!d.configured) {
+      const stored = sessionStorage.getItem('kesher_api_key');
+      if (!stored) {
+        document.getElementById('modal-apikey').style.display = 'flex';
+      }
+    }
+  } catch (e) { /* server not reachable */ }
+}
+
+function saveApiKey() {
+  const key = document.getElementById('apikey-input').value.trim();
+  if (!key || !key.startsWith('sk-')) {
+    showToast('Please enter a valid Anthropic API key (starts with sk-)');
+    return;
+  }
+  sessionStorage.setItem('kesher_api_key', key);
+  document.getElementById('modal-apikey').style.display = 'none';
+  showToast('API key saved for this session! Baruch Haba! ✡️');
+}
+
+function getApiKey() {
+  return sessionStorage.getItem('kesher_api_key') || '';
+}
+
+// ─── UTILITY ──────────────────────────────────────────────
+function escapeHtml(str) {
+  if (!str) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
+// Close modals on overlay click
+document.addEventListener('click', (e) => {
+  if (e.target.id === 'modal-feedback') closeFeedback();
+  if (e.target.id === 'modal-streak') closeStreakModal();
+});
