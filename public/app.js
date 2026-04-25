@@ -768,7 +768,12 @@ function renderChallenge(cId) {
 }
 
 function renderMultipleChoice(cId, c, container) {
+  // Extract Hebrew word from question to display prominently
+  const hebMatch = c.question.match(/[֐-׿יִ-ﭏ]+[\s֐-׿יִ-ﭏ]*/);
+  const hebWord = hebMatch ? `<div class="tap-hebrew">${escapeHtml(hebMatch[0].trim())}</div>` : '';
+
   container.innerHTML = `
+    ${hebWord}
     <div class="challenge-question">${escapeHtml(c.question)}</div>
     <div class="challenge-options mc-options">
       ${c.options.map((opt, i) => `
@@ -777,6 +782,16 @@ function renderMultipleChoice(cId, c, container) {
         </button>`).join('')}
     </div>
     <div class="challenge-feedback" id="cf-${cId}"></div>`;
+
+  // Auto-speak the Hebrew word so students hear it
+  if (hebMatch && window.speechSynthesis) {
+    const utter = new SpeechSynthesisUtterance(hebMatch[0].trim());
+    utter.lang = 'he-IL';
+    const heVoice = window.speechSynthesis.getVoices().find(v => v.lang.startsWith('he'));
+    if (heVoice) utter.voice = heVoice;
+    utter.rate = 0.8;
+    setTimeout(() => window.speechSynthesis.speak(utter), 400);
+  }
 }
 
 function answerMC(cId, selected) {
