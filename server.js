@@ -87,7 +87,7 @@ BEGINNER: Write entirely in English. Introduce Hebrew words one at a time using 
   userProfile.level === 'basic' ? `
 BASIC: 80% English, 20% Hebrew. Short Hebrew phrases (2-3 words) always followed by English. Transliterate everything.` :
   userProfile.level === 'intermediate' ? `
-INTERMEDIATE (CHALLENGING): Write 75% in Hebrew, 25% English. Use complex Hebrew sentences. Explain grammar rules IN Hebrew with brief English only for the grammar term itself. Translate ONLY brand-new vocabulary — do NOT translate words already taught. Push the student to read and respond in Hebrew. Use the present, past, and future tense actively. Example: "הפועל 'ללכת' הוא פועל מגזרה א׳ (pa'al binyan). בהווה: אני הולך, אתה הולך, היא הולכת. Can you conjugate it?"` :
+INTERMEDIATE: Write 85% in Hebrew, 15% English. Assume student knows basic greetings, numbers, and common nouns — do NOT re-explain them. Use full Hebrew sentences. Introduce binyan patterns, verb conjugations, and sentence structure directly in Hebrew. Only translate words that are genuinely new to this session. Never translate words already used. Demand Hebrew responses — if student writes English, respond in Hebrew and ask them to try again in Hebrew. Use past and future tense actively alongside present. Example: "דִּבַּרְנוּ על פועל בינוני. עכשיו — מה עשית אתמול? ענה במשפט שלם."` :
   `
 ADVANCED: Teach entirely in Hebrew. English only for brand-new vocabulary definitions, nothing else. Complex grammar, idiomatic expressions, nuanced usage. Demand Hebrew responses.`
 }
@@ -136,7 +136,7 @@ app.post('/api/chat', async (req, res) => {
 
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 2048,
+      max_tokens: 300,
       system: buildSystemPrompt(userProfile),
       messages: messages.map(m => ({ role: m.role, content: m.content }))
     });
@@ -178,7 +178,62 @@ app.post('/api/tooltip', async (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
-  res.json({ configured: !!process.env.ANTHROPIC_API_KEY });
+  res.json({
+    configured: !!process.env.ANTHROPIC_API_KEY,
+    tts: !!process.env.OPENAI_API_KEY
+  });
+});
+
+// OpenAI TTS — streams MP3 audio back to client
+app.post('/api/speak', async (req, res) => {
+  const openaiKey = process.env.OPENAI_API_KEY;
+  if (!openaiKey) {
+    return res.status(401).json({ error: 'OPENAI_API_KEY not set in .env' });
+  }
+
+  const { text } = req.body;
+  if (!text || !text.trim()) {
+    return res.status(400).json({ error: 'No text provided' });
+  }
+
+  try {
+    const upstream = await fetch('https://api.openai.com/v1/audio/speech', {
+      method: 'POST',
+      headers: {
+        'Authorization': 'Bearer ' + openaiKey,
+        'Content-Type': 'application/json'
+      },
+      body: JSON.stringify({
+        model: 'tts-1',
+        input: text.slice(0, 4096),
+        voice: 'nova',
+        response_format: 'mp3',
+        speed: 0.95
+      })
+    });
+
+    if (!upstream.ok) {
+      const errText = await upstream.text();
+      console.error('OpenAI TTS error:', upstream.status, errText);
+      return res.status(upstream.status).json({ error: errText });
+    }
+
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Cache-Control', 'no-cache');
+
+    const reader = upstream.body.getReader();
+    const pump = async () => {
+      const { done, value } = await reader.read();
+      if (done) { res.end(); return; }
+      res.write(Buffer.from(value));
+      return pump();
+    };
+    await pump();
+
+  } catch (err) {
+    console.error('OpenAI TTS error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
 });
 
 const PORT = process.env.PORT || 3000;

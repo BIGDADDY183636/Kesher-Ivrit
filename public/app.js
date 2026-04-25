@@ -375,6 +375,8 @@ function setupLessonScreen() {
   updateStats();
   renderWordsList();
   renderTopics();
+  const sel = document.getElementById('topic-select');
+  if (sel) sel.value = state.currentTopic;
 }
 
 function renderTopics() {
@@ -389,8 +391,11 @@ function renderTopics() {
 
 function selectTopic(topicId) {
   state.currentTopic = topicId;
+  // Sync the dropdown in the header
+  const sel = document.getElementById('topic-select');
+  if (sel) sel.value = topicId;
   renderTopics();
-  showToast(`Topic: ${topicId} — starting fresh lesson!`);
+  showToast(`Topic changed to: ${topicId}`);
   startLesson();
 }
 
@@ -491,13 +496,15 @@ async function sendToMorah(messages) {
     state.messages.push({ role: 'assistant', content: rawContent });
     saveProgress();
 
-    appendMessage('morah', cleanContent, wordsData);
+    const newMsgId = appendMessage('morah', cleanContent, wordsData);
 
     if (wordsData.length > 0) {
       addWordsToProgress(wordsData);
     }
 
-    // Update lesson count and streak
+    // Auto-play Morah's response via OpenAI TTS
+    if (newMsgId) speakMessage(newMsgId);
+
     updateStreak();
     setMorahStatus('Ready to teach! 🇮🇱');
 
@@ -600,122 +607,106 @@ function autoScroll() {
   }
 }
 
-// ─── TEXT TO SPEECH ───────────────────────────────────────
+// ─── TEXT TO SPEECH (OpenAI TTS) ─────────────────────────
 const msgContentMap = {};
 let msgCounter = 0;
 let activeSpeakBtn = null;
-let ttsChainActive = false;
-
-// Eagerly load voices — Chrome is async, retry until they arrive
-let cachedVoices = [];
-function initVoices() {
-  const v = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-  if (v.length) cachedVoices = v;
-  return cachedVoices;
-}
-if (window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = () => { cachedVoices = window.speechSynthesis.getVoices(); };
-  setTimeout(initVoices, 200);
-  setTimeout(initVoices, 1000);
-}
-
-function pickVoice() {
-  if (!cachedVoices.length) cachedVoices = window.speechSynthesis.getVoices();
-  for (const v of cachedVoices) { if (v.lang === 'he-IL') return v; }
-  for (const v of cachedVoices) { if (v.lang.startsWith('he')) return v; }
-  for (const v of cachedVoices) { if (v.lang === 'en-US' && v.name.includes('Google')) return v; }
-  for (const v of cachedVoices) { if (v.lang === 'en-US') return v; }
-  return null;
-}
+let currentAudio = null;
 
 function cleanForSpeech(raw) {
   return raw
     .replace(/\[TEACH\]|\[\/TEACH\]/g, '')
     .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
-    .replace(/📚 WORDS LEARNED:.*/s, '')
-    .replace(/\*+([^*\n]+)\*+/g, '$1')   // strip bold/italic markdown
-    .replace(/\p{Emoji}/gu, '')           // remove all emoji
-    .replace(/[#`~_>*|\\]/g, '')          // strip remaining markdown symbols
-    .replace(/—/g, ',')                   // em-dash → comma pause
-    .replace(/[^\w\sא-תְ-ֽ.,!?;:()\-']/g, '') // keep only words, Hebrew, punctuation
+    .replace(/📚 WORDS LEARNED:[\s\S]*/g, '')
+    .replace(/\*/g, '')
+    .replace(/[\u{1F300}-\u{1F9FF}]/gu, '')
+    .replace(/[\u{2600}-\u{27BF}]/gu, '')
+    .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')
+    .replace(/[#`~_>|\\]/g, '')
+    .replace(/—/g, ',')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-function splitSentences(text) {
-  // Split at sentence-ending punctuation for natural pauses
-  return text
-    .split(/(?<=[.!?])\s+/)
-    .map(s => s.trim())
-    .filter(s => s.length > 1);
-}
-
-function applyVoiceSettings(u) {
-  u.rate   = 0.85;
-  u.pitch  = 1.05;
-  u.volume = 1;
-  const voice = pickVoice();
-  if (voice) { u.voice = voice; u.lang = voice.lang; }
-  else        { u.lang = 'he-IL'; }
-}
-
-function setSpeakBtnState(btn, speaking) {
+function setSpeakBtnState(btn, active) {
   if (!btn) return;
-  btn.innerHTML = speaking ? '⏹ <span>Stop</span>' : '🔊 <span>Hear Morah</span>';
-  btn.classList.toggle('speaking', speaking);
+  btn.innerHTML = active ? '⏹ <span>Stop</span>' : '🔊 <span>Hear Morah</span>';
+  btn.classList.toggle('speaking', active);
 }
 
-function stopTTS() {
-  ttsChainActive = false;
-  window.speechSynthesis.cancel();
-  setSpeakBtnState(activeSpeakBtn, false);
-  activeSpeakBtn = null;
-}
-
-function speakMessage(msgId) {
-  if (!window.speechSynthesis) { showToast('Speech not supported in this browser.'); return; }
-
-  const btn = document.querySelector(`[data-speak-id="${msgId}"]`);
+async function speakMessage(msgId) {
+  const btn = document.querySelector('[data-speak-id="' + msgId + '"]');
   const raw = msgContentMap[msgId];
   if (!raw) return;
 
-  // Toggle off if already speaking
-  if (ttsChainActive) { stopTTS(); return; }
+  // Stop if already playing
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio.src = '';
+    currentAudio = null;
+    setSpeakBtnState(activeSpeakBtn, false);
+    activeSpeakBtn = null;
+    return;
+  }
 
   const clean = cleanForSpeech(raw);
   if (!clean) return;
 
-  const sentences = splitSentences(clean);
-  if (!sentences.length) return;
-
-  ttsChainActive = true;
-  activeSpeakBtn = btn;
   setSpeakBtnState(btn, true);
+  activeSpeakBtn = btn;
 
-  let idx = 0;
-  function speakNext() {
-    if (!ttsChainActive || idx >= sentences.length) {
-      ttsChainActive = false;
+  try {
+    const headers = { 'Content-Type': 'application/json' };
+    const apiKey = getApiKey();
+    if (apiKey) headers['x-api-key'] = apiKey;
+
+    const res = await fetch('/api/speak', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ text: clean })
+    });
+
+    if (!res.ok) {
+      const err = await res.json().catch(() => ({ error: 'Audio error' }));
+      // If ElevenLabs not configured, fall back silently
+      if (res.status === 401) {
+        console.warn('OpenAI TTS not configured:', err.error);
+        showToast('Add OPENAI_API_KEY to .env for voice.');
+      } else {
+        showToast('Voice error: ' + (err.error || res.status));
+      }
       setSpeakBtnState(btn, false);
       activeSpeakBtn = null;
       return;
     }
-    const sentence = sentences[idx++];
-    const u = new SpeechSynthesisUtterance(sentence);
-    applyVoiceSettings(u);
-    // Pause after commas (shorter) vs sentence end (longer)
-    const delay = sentence.endsWith(',') ? 120 : 220;
-    u.onend  = () => setTimeout(speakNext, delay);
-    u.onerror = (e) => {
-      if (e.error !== 'interrupted') console.warn('TTS:', e.error);
-      ttsChainActive = false;
+
+    const blob = await res.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    currentAudio = audio;
+
+    audio.onended = function() {
+      URL.revokeObjectURL(url);
+      currentAudio = null;
       setSpeakBtnState(btn, false);
       activeSpeakBtn = null;
     };
-    window.speechSynthesis.speak(u);
-  }
+    audio.onerror = function() {
+      URL.revokeObjectURL(url);
+      currentAudio = null;
+      setSpeakBtnState(btn, false);
+      activeSpeakBtn = null;
+      showToast('Audio playback error.');
+    };
 
-  speakNext();
+    audio.play();
+
+  } catch (err) {
+    console.error('speakMessage error:', err);
+    setSpeakBtnState(btn, false);
+    activeSpeakBtn = null;
+    showToast('Voice unavailable: ' + err.message);
+  }
 }
 
 // ─── CHALLENGE STORE ─────────────────────────────────────
