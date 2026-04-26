@@ -953,10 +953,8 @@ function autoScroll() {
 //
 //  ALL speech synthesis goes through speakText(rawText, btn).
 //  No other code may call SpeechSynthesisUtterance directly.
-//  No other code may call window.speechSynthesis.speak() directly.
-//
-// Hebrew detection uses א-ת (aleph–tav) plus nikud ְ-ׇ.
-// All Unicode ranges use explicit \uXXXX escapes — never raw characters.
+//  Open the browser DevTools console to see per-segment logs.
+//  Call testHebrew() in the console to test Hebrew audio.
 // ═══════════════════════════════════════════════════════════════════════
 
 // ── State ──────────────────────────────────────────────────────────────
@@ -965,7 +963,7 @@ let msgCounter     = 0;
 let activeSpeakBtn = null;
 let ttsActive      = false;
 
-// ── Female voice name fragments ─────────────────────────────────────────
+// ── Female voice heuristic ──────────────────────────────────────────────
 var _FEMALE = [
   'female','samantha','karen','victoria','moira','fiona','tessa','veena',
   'allison','ava','susan','zira','hazel','eva','emily','sara','linda',
@@ -977,13 +975,12 @@ var _FEMALE = [
 function _isFemale(v) {
   var n = v.name.toLowerCase();
   for (var k = 0; k < _FEMALE.length; k++) {
-    if (n.indexOf(_FEMALE[k]) !== -1) return true;
+    if (n.indexOf(_FEMALE[k]) >= 0) return true;
   }
   return false;
 }
 
-// ── Voice pickers — always fetch fresh from browser ─────────────────────
-// Called per-utterance so Chrome's async voice list is never stale.
+// ── Voice pickers — fetch fresh every call so Chrome list is never stale ─
 function _pickHebrewVoice() {
   var vs = window.speechSynthesis.getVoices();
   for (var i = 0; i < vs.length; i++) { if (vs[i].lang === 'he-IL' && _isFemale(vs[i])) return vs[i]; }
@@ -1002,75 +999,78 @@ function _pickEnglishVoice() {
   return null;
 }
 
-// ── Hebrew character test — explicit Unicode escapes, no raw characters ──
-// Covers Hebrew letters א-ת plus nikud ְ-ׇ so vowel
-// marks stay attached to their letters and are routed to the Hebrew voice.
+// ── Hebrew character detection — explicit hex, never raw Unicode ──────────
+// Covers: full Hebrew block U+0590-U+05FF (letters, nikud, cantillation)
+//          + presentation forms U+FB1D-U+FB4F
 function _isHebrewChar(code) {
-  return (code >= 0x05B0 && code <= 0x05EA) || // letters + nikud
-         (code >= 0x0591 && code <= 0x05AF) || // cantillation marks
-         (code >= 0xFB1D && code <= 0xFB4F);   // presentation forms
+  return (code >= 0x0590 && code <= 0x05FF) ||
+         (code >= 0xFB1D && code <= 0xFB4F);
 }
 
-// ── Pronunciation dictionary ────────────────────────────────────────────
-// Applied to Latin (transliteration) segments only. Longest match first.
-var _PHONETICS = {
-  // Phrases first so sub-words don't match early
-  'todah rabah':   'to-DAH ra-BAH',
-  'boker tov':     'BOH-ker tov',
-  'erev tov':      'EH-rev tov',
-  'laila tov':     'LYE-la tov',
-  'shabbat shalom':'sha-BAT sha-LOME',
-  'kol hakavod':   'kohl ha-ka-VODE',
-  'tikkun olam':   'tee-KOON oh-LAHM',
-  // Single words
-  'shalom':     'sha-LOME',   'todah':    'to-DAH',
-  'bevakasha':  'be-va-ka-SHAH', 'lehitraot':'le-hit-ra-OHT',
-  'anachnu':    'ah-NAKH-noo',  'atem':    'ah-TEM',
-  'sababa':     'sa-BA-ba',    'yalla':   'YAH-la',
-  'walla':      'WAH-la',      'stam':    'stahm',
-  'achi':       'ah-KHEE',     'ahoti':   'ah-HOH-tee',
-  'davka':      'DAV-ka',      'yoffi':   'YOF-ee',
-  'metzuyan':   'me-tsoo-YAN', 'beseder': 'be-SEH-der',
-  'mayim':      'MA-yim',      'lechem':  'LEH-khem',
-  'bayit':      'BA-yit',      'yom':     'yome',
-  'lailah':     'LYE-la',      'ahavah':  'a-ha-VAH',
-  'eretz':      'EH-rets',     'shamayim':'sha-MA-yim',
-  'sefer':      'SEH-fer',     'nefesh':  'NEH-fesh',
-  'ruakh':      'ROO-akh',     'emunah':  'e-moo-NAH',
-  'emet':       'EH-met',      'khesed':  'KHEH-sed',
-  'kavod':      'ka-VODE',     'tzedek':  'TZEH-dek',
-  'mitzvah':    'mitz-VAH',    'kavanah': 'ka-va-NAH',
-  'bereshit':   'be-re-SHEET', 'mishpakhah':'mish-pa-KHAH',
-  'gadol':      'ga-DOLE',     'katan':   'ka-TAN',
-  'yafeh':      'ya-FEH',      'yafah':   'ya-FAH',
-  'kashuv':     'ka-SHOOV',    'maher':   'ma-HEHR',
-  'larutz':     'la-ROOTS',    'ledaber': 'le-da-BEHR',
-  'lakhshov':   'lakh-SHOHV',  'lehavin': 'le-ha-VEEN',
-  'likhtov':    'likh-TOVE',   'lalechet':'la-LEH-khet',
-  'halakhti':   'ha-lakh-TEE', 'halakhta':'ha-LAKH-ta',
-  'halekhu':    'ha-lekh-OO',  'yelekh':  'ye-LEKH',
-  'diber':      'dee-BEHR',    'hevin':   'he-VEEN',
-  'katav':      'ka-TAV',      'etmol':   'et-MOLE',
-  'makhar':     'ma-KHAR',     'akhshav': 'akh-SHAHV',
-  'hayom':      'ha-YOME',     'binyan':  'bin-YAN',
-  'avar':       'a-VAR',       'atid':    'a-TEED',
-  'ani':        'ah-NEE',      'ata':     'ah-TAH',
-  'at':         'aht',         'hu':      'hoo',
-  'hi':         'hee',         'ken':     'kehn',
-  'lo':         'loh',         'nu':      'noo',
-  'tov':        'tove',        'ra':      'rah',
-  'lev':        'lehv',        'ir':      'eer',
-  'paal':       'pa-AHL',      'hifil':   'hee-FEEL',
-};
-var _PHON_KEYS = Object.keys(_PHONETICS).sort(function(a,b){ return b.length-a.length; });
+// ── Belt-and-suspenders: check if ANY character in a string is Hebrew ────
+function _containsHebrew(str) {
+  for (var i = 0; i < str.length; i++) {
+    if (_isHebrewChar(str.charCodeAt(i))) return true;
+  }
+  return false;
+}
 
-// ── Text cleaning ───────────────────────────────────────────────────────
+// ── Pronunciation dictionary (Latin / transliteration segments only) ─────
+var _PHONETICS = {
+  'todah rabah':    'to-DAH ra-BAH',
+  'boker tov':      'BOH-ker tov',
+  'erev tov':       'EH-rev tov',
+  'laila tov':      'LYE-la tov',
+  'shabbat shalom': 'sha-BAT sha-LOME',
+  'kol hakavod':    'kohl ha-ka-VODE',
+  'tikkun olam':    'tee-KOON oh-LAHM',
+  'shalom':    'sha-LOME',   'todah':     'to-DAH',
+  'bevakasha': 'be-va-ka-SHAH', 'lehitraot': 'le-hit-ra-OHT',
+  'anachnu':   'ah-NAKH-noo',  'atem':    'ah-TEM',
+  'sababa':    'sa-BA-ba',    'yalla':   'YAH-la',
+  'walla':     'WAH-la',      'stam':    'stahm',
+  'achi':      'ah-KHEE',     'ahoti':   'ah-HOH-tee',
+  'davka':     'DAV-ka',      'yoffi':   'YOF-ee',
+  'metzuyan':  'me-tsoo-YAN', 'beseder': 'be-SEH-der',
+  'mayim':     'MA-yim',      'lechem':  'LEH-khem',
+  'bayit':     'BA-yit',      'yom':     'yome',
+  'lailah':    'LYE-la',      'ahavah':  'a-ha-VAH',
+  'eretz':     'EH-rets',     'shamayim':'sha-MA-yim',
+  'sefer':     'SEH-fer',     'nefesh':  'NEH-fesh',
+  'ruakh':     'ROO-akh',     'emunah':  'e-moo-NAH',
+  'emet':      'EH-met',      'khesed':  'KHEH-sed',
+  'kavod':     'ka-VODE',     'tzedek':  'TZEH-dek',
+  'mitzvah':   'mitz-VAH',    'kavanah': 'ka-va-NAH',
+  'bereshit':  'be-re-SHEET', 'mishpakhah':'mish-pa-KHAH',
+  'gadol':     'ga-DOLE',     'katan':   'ka-TAN',
+  'yafeh':     'ya-FEH',      'yafah':   'ya-FAH',
+  'kashuv':    'ka-SHOOV',    'maher':   'ma-HEHR',
+  'larutz':    'la-ROOTS',    'ledaber': 'le-da-BEHR',
+  'lakhshov':  'lakh-SHOHV',  'lehavin': 'le-ha-VEEN',
+  'likhtov':   'likh-TOVE',   'lalechet':'la-LEH-khet',
+  'halakhti':  'ha-lakh-TEE', 'halakhta':'ha-LAKH-ta',
+  'halekhu':   'ha-lekh-OO',  'yelekh':  'ye-LEKH',
+  'diber':     'dee-BEHR',    'hevin':   'he-VEEN',
+  'katav':     'ka-TAV',      'etmol':   'et-MOLE',
+  'makhar':    'ma-KHAR',     'akhshav': 'akh-SHAHV',
+  'hayom':     'ha-YOME',     'binyan':  'bin-YAN',
+  'avar':      'a-VAR',       'atid':    'a-TEED',
+  'ani':       'ah-NEE',      'ata':     'ah-TAH',
+  'at':        'aht',         'hu':      'hoo',
+  'hi':        'hee',         'ken':     'kehn',
+  'lo':        'loh',         'nu':      'noo',
+  'tov':       'tove',        'ra':      'rah',
+  'lev':       'lehv',        'ir':      'eer',
+  'paal':      'pa-AHL',      'hifil':   'hee-FEEL',
+};
+var _PHON_KEYS = Object.keys(_PHONETICS).sort(function(a,b){ return b.length - a.length; });
+
+// ── Text cleaning — IMPORTANT: no raw Unicode chars in regex patterns ────
 function _cleanText(raw) {
   return raw
     .replace(/\[TEACH\]|\[\/TEACH\]/g, '')
     .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
     .replace(/\[RESULT:[^\]]*\]/g, '')
-    .replace(/\u{1F000}-\u{1FFFF}/gu, '') // these four cover all emoji
     .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
     .replace(/[\u{2600}-\u{27BF}]/gu, '')
     .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')
@@ -1078,50 +1078,31 @@ function _cleanText(raw) {
     .replace(/📚 WORDS LEARNED:[\s\S]*/g, '')
     .replace(/\*+/g, '')
     .replace(/[#`~_>|\\]/g, '')
-    // Sentence-ending punctuation → newline (pause marker)
     .replace(/[.!?]+/g, '\n')
-    // Commas and dashes → space
     .replace(/[,—–;:]/g, ' ')
-    // Strip everything that is not: ASCII letter, digit, Hebrew (U+0590-U+05FF + FB1D-FB4F), space, newline
+    // WHITELIST — keep only: ASCII letters/digits, Hebrew block, spaces, newlines.
+    // Written with \uXXXX escapes so no encoding drift can corrupt them.
     .replace(/[^a-zA-Z0-9֐-׿יִ-ﭏ\s\n]/g, '')
     .replace(/[^\S\n]+/g, ' ')
     .replace(/\n{2,}/g, '\n')
     .trim();
 }
 
-// ── Transliteration pronunciation fixes (Latin segments only) ───────────
-// Rules applied in order — dictionary first (longest match), then generics.
-// sh  → sh  : already correct in English TTS, no change needed
-// tz  → ts  : "tzadik" → "tsadik"  (clearer than tz for TTS)
-// kh/ch → kh: guttural chet/khaf approximation
-// ei  → ay  : "tzedek" final syllable → "tsay"
-// ai  → eye : standalone "ai" diphthong → "eye" (as in "Sinai")
-// oo  → oo  : already correct in English TTS, no change needed
-// ah  → ah  : word-final "ah" already handled by TTS; explicit for clarity
+// ── Transliteration phonetic fixes (Latin segments only) ─────────────────
 function _fixPronunciation(text) {
   var r = text;
-
-  // 1. Dictionary substitutions — longest entry first so phrases beat sub-words
   _PHON_KEYS.forEach(function(w) {
     var re = new RegExp('(?<![\\w-])' + w.replace(/[-]/g, '\\-') + '(?![\\w-])', 'gi');
     r = r.replace(re, _PHONETICS[w]);
   });
-
-  // 2. Generic consonant rules for anything not caught by the dictionary
-  r = r.replace(/ch/gi, 'kh');   // ch → kh  (chet/khaf guttural)
-  r = r.replace(/tz/gi, 'ts');   // tz → ts  (tzadik)
-
-  // 3. Vowel rules — applied after consonant fixes
-  r = r.replace(/ai/gi, 'eye');         // ai anywhere  → eye  (Sinai, laila)
-  r = r.replace(/ei\b/gi, 'ay');        // ei word-end  → ay   (tzedek, sei)
-  r = r.replace(/\boo\b/gi, 'oo');      // oo standalone → oo  (explicit, TTS already correct)
-  r = r.replace(/ah\b/gi, 'ah');        // word-final ah → ah  (TTS already correct; explicit for clarity)
-
+  r = r.replace(/ch/gi, 'kh');          // chet/khaf
+  r = r.replace(/tz/gi, 'ts');          // tzadik
+  r = r.replace(/ai/gi, 'eye');         // diphthong ai → eye
+  r = r.replace(/ei\b/gi, 'ay');        // word-final ei → ay
   return r;
 }
 
-// ── Character-level Hebrew/Latin run splitter ────────────────────────────
-// Uses explicit _isHebrewChar() — no raw Unicode characters in regex.
+// ── Character-level Hebrew/Latin run splitter ─────────────────────────────
 function _segmentRuns(text) {
   var runs = [], cur = '', curHeb = null;
   for (var i = 0; i < text.length; i++) {
@@ -1137,7 +1118,7 @@ function _segmentRuns(text) {
   return runs;
 }
 
-// ── Build utterance segment list ─────────────────────────────────────────
+// ── Build final utterance segment list ────────────────────────────────────
 function _buildSegments(cleanedText) {
   var lines = cleanedText.split('\n')
     .map(function(s) { return s.trim(); })
@@ -1150,7 +1131,7 @@ function _buildSegments(cleanedText) {
       var spoken = run.isHebrew
         ? run.text.trim()
         : _fixPronunciation(run.text.trim());
-      // Whitelist: ASCII letters/digits, Hebrew U+0590-U+05FF, presentation forms, spaces, hyphens
+      // Whitelist — \uXXXX escapes, immune to encoding drift:
       spoken = spoken
         .replace(/[^a-zA-Z0-9֐-׿יִ-ﭏ\s\-]/g, ' ')
         .replace(/\s+/g, ' ')
@@ -1166,14 +1147,14 @@ function _buildSegments(cleanedText) {
   return segments;
 }
 
-// ── Button state helper ─────────────────────────────────────────────────
+// ── Button state helper ───────────────────────────────────────────────────
 function setSpeakBtnState(btn, active) {
   if (!btn) return;
   btn.innerHTML = active ? '⏹ <span>Stop</span>' : '🔊 <span>Hear Morah</span>';
   btn.classList.toggle('speaking', active);
 }
 
-// ── Stop any in-progress speech ─────────────────────────────────────────
+// ── Stop speech ───────────────────────────────────────────────────────────
 function stopSpeech() {
   ttsActive = false;
   if (window.speechSynthesis) window.speechSynthesis.cancel();
@@ -1181,17 +1162,7 @@ function stopSpeech() {
   activeSpeakBtn = null;
 }
 
-// ── ▼▼▼  speakText — THE ONLY ENTRY POINT FOR SPEECH  ▼▼▼ ──────────────
-//
-//   speakText(rawText)       — speak with no button
-//   speakText(rawText, btn)  — speak, toggling btn state
-//
-//   Guarantees:
-//   • Hebrew chars (א-ת + nikud) → he-IL utterance, always.
-//   • Latin text → en-GB utterance with phonetic fixes.
-//   • Voices re-fetched per utterance — Chrome async list never goes stale.
-//   • rate 0.85 · pitch 1.1 · 250–350 ms gaps.
-//
+// ── speakText — THE ONLY ENTRY POINT ─────────────────────────────────────
 function speakText(rawText, btn) {
   if (!window.speechSynthesis) return;
   if (!rawText || !rawText.trim()) return;
@@ -1199,13 +1170,16 @@ function speakText(rawText, btn) {
   if (ttsActive) {
     var wasBtn = activeSpeakBtn;
     stopSpeech();
-    if (btn && btn === wasBtn) return;  // same button → stop only
+    if (btn && btn === wasBtn) return;
   }
 
   var clean = _cleanText(rawText);
-  if (!clean) return;
+  if (!clean) { console.warn('[TTS] _cleanText returned empty for input:', rawText.slice(0,80)); return; }
+
   var segments = _buildSegments(clean);
-  if (!segments.length) return;
+  if (!segments.length) { console.warn('[TTS] No segments after building. Clean text:', clean.slice(0,80)); return; }
+
+  console.log('[TTS] Starting. Segments:', segments.length, '| Raw snippet:', rawText.slice(0,60));
 
   ttsActive      = true;
   activeSpeakBtn = btn || null;
@@ -1220,27 +1194,37 @@ function speakText(rawText, btn) {
       return;
     }
     var seg = segments[idx++];
-    var u = new SpeechSynthesisUtterance(seg.text);
 
-    if (seg.isHebrew) {
-      // Hebrew: set lang FIRST (guarantees he-IL even if no voice object found),
-      // then optionally set voice for better quality.
-      u.lang = 'he-IL';
+    // Force Hebrew routing if the segment text itself contains Hebrew chars.
+    // This is the belt-and-suspenders catch for any segmentation edge case.
+    var treatAsHebrew = seg.isHebrew || _containsHebrew(seg.text);
+
+    var u = new SpeechSynthesisUtterance(seg.text);
+    if (treatAsHebrew) {
+      u.lang = 'he-IL';          // ALWAYS set lang before voice
       var hv = _pickHebrewVoice();
       if (hv) u.voice = hv;
     } else {
-      // English: set lang then best available voice.
       u.lang = 'en-GB';
       var ev = _pickEnglishVoice();
       if (ev) { u.voice = ev; u.lang = ev.lang; }
     }
+    u.rate = 0.85; u.pitch = 1.1; u.volume = 1.0;
 
-    u.rate   = 0.85;
-    u.pitch  = 1.1;
-    u.volume = 1.0;
+    // ── Per-segment console log — visible in DevTools ────────────────────
+    console.log(
+      '[TTS seg ' + idx + '/' + segments.length + ']',
+      JSON.stringify(seg.text),
+      '| segClass=' + (seg.isHebrew ? 'HEB' : 'eng'),
+      '| containsHeb=' + _containsHebrew(seg.text),
+      '| forcedHeb=' + treatAsHebrew,
+      '| lang=' + u.lang,
+      '| voice=' + (u.voice ? u.voice.name : '(browser-default)')
+    );
+
     u.onend  = function() { setTimeout(next, seg.pauseAfter); };
     u.onerror = function(e) {
-      if (e.error !== 'interrupted') console.warn('TTS:', e.error, '|', seg.text);
+      console.error('[TTS error]', e.error, '| text:', seg.text, '| lang:', u.lang);
       ttsActive = false;
       setSpeakBtnState(activeSpeakBtn, false);
       activeSpeakBtn = null;
@@ -1248,7 +1232,6 @@ function speakText(rawText, btn) {
     window.speechSynthesis.speak(u);
   }
 
-  // If Chrome hasn't loaded voices yet, wait for the event before starting.
   if (window.speechSynthesis.getVoices().length === 0) {
     var _onReady = function() {
       window.speechSynthesis.removeEventListener('voiceschanged', _onReady);
@@ -1261,7 +1244,29 @@ function speakText(rawText, btn) {
 }
 // ▲▲▲  END speakText — DO NOT ADD SPEECH CALLS OUTSIDE THIS BLOCK  ▲▲▲
 
-// ── Thin wrappers (do not put logic here) ──────────────────────────────
+// ── Self-test (runs once on load) ─────────────────────────────────────────
+(function _ttsSelfTest() {
+  var r = {
+    aleph:   _isHebrewChar(0x05D0),  // must be true
+    shin:    _isHebrewChar(0x05E9),  // must be true
+    nikud:   _isHebrewChar(0x05B8),  // must be true
+    asciiA:  _isHebrewChar(0x0041),  // must be false
+    space:   _isHebrewChar(0x0020),  // must be false
+    shalomStr: _containsHebrew('שָׁלוֹמ') // שָׁלוֹם → true
+  };
+  var ok = r.aleph && r.shin && r.nikud && !r.asciiA && !r.space && r.shalomStr;
+  console.log('[TTS self-test]', ok ? 'PASSED' : 'FAILED', r);
+  if (!ok) console.error('[TTS] SELF-TEST FAILED — Hebrew detection broken. Check _isHebrewChar.');
+})();
+
+// ── testHebrew() — call this in the browser console to test Hebrew audio ──
+window.testHebrew = function() {
+  console.log('[TTS] testHebrew() called');
+  // Speak the word shalom using its Unicode code points (encoding-safe)
+  speakText('שָׁלוֹם');
+};
+
+// ── Thin wrapper ──────────────────────────────────────────────────────────
 function speakMessage(msgId) {
   var btn = document.querySelector('[data-speak-id="' + msgId + '"]');
   speakText(msgContentMap[msgId] || '', btn);
