@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=4" />
+  <link rel="stylesheet" href="style.css?v=6" />
 </head>
 <body>
 
@@ -287,8 +287,53 @@
         </div>
       </div>
     </main>
+  </div><!-- /lesson-layout -->
+
+  <!-- ═══ MOBILE PANELS — shown via .mob-tab-* class on #screen-lesson ═══ -->
+  <div id="mob-path" class="mob-panel">
+    <div class="mob-panel-hdr">
+      <div class="mob-panel-title">Lesson Path</div>
+      <div class="mob-panel-sub">Your Hebrew journey — <span class="heb-small">מַסְלוּל הַלִּמּוּד</span></div>
+    </div>
+    <div class="mob-path-body" id="mob-path-body"></div>
   </div>
-</div>
+
+  <div id="mob-games" class="mob-panel">
+    <div class="mob-panel-hdr">
+      <div class="mob-panel-title">Games</div>
+      <div class="mob-panel-sub">Test your Hebrew speed</div>
+    </div>
+    <div class="mob-games-body">
+      <button class="mob-game-card" onclick="startSpeedRound()">
+        <div class="mob-game-icon">⚡</div>
+        <div class="mob-game-title">Speed Round</div>
+        <div class="mob-game-desc">60 seconds · 10 words · how many can you get?</div>
+        <div class="mob-game-btn">Play Now!</div>
+      </button>
+    </div>
+  </div>
+
+  <div id="mob-me" class="mob-panel">
+    <div class="mob-me-body" id="mob-me-body"></div>
+  </div>
+
+  <!-- ═══ BOTTOM NAVIGATION — mobile only ═══ -->
+  <nav class="bottom-nav" id="bottom-nav">
+    <button class="nav-btn active" data-panel="learn" onclick="switchTab('learn')">
+      <span class="nav-icon">💬</span><span class="nav-label">Learn</span>
+    </button>
+    <button class="nav-btn" data-panel="path" onclick="switchTab('path')">
+      <span class="nav-icon">🗺️</span><span class="nav-label">Path</span>
+    </button>
+    <button class="nav-btn" data-panel="games" onclick="switchTab('games')">
+      <span class="nav-icon">⚡</span><span class="nav-label">Games</span>
+    </button>
+    <button class="nav-btn" data-panel="me" onclick="switchTab('me')">
+      <span class="nav-icon">👤</span><span class="nav-label">Me</span>
+    </button>
+  </nav>
+
+</div><!-- /screen-lesson -->
 
 <!-- ═══════════════════════════════════════════
      MODAL: FEEDBACK
@@ -472,6 +517,6 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=5"></script>
+<script src="app.js?v=6"></script>
 </body>
 </html>

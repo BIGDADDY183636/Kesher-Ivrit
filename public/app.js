@@ -549,6 +549,135 @@ function finishQuiz() {
   startLesson();
 }
 
+// ─── MOBILE TAB NAVIGATION ───────────────────────────────
+var _mobTab = 'learn';
+
+function switchTab(tab) {
+  _mobTab = tab;
+  document.querySelectorAll('.nav-btn').forEach(function(btn) {
+    btn.classList.toggle('active', btn.dataset.panel === tab);
+  });
+  var sl = document.getElementById('screen-lesson');
+  // Remove any existing mob-tab-* class then add the new one
+  sl.className = sl.className.replace(/\bmob-tab-\S+/g, '').trim();
+  if (tab !== 'learn') sl.classList.add('mob-tab-' + tab);
+  if (tab === 'path')  renderMobilePath();
+  if (tab === 'me')    renderMobileProfile();
+}
+
+function renderMobilePath() {
+  var body = document.getElementById('mob-path-body');
+  if (!body) return;
+  var cp = state.curriculumProgress;
+  var level = (state.userProfile && state.userProfile.level) || 'complete_beginner';
+  var userLevelIdx = LEVEL_ORDER.indexOf(level);
+  var POSITIONS = ['path-pos-left','path-pos-right','path-pos-left','path-pos-right','path-pos-left'];
+  var nodeIdx = 0;
+  var html = '';
+
+  CURRICULUM.forEach(function(unit, ui) {
+    var unlocked = userLevelIdx >= unit.levelReq;
+    var completedCount = unit.lessons.filter(function(l) {
+      return cp.completedLessons.includes(l.id);
+    }).length;
+
+    html += '<div class="path-unit">';
+    html += '<div class="path-unit-banner" style="background:' + unit.color +
+            (unlocked ? '' : ';filter:grayscale(0.5);opacity:0.75') + '">';
+    html += '<span class="path-unit-num">' + (ui + 1) + '</span>';
+    html += '<div class="path-unit-info">';
+    html += '<div class="path-unit-name">' + (unlocked ? '' : '🔒 ') + unit.title + '</div>';
+    html += '<div class="path-unit-heb">' + unit.titleHeb + '</div>';
+    html += '</div>';
+    html += '<div class="path-unit-done">' + completedCount + '/' + unit.lessons.length + '</div>';
+    html += '</div>';
+
+    html += '<div class="path-track">';
+    unit.lessons.forEach(function(lesson, li) {
+      var done     = cp.completedLessons.includes(lesson.id);
+      var current  = cp.currentLesson === lesson.id;
+      var prevDone = li === 0 || cp.completedLessons.includes(unit.lessons[li - 1].id);
+      var avail    = unlocked && (done || current || prevDone);
+      var locked   = !avail;
+
+      var stClass = locked ? 'node-locked' : done ? 'node-done' : current ? 'node-current' : 'node-open';
+      var pos     = POSITIONS[li % POSITIONS.length];
+      var icon    = locked ? '🔒' : done ? '✓' : lesson.icon;
+      var delay   = (nodeIdx * 55) + 'ms';
+      var clickFn = locked ? '' : 'onclick="startCurriculumLesson(\'' + lesson.id + '\');switchTab(\'learn\')"';
+
+      if (li > 0) {
+        var prevLineDone = cp.completedLessons.includes(unit.lessons[li - 1].id);
+        html += '<div class="path-line' + (prevLineDone ? ' path-line-done' : '') + '"></div>';
+      }
+
+      html += '<div class="path-node-wrap ' + pos + '">';
+      html += '<button class="path-node ' + stClass + '" ' + clickFn +
+              ' style="animation-delay:' + delay + '">';
+      html += '<span class="path-node-icon">' + icon + '</span>';
+      html += '<span class="path-node-label">' + lesson.title + '</span>';
+      html += '</button>';
+      html += '</div>';
+      nodeIdx++;
+    });
+    html += '</div></div>';
+  });
+
+  body.innerHTML = html;
+}
+
+function renderMobileProfile() {
+  var body = document.getElementById('mob-me-body');
+  if (!body) return;
+  var avatarMap = { complete_beginner:'🌱', some_exposure:'🌿', basic:'🌳', intermediate:'⭐', advanced:'🔥' };
+  var levelNames = { complete_beginner:'Complete Beginner', some_exposure:'Some Exposure',
+                     basic:'Basic', intermediate:'Intermediate', advanced:'Advanced' };
+  var lvl  = state.userProfile ? state.userProfile.level : null;
+  var name = currentUser
+    ? (currentUser.firstName + ' ' + currentUser.lastInitial + '.')
+    : (state.userProfile ? state.userProfile.name : 'Student');
+  var school = currentUser ? currentUser.school : '';
+
+  body.innerHTML =
+    '<div class="mob-me-hero">' +
+      '<div class="mob-me-avatar">' + (avatarMap[lvl] || '👤') + '</div>' +
+      '<div class="mob-me-name">'   + escapeHtml(name) + '</div>' +
+      (school ? '<div class="mob-me-school">' + escapeHtml(school) + '</div>' : '') +
+      '<div class="mob-me-level">'  + (levelNames[lvl] || 'Hebrew Learner') + '</div>' +
+    '</div>' +
+    '<div class="mob-stats-grid">' +
+      '<div class="mob-stat"><div class="mob-stat-icon">🔥</div>' +
+        '<div class="mob-stat-val">' + state.progress.streak + '</div>' +
+        '<div class="mob-stat-lbl">Streak</div></div>' +
+      '<div class="mob-stat"><div class="mob-stat-icon">📖</div>' +
+        '<div class="mob-stat-val">' + state.progress.wordsLearned.length + '</div>' +
+        '<div class="mob-stat-lbl">Words</div></div>' +
+      '<div class="mob-stat"><div class="mob-stat-icon">⭐</div>' +
+        '<div class="mob-stat-val">' + state.progress.points + '</div>' +
+        '<div class="mob-stat-lbl">Points</div></div>' +
+      '<div class="mob-stat"><div class="mob-stat-icon">📅</div>' +
+        '<div class="mob-stat-val">' + state.progress.lessonsCompleted + '</div>' +
+        '<div class="mob-stat-lbl">Lessons</div></div>' +
+    '</div>' +
+    '<div class="mob-action-list">' +
+      '<button class="mob-action-btn" onclick="showNotebook()">' +
+        '<span class="mob-action-icon">📓</span>' +
+        '<div><div class="mob-action-title">My Notebook</div>' +
+        '<div class="mob-action-sub">' + state.progress.wordsLearned.length + ' words collected</div></div>' +
+      '</button>' +
+      '<button class="mob-action-btn" onclick="showFeedback()">' +
+        '<span class="mob-action-icon">📝</span>' +
+        '<div><div class="mob-action-title">Lesson Feedback</div>' +
+        '<div class="mob-action-sub">Rate your session</div></div>' +
+      '</button>' +
+      '<button class="mob-action-btn" onclick="goHome();switchTab(\'learn\')">' +
+        '<span class="mob-action-icon">🏠</span>' +
+        '<div><div class="mob-action-title">Home</div>' +
+        '<div class="mob-action-sub">Word of the Day &amp; settings</div></div>' +
+      '</button>' +
+    '</div>';
+}
+
 // ─── LESSON / CHAT ────────────────────────────────────────
 function setupLessonScreen() {
   if (!state.userProfile) return;
@@ -961,16 +1090,33 @@ function _cleanText(raw) {
 }
 
 // ── Transliteration pronunciation fixes (Latin segments only) ───────────
+// Rules applied in order — dictionary first (longest match), then generics.
+// sh  → sh  : already correct in English TTS, no change needed
+// tz  → ts  : "tzadik" → "tsadik"  (clearer than tz for TTS)
+// kh/ch → kh: guttural chet/khaf approximation
+// ei  → ay  : "tzedek" final syllable → "tsay"
+// ai  → eye : standalone "ai" diphthong → "eye" (as in "Sinai")
+// oo  → oo  : already correct in English TTS, no change needed
+// ah  → ah  : word-final "ah" already handled by TTS; explicit for clarity
 function _fixPronunciation(text) {
   var r = text;
+
+  // 1. Dictionary substitutions — longest entry first so phrases beat sub-words
   _PHON_KEYS.forEach(function(w) {
     var re = new RegExp('(?<![\\w-])' + w.replace(/[-]/g, '\\-') + '(?![\\w-])', 'gi');
     r = r.replace(re, _PHONETICS[w]);
   });
-  r = r.replace(/ch/gi, 'kh');    // ch → kh (guttural)
-  r = r.replace(/tz/gi, 'ts');    // tz → ts
-  r = r.replace(/\bai\b/gi, 'eye'); // ai → eye
-  r = r.replace(/ei\b/gi, 'ay');    // ei → ay
+
+  // 2. Generic consonant rules for anything not caught by the dictionary
+  r = r.replace(/ch/gi, 'kh');   // ch → kh  (chet/khaf guttural)
+  r = r.replace(/tz/gi, 'ts');   // tz → ts  (tzadik)
+
+  // 3. Vowel rules — applied after consonant fixes
+  r = r.replace(/ai/gi, 'eye');         // ai anywhere  → eye  (Sinai, laila)
+  r = r.replace(/ei\b/gi, 'ay');        // ei word-end  → ay   (tzedek, sei)
+  r = r.replace(/\boo\b/gi, 'oo');      // oo standalone → oo  (explicit, TTS already correct)
+  r = r.replace(/ah\b/gi, 'ah');        // word-final ah → ah  (TTS already correct; explicit for clarity)
+
   return r;
 }
 
