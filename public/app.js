@@ -917,26 +917,29 @@ var _PHON_KEYS = Object.keys(_PHONETICS).sort(function(a,b){ return b.length - a
 
 function _cleanText(raw) {
   return raw
-    // Remove app-specific tags and metadata
+    // Remove app-specific tags and metadata first
     .replace(/\[TEACH\]|\[\/TEACH\]/g, '')
     .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
     .replace(/\[RESULT:[^\]]*\]/g, '')
     .replace(/📚 WORDS LEARNED:[\s\S]*/g, '')
-    // Strip markdown formatting
+    // Strip markdown
     .replace(/\*+/g, '')
     .replace(/[#`~_>|\\]/g, '')
-    // Strip all emoji ranges
+    // Strip emoji blocks
     .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
     .replace(/[\u{2600}-\u{27BF}]/gu, '')
     .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')
     .replace(/[\u{FE00}-\u{FEFF}]/gu, '')
-    // Normalise dashes and convert sentence-enders so segmentation keeps pauses
-    // but TTS never receives a raw ? or ! to mispronounce
-    .replace(/[—–]/g, ', ')
-    .replace(/[?!]+/g, '.')
-    // Strip all other punctuation TTS might read aloud
-    .replace(/[;:"'()\[\]{}…«»]/g, ' ')
-    .replace(/\s+/g, ' ')
+    // Sentence-ending punctuation → newline so segments get a natural pause gap
+    .replace(/[.!?]+/g, '\n')
+    // Commas, dashes, semicolons, colons → space (short pause without a break)
+    .replace(/[,—–;:]/g, ' ')
+    // Strip EVERYTHING else that is not a Hebrew letter, ASCII letter, digit, or whitespace.
+    // This is the no-exceptions rule: no punctuation reaches the TTS engine.
+    .replace(/[^a-zA-Z0-9֐-׿יִ-ﭏ\s\n]/g, '')
+    // Normalise whitespace without collapsing intentional newlines
+    .replace(/[^\S\n]+/g, ' ')
+    .replace(/\n{2,}/g, '\n')
     .trim();
 }
 
@@ -949,7 +952,7 @@ function _fixPronunciation(text) {
   });
   // Guttural chet/khaf: χ (Greek chi U+03C7) for velar-fricative approximation.
   // To try h-bar instead: replace 'χ' with 'ħ' (U+0127) on the next line only.
-  r = r.replace(/kh|ch/gi, 'χ');
+  r = r.replace(/ch/gi, 'kh');   // chet/khaf: kh survives the ASCII whitelist
   // Tzadik
   r = r.replace(/tz/gi, 'ts');
   // Vowel shaping
@@ -978,31 +981,36 @@ function _segmentRuns(text) {
 }
 
 // Build the final ordered list of utterance segments with pause durations.
+// _cleanText has already converted sentence-enders to newlines and stripped all punctuation.
 function _buildSegments(cleanedText) {
-  // Split at sentence and clause boundaries to get natural pauses.
-  var chunks = cleanedText
-    .replace(/([.])\s+/g, '$1\n')
-    .replace(/,\s+/g, ',\n')
-    .split('\n')
+  // Split on newlines — each line is one natural utterance unit.
+  var lines = cleanedText.split('\n')
     .map(function(s) { return s.trim(); })
     .filter(function(s) { return s.length > 0; });
 
   var segments = [];
-  chunks.forEach(function(chunk) {
-    var gap = /[.]$/.test(chunk) ? 300 : /,$/.test(chunk) ? 200 : 250;
-    var runs = _segmentRuns(chunk);
+  lines.forEach(function(line, li) {
+    var isLastLine = (li === lines.length - 1);
+    var runs = _segmentRuns(line);
     runs.forEach(function(run, ri) {
-      // Apply pronunciation fixes to Latin runs; pass Hebrew script through unchanged.
+      // Hebrew script passes through unchanged → he-IL voice reads it natively.
+      // Latin text gets pronunciation fixes (phonetic dictionary + ch→kh).
       var spoken = run.isHebrew
         ? run.text.trim()
         : _fixPronunciation(run.text.trim());
-      // Strip any residual punctuation from the utterance string itself.
-      spoken = spoken.replace(/[.,!?;:'"()\[\]{}…«»]+/g, ' ').replace(/\s+/g, ' ').trim();
+      // Final whitelist: only ASCII letters/digits, Hebrew block, spaces, hyphens.
+      // Hyphens survive so phonetic forms like sha-LOME work correctly.
+      spoken = spoken
+        .replace(/[^a-zA-Z0-9֐-׿יִ-ﭏ\s\-]/g, ' ')
+        .replace(/\s+/g, ' ')
+        .trim();
       if (!spoken) return;
+      var isLastRun = (ri === runs.length - 1);
       segments.push({
         text:       spoken,
         isHebrew:   run.isHebrew,
-        pauseAfter: (ri === runs.length - 1) ? gap : 250,
+        // 350 ms after the last segment of a line; 250 ms within a line between voice switches.
+        pauseAfter: (isLastRun && !isLastLine) ? 350 : 250,
       });
     });
   });
@@ -1067,11 +1075,17 @@ function speakText(rawText, btn) {
       return;
     }
     var seg = segments[idx++];
-    var voice = seg.isHebrew ? (heV || enV) : enV;
 
     var u = new SpeechSynthesisUtterance(seg.text);
-    if (voice) { u.voice = voice; u.lang = voice.lang; }
-    else        { u.lang  = seg.isHebrew ? 'he-IL' : 'en-GB'; }
+    // Hebrew and English voice assignment are completely independent.
+    // Hebrew NEVER falls back to the English voice — it gets he-IL regardless.
+    if (seg.isHebrew) {
+      if (heV) { u.voice = heV; u.lang = heV.lang; }
+      else      { u.lang = 'he-IL'; }   // browser picks any available Hebrew voice
+    } else {
+      if (enV) { u.voice = enV; u.lang = enV.lang; }
+      else      { u.lang = 'en-GB'; }
+    }
     u.rate   = 0.85;
     u.pitch  = 1.1;
     u.volume = 1.0;
