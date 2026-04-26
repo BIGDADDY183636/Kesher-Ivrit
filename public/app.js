@@ -691,6 +691,7 @@ function cleanForSpeech(raw) {
     .replace(/[\u{2600}-\u{27BF}]/gu, '')        // emoji block 2 (misc symbols)
     .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')      // flag emoji
     .replace(/—/g, '.')                          // em-dash → full pause
+    .replace(/ch/gi, 'kh')                       // Hebrew chet: "challah"→"khallah", "Chanukah"→"Khanukah"
     .replace(/\s+/g, ' ')
     .trim();
 }
