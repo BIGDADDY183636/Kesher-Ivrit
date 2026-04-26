@@ -1342,6 +1342,216 @@ function toggleMicLang() {
   }
 }
 
+// ─── SPEED ROUND ─────────────────────────────────────────
+const SR_POOL = [
+  { hebrew:'שָׁלוֹם', transliteration:'shalom',   english:'peace / hello' },
+  { hebrew:'תּוֹדָה', transliteration:'todah',    english:'thank you' },
+  { hebrew:'כֵּן',    transliteration:'ken',      english:'yes' },
+  { hebrew:'לֹא',    transliteration:'lo',       english:'no' },
+  { hebrew:'מַיִם',  transliteration:'mayim',    english:'water' },
+  { hebrew:'לֶחֶם',  transliteration:'lechem',   english:'bread' },
+  { hebrew:'בַּיִת',  transliteration:'bayit',    english:'house' },
+  { hebrew:'יוֹם',   transliteration:'yom',      english:'day' },
+  { hebrew:'לַיְלָה', transliteration:'lailah',  english:'night' },
+  { hebrew:'טוֹב',   transliteration:'tov',      english:'good' },
+  { hebrew:'גָּדוֹל', transliteration:'gadol',   english:'big' },
+  { hebrew:'קָטָן',  transliteration:'katan',    english:'small' },
+  { hebrew:'אֶחָד',  transliteration:'echad',    english:'one' },
+  { hebrew:'הָלַךְ', transliteration:'halakh',   english:'went / walked' },
+  { hebrew:'אָכַל',  transliteration:'akhal',    english:'ate' },
+  { hebrew:'אֲנִי',  transliteration:'ani',      english:'I / me' },
+  { hebrew:'אַתָּה',  transliteration:'ata',      english:'you (m)' },
+  { hebrew:'הוּא',   transliteration:'hu',       english:'he' },
+  { hebrew:'הִיא',   transliteration:'hi',       english:'she' },
+  { hebrew:'יִשְׂרָאֵל', transliteration:'Yisrael', english:'Israel' },
+  { hebrew:'עִבְרִית',   transliteration:'Ivrit',   english:'Hebrew' },
+  { hebrew:'מִשְׁפָּחָה', transliteration:'mishpakhah', english:'family' },
+  { hebrew:'אַהֲבָה', transliteration:'ahavah',  english:'love' },
+  { hebrew:'שֶׁמֶשׁ', transliteration:'shemesh',  english:'sun' },
+  { hebrew:'כֶּלֶב',  transliteration:'kelev',    english:'dog' },
+  { hebrew:'חָתוּל',  transliteration:'khatul',   english:'cat' },
+  { hebrew:'סֵפֶר',  transliteration:'sefer',    english:'book' },
+  { hebrew:'עִיר',   transliteration:'ir',       english:'city' },
+  { hebrew:'אֶרֶץ',  transliteration:'eretz',    english:'land / country' },
+  { hebrew:'שָׁמַיִם', transliteration:'shamayim', english:'sky / heaven' },
+];
+
+const SR_MESSAGES = [
+  { min:0,  max:3,  emoji:'💪', msg:'Even the Maccabees had bad days. You\'ll crush it next time!' },
+  { min:4,  max:6,  emoji:'👍', msg:'Sababa! Not bad — keep going, you\'re getting there!' },
+  { min:7,  max:9,  emoji:'🔥', msg:'Kol HaKavod! Almost perfect — you\'ve got this!' },
+  { min:10, max:10, emoji:'🇮🇱', msg:'You\'re basically Israeli now. Mazal tov!' },
+];
+
+const sr = {
+  active: false,
+  words: [],
+  pool: [],
+  idx: 0,
+  correct: 0,
+  timeLeft: 60,
+  timer: null,
+  answered: false,
+  pointsEarned: 0
+};
+
+function buildSRPool() {
+  // Merge learned words with built-in pool, deduplicate by hebrew
+  const learned = state.progress.wordsLearned.map(function(w) {
+    return { hebrew: w.hebrew, transliteration: w.transliteration, english: w.english };
+  });
+  const seen = {};
+  const combined = [];
+  learned.concat(SR_POOL).forEach(function(w) {
+    if (!seen[w.hebrew] && w.english) { seen[w.hebrew] = true; combined.push(w); }
+  });
+  return combined;
+}
+
+function shuffle(arr) {
+  var a = arr.slice();
+  for (var i = a.length - 1; i > 0; i--) {
+    var j = Math.floor(Math.random() * (i + 1));
+    var tmp = a[i]; a[i] = a[j]; a[j] = tmp;
+  }
+  return a;
+}
+
+function startSpeedRound() {
+  sr.pool = buildSRPool();
+  if (sr.pool.length < 4) { showToast('Learn a few more words first!'); return; }
+
+  sr.words   = shuffle(sr.pool).slice(0, 10);
+  sr.idx     = 0;
+  sr.correct = 0;
+  sr.timeLeft = 60;
+  sr.answered = false;
+  sr.pointsEarned = 0;
+  sr.active  = true;
+
+  document.getElementById('sr-modal').style.display = 'flex';
+  document.getElementById('sr-game').style.display  = 'flex';
+  document.getElementById('sr-results').style.display = 'none';
+
+  updateSRTimer();
+  renderSRWord();
+
+  sr.timer = setInterval(function() {
+    sr.timeLeft--;
+    updateSRTimer();
+    if (sr.timeLeft <= 0) endSpeedRound();
+  }, 1000);
+}
+
+function updateSRTimer() {
+  const num = document.getElementById('sr-timer-num');
+  const bar = document.getElementById('sr-timer-bar');
+  if (num) num.textContent = sr.timeLeft;
+  if (bar) {
+    bar.style.width = (sr.timeLeft / 60 * 100) + '%';
+    bar.className = 'sr-timer-bar' +
+      (sr.timeLeft <= 10 ? ' danger' : sr.timeLeft <= 20 ? ' warning' : '');
+  }
+  if (num) {
+    num.className = 'sr-timer-num' +
+      (sr.timeLeft <= 10 ? ' danger' : sr.timeLeft <= 20 ? ' warning' : '');
+  }
+}
+
+function renderSRWord() {
+  const word = sr.words[sr.idx];
+  const card = document.getElementById('sr-word-card');
+
+  document.getElementById('sr-word-num').textContent = (sr.idx + 1) + ' / ' + sr.words.length;
+  document.getElementById('sr-stat-correct').textContent = sr.correct + ' ✓';
+
+  // Animate card in
+  if (card) { card.classList.remove('sr-slide-in'); void card.offsetWidth; card.classList.add('sr-slide-in'); }
+  document.getElementById('sr-hebrew').textContent = word.hebrew;
+  document.getElementById('sr-trans').textContent  = word.transliteration;
+
+  // Build 4 options: 1 correct + 3 distractors
+  const distractors = shuffle(sr.pool.filter(function(w) { return w.hebrew !== word.hebrew; })).slice(0, 3);
+  const options = shuffle([word].concat(distractors));
+
+  const container = document.getElementById('sr-options');
+  container.innerHTML = '';
+  options.forEach(function(opt) {
+    const btn = document.createElement('button');
+    btn.className = 'sr-opt-btn';
+    btn.textContent = opt.english;
+    btn.onclick = function() { answerSR(opt, word, btn, container); };
+    container.appendChild(btn);
+  });
+}
+
+function answerSR(chosen, correct, btn, container) {
+  if (sr.answered) return;
+  sr.answered = true;
+
+  const isCorrect = chosen.hebrew === correct.hebrew;
+
+  // Highlight all buttons
+  Array.from(container.children).forEach(function(b) {
+    b.disabled = true;
+    if (b.textContent === correct.english) {
+      b.classList.add('sr-correct');
+    } else if (b === btn && !isCorrect) {
+      b.classList.add('sr-wrong');
+    }
+  });
+
+  if (isCorrect) {
+    sr.correct++;
+    sr.pointsEarned += 10;
+    state.progress.points += 10;
+    updateStats();
+    saveProgress();
+    playCorrectTone();
+  }
+
+  // Brief pause then advance
+  setTimeout(function() {
+    sr.idx++;
+    sr.answered = false;
+    if (sr.idx >= sr.words.length) {
+      endSpeedRound();
+    } else {
+      renderSRWord();
+    }
+  }, isCorrect ? 600 : 1000);
+}
+
+function endSpeedRound() {
+  clearInterval(sr.timer);
+  sr.active = false;
+
+  const pct = sr.correct / sr.words.length;
+  const msg = SR_MESSAGES.find(function(m) { return sr.correct >= m.min && sr.correct <= m.max; }) || SR_MESSAGES[0];
+
+  document.getElementById('sr-game').style.display    = 'none';
+  document.getElementById('sr-results').style.display = 'flex';
+  document.getElementById('sr-results-emoji').textContent = msg.emoji;
+  document.getElementById('sr-results-msg').textContent   = msg.msg;
+  document.getElementById('res-correct').textContent  = sr.correct + ' / ' + sr.words.length;
+  document.getElementById('res-time').textContent     = sr.timeLeft + 's';
+  document.getElementById('res-points').textContent   = '+' + sr.pointsEarned;
+
+  if (sr.correct === sr.words.length) triggerConfetti();
+}
+
+function quitSpeedRound() {
+  clearInterval(sr.timer);
+  sr.active = false;
+  closeSpeedRound();
+}
+
+function closeSpeedRound() {
+  clearInterval(sr.timer);
+  sr.active = false;
+  document.getElementById('sr-modal').style.display = 'none';
+}
+
 // ─── NOTEBOOK ────────────────────────────────────────────
 const CATEGORY_ORDER = ['verb','noun','adjective','greeting','number','phrase','preposition','adverb','other'];
 const CATEGORY_LABELS = {

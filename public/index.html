@@ -156,6 +156,7 @@
             <option value="Adjectives">Adjectives</option>
             <option value="Numbers">Numbers</option>
           </select>
+          <button class="btn-speed-round" onclick="startSpeedRound()" title="Speed Round">⚡ Speed Round</button>
           <button class="btn-icon" onclick="newLesson()" title="New Lesson">🔄 Restart</button>
         </div>
       </div>
@@ -281,6 +282,63 @@
 <!-- ═══════════════════════════════════════════
      TOAST NOTIFICATION
 ═══════════════════════════════════════════ -->
+<!-- SPEED ROUND MODAL -->
+<div id="sr-modal" class="sr-modal" style="display:none;">
+
+  <!-- GAME SCREEN -->
+  <div id="sr-game" class="sr-game">
+    <div class="sr-top">
+      <div class="sr-timer-wrap">
+        <div class="sr-timer-bar-bg">
+          <div class="sr-timer-bar" id="sr-timer-bar"></div>
+        </div>
+        <span class="sr-timer-num" id="sr-timer-num">60</span>
+      </div>
+      <div class="sr-stats">
+        <span class="sr-stat-correct" id="sr-stat-correct">0 ✓</span>
+        <span class="sr-stat-sep">/</span>
+        <span class="sr-stat-total" id="sr-stat-total">10</span>
+      </div>
+      <button class="sr-quit-btn" onclick="quitSpeedRound()">✕</button>
+    </div>
+
+    <div class="sr-word-area">
+      <div class="sr-word-card" id="sr-word-card">
+        <div class="sr-word-num" id="sr-word-num">1 / 10</div>
+        <div class="sr-hebrew" id="sr-hebrew">שָׁלוֹם</div>
+        <div class="sr-trans" id="sr-trans">shalom</div>
+      </div>
+    </div>
+
+    <div class="sr-options" id="sr-options"></div>
+  </div>
+
+  <!-- RESULTS SCREEN -->
+  <div id="sr-results" class="sr-results" style="display:none;">
+    <div class="sr-results-card">
+      <div class="sr-results-emoji" id="sr-results-emoji">🏆</div>
+      <div class="sr-results-msg" id="sr-results-msg"></div>
+      <div class="sr-results-stats">
+        <div class="sr-stat-box">
+          <div class="sr-stat-val" id="res-correct">0</div>
+          <div class="sr-stat-lbl">Correct</div>
+        </div>
+        <div class="sr-stat-box">
+          <div class="sr-stat-val" id="res-time">0s</div>
+          <div class="sr-stat-lbl">Time Left</div>
+        </div>
+        <div class="sr-stat-box">
+          <div class="sr-stat-val" id="res-points">+0</div>
+          <div class="sr-stat-lbl">Points</div>
+        </div>
+      </div>
+      <button class="sr-play-again" onclick="startSpeedRound()">⚡ Play Again</button>
+      <button class="sr-done-btn" onclick="closeSpeedRound()">Back to Lesson</button>
+    </div>
+  </div>
+
+</div>
+
 <!-- NOTEBOOK PANEL -->
 <div id="notebook-panel" class="notebook-panel" style="display:none;">
   <div class="notebook-header">
