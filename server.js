@@ -7,15 +7,16 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
-// Serve JS/CSS with versioned URLs (cache-busted by query string in HTML).
-// Serve HTML with no-cache so browsers always get the latest script tag versions.
-app.use(express.static(path.join(__dirname, 'public'), {
-  setHeaders(res, filePath) {
-    if (filePath.endsWith('.html')) {
-      res.setHeader('Cache-Control', 'no-store');
-    }
-  }
-}));
+// ── FORCE NO-CACHE on every response ─────────────────────────────────────────
+// This ensures browsers never serve stale HTML/CSS/JS during development.
+app.use(function(req, res, next) {
+  res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+  res.setHeader('Pragma', 'no-cache');
+  res.setHeader('Expires', '0');
+  next();
+});
+
+app.use(express.static(path.join(__dirname, 'public')));
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 

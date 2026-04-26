@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=16" />
+  <link rel="stylesheet" href="style.css?v=99" />
 </head>
 <body>
 
@@ -235,7 +235,7 @@
         <div class="morah-info">
           <div class="morah-avatar">👩‍🏫</div>
           <div>
-            <div class="morah-name">Morah <span class="heb-small">מורה</span></div>
+            <div class="morah-name">Morah <span class="heb-small">מורה</span> <span class="build-tag">v2.0</span></div>
             <div class="morah-status" id="morah-status">Ready to teach! 🇮🇱</div>
           </div>
         </div>
@@ -296,7 +296,6 @@
           <span id="mic-status-text">Listening… speak in Hebrew or English</span>
           <button class="mic-lang-toggle" id="mic-lang-toggle" onclick="toggleMicLang()">עב / EN</button>
         </div>
-        <div class="voice-teaser">🎤 Voice responses coming soon!</div>
         <div class="quick-prompts">
           <button class="quick-btn" onclick="sendQuick('Teach me something new today!')">🆕 Teach me something new</button>
           <button class="quick-btn" onclick="sendQuick('Quiz me on what I\'ve learned!')">🎯 Quiz me!</button>
@@ -317,28 +316,37 @@
   </div>
 
   <div id="mob-games" class="mob-panel">
-    <div class="mob-panel-hdr">
-      <div class="mob-panel-title">Games</div>
-      <div class="mob-panel-sub">Test your Hebrew speed</div>
+    <div class="gp-header">
+      <div class="gp-title">Games <span class="gp-ver">v2.0</span></div>
+      <div class="gp-sub">Test your Hebrew skills</div>
     </div>
-    <div class="mob-games-body">
-      <button class="mob-game-card" onclick="startSpeedRound()">
-        <div class="mob-game-icon">⚡</div>
-        <div class="mob-game-title">Speed Round</div>
-        <div class="mob-game-desc">60 seconds · 10 words · how many can you get?</div>
-        <div class="mob-game-btn">Play Now!</div>
+    <div class="gp-scroll">
+      <button class="gp-card gp-speed" onclick="startSpeedRound()">
+        <div class="gp-card-accent"></div>
+        <div class="gp-card-body">
+          <div class="gp-icon">⚡</div>
+          <div class="gp-name">Speed Round</div>
+          <div class="gp-desc">60 seconds · 10 words · how fast are you?</div>
+          <div class="gp-play">Play Now!</div>
+        </div>
       </button>
-      <button class="mob-game-card" onclick="showWordleGame()">
-        <div class="mob-game-icon">🟩</div>
-        <div class="mob-game-title">Hebrew Wordle</div>
-        <div class="mob-game-desc">Guess today's 5-letter Hebrew word in 6 tries. New word every day!</div>
-        <div class="mob-game-btn" id="wordle-card-btn">Play Today!</div>
+      <button class="gp-card gp-wordle" onclick="showWordleGame()">
+        <div class="gp-card-accent"></div>
+        <div class="gp-card-body">
+          <div class="gp-icon">🟩</div>
+          <div class="gp-name">Hebrew Wordle</div>
+          <div class="gp-desc">Guess the 5-letter Hebrew word in 6 tries. New word daily!</div>
+          <div class="gp-play" id="wordle-card-btn">Play Today!</div>
+        </div>
       </button>
-      <button class="mob-game-card" onclick="showUnscrambleGame()">
-        <div class="mob-game-icon">🔤</div>
-        <div class="mob-game-title">Unscramble</div>
-        <div class="mob-game-desc">10 Hebrew words — tap letters in the right order to unscramble!</div>
-        <div class="mob-game-btn">Play Now!</div>
+      <button class="gp-card gp-unscramble" onclick="showUnscrambleGame()">
+        <div class="gp-card-accent"></div>
+        <div class="gp-card-body">
+          <div class="gp-icon">🔤</div>
+          <div class="gp-name">Unscramble</div>
+          <div class="gp-desc">10 Hebrew words — tap letters in the right order!</div>
+          <div class="gp-play">Play Now!</div>
+        </div>
       </button>
     </div>
   </div>
@@ -627,7 +635,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=21"></script>
+<script src="app.js?v=99"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">
@@ -647,14 +655,30 @@
 </div>
 
 <script>
-// ── Service Worker registration ──────────────────────────
-if ('serviceWorker' in navigator) {
-  window.addEventListener('load', function() {
-    navigator.serviceWorker.register('/sw.js')
-      .then(function(reg) { console.log('[SW] registered, scope:', reg.scope); })
-      .catch(function(err) { console.warn('[SW] registration failed:', err); });
-  });
-}
+// ── FORCE CLEAR: Unregister all service workers + delete all caches ──────────
+// This guarantees the browser always fetches fresh HTML/CSS/JS from the server.
+(function() {
+  if ('serviceWorker' in navigator) {
+    navigator.serviceWorker.getRegistrations().then(function(regs) {
+      regs.forEach(function(r) {
+        r.unregister();
+        console.log('[SW] Unregistered:', r.scope);
+      });
+      // Register a fresh SW (cache-nuking passthrough version)
+      navigator.serviceWorker.register('/sw.js')
+        .then(function(reg) { console.log('[SW] Registered clean SW'); })
+        .catch(function(e) { console.warn('[SW] register failed:', e); });
+    });
+  }
+  if (window.caches) {
+    caches.keys().then(function(keys) {
+      keys.forEach(function(k) {
+        caches.delete(k);
+        console.log('[Cache] Deleted:', k);
+      });
+    });
+  }
+})();
 
 // ── Install prompt logic ─────────────────────────────────
 (function() {

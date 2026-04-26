@@ -2044,8 +2044,8 @@ body {
   margin-top: 4px;
 }
 
-/* ── Voice teaser (subtle coming-soon hint) ── */
-.voice-teaser {
+/* .voice-teaser removed — not displayed */
+.voice-teaser-removed {
   font-size: 0.7rem;
   color: var(--text-light);
   text-align: center;
@@ -2087,11 +2087,27 @@ body {
 /* ═══════════════════════════════════════════════════════
    MOBILE BOTTOM NAVIGATION
 ═══════════════════════════════════════════════════════ */
+/* ── Build version badge ── */
+.build-tag {
+  display: inline-block;
+  font-size: 0.55rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  background: var(--blue-pale);
+  color: var(--blue-mid);
+  border-radius: 4px;
+  padding: 1px 5px;
+  vertical-align: middle;
+  margin-left: 4px;
+  -webkit-text-fill-color: var(--blue-mid); /* override gradient text on morah-name */
+}
+
 .bottom-nav {
   display: none;
   position: fixed;
   bottom: 0; left: 0; right: 0;
-  height: 60px;
+  height: 68px;
   background: var(--white);
   border-top: 1px solid var(--border);
   box-shadow: 0 -4px 20px rgba(0,56,184,0.10);
@@ -2126,7 +2142,7 @@ body {
   flex-direction: column;
   position: fixed;
   top: 0; left: 0; right: 0;
-  bottom: 60px;
+  bottom: 68px;
   background: var(--blue-bg);
   z-index: 500;
   overflow: hidden;
@@ -2140,24 +2156,31 @@ body {
 .mob-panel-title { font-size: 1.2rem; font-weight: 800; color: var(--text-dark); }
 .mob-panel-sub { font-size: 0.78rem; color: var(--text-light); margin-top: 2px; }
 
-.mob-games-body {
-  flex: 1; display: flex; flex-direction: column;
-  align-items: center; justify-content: center; padding: 32px 24px;
+/* .mob-games-body is no longer used — games panel rebuilt as #mob-games with gp-* classes */
+.mob-games-body { display: none !important; }
+
+/* Path panel scrollable body */
+.mob-path-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px;
 }
 .mob-game-card {
-  width: 100%; max-width: 340px;
-  background: var(--white); border-radius: 24px; padding: 32px 24px;
+  width: 100%; max-width: 340px; flex-shrink: 0;
+  background: var(--white); border-radius: 20px; padding: 20px 20px;
   text-align: center; box-shadow: var(--shadow-lg); border: none;
   cursor: pointer; -webkit-tap-highlight-color: transparent; transition: transform 0.12s;
 }
 .mob-game-card:active { transform: scale(0.97); }
-.mob-game-icon { font-size: 3.5rem; margin-bottom: 12px; }
-.mob-game-title { font-size: 1.4rem; font-weight: 800; color: var(--text-dark); margin-bottom: 6px; }
-.mob-game-desc { font-size: 0.85rem; color: var(--text-light); margin-bottom: 20px; line-height: 1.5; }
+.mob-game-icon { font-size: 2.8rem; margin-bottom: 8px; }
+.mob-game-title { font-size: 1.25rem; font-weight: 800; color: var(--text-dark); margin-bottom: 4px; }
+.mob-game-desc { font-size: 0.82rem; color: var(--text-light); margin-bottom: 14px; line-height: 1.5; }
 .mob-game-btn {
   background: linear-gradient(135deg, var(--blue-deep), var(--blue-mid));
-  color: var(--white); border-radius: 14px; padding: 14px 32px;
-  font-size: 1rem; font-weight: 800; display: inline-block; font-family: var(--font-eng);
+  color: var(--white); border-radius: 14px; padding: 10px 28px;
+  font-size: 0.95rem; font-weight: 800; display: inline-block; font-family: var(--font-eng);
 }
 .mob-me-body { flex: 1; overflow-y: auto; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
 .mob-me-hero {
@@ -2306,16 +2329,25 @@ body {
    MOBILE OVERRIDES
 ═══════════════════════════════════════════════════════ */
 @media (max-width: 768px) {
-  .bottom-nav { display: flex; }
+  .bottom-nav { display: flex; height: 68px; }
   .sidebar { display: none !important; }
-  .chat-input-area { padding-bottom: 8px; }
-  #screen-lesson .lesson-layout { height: calc(100dvh - 60px); }
+  .chat-input-area { padding-bottom: 10px; }
+
+  /* Lesson layout stops above the 68px nav */
+  #screen-lesson .lesson-layout { height: calc(100dvh - 68px); }
+
+  /* Hide lesson layout when a panel tab is active */
   #screen-lesson.mob-tab-path .lesson-layout,
   #screen-lesson.mob-tab-games .lesson-layout,
   #screen-lesson.mob-tab-me .lesson-layout { display: none !important; }
+
+  /* Show path and me panels as flex (games panel handled separately as grid) */
   #screen-lesson.mob-tab-path #mob-path,
-  #screen-lesson.mob-tab-games #mob-games,
   #screen-lesson.mob-tab-me #mob-me { display: flex; }
+
+  /* Panels fill viewport above 68px nav */
+  .mob-panel { bottom: 68px; overflow: hidden; }
+
   .lesson-user-badge { display: none !important; }
   .chat-header-actions .btn-lesson-path-header { display: none; }
 }
@@ -2593,9 +2625,8 @@ body {
   /* Push above bottom-nav on mobile */
   padding-bottom: max(14px, env(safe-area-inset-bottom, 14px));
 }
-/* Shift up by 60px on narrow screens so bottom-nav is not covered */
 @media (max-width: 768px) {
-  .pwa-banner { bottom: 60px; }
+  .pwa-banner { bottom: 68px; }
 }
 .pwa-banner-hidden  { transform: translateY(110%); opacity: 0; pointer-events: none; }
 .pwa-banner-visible { transform: translateY(0);    opacity: 1; pointer-events: all; }
@@ -2898,14 +2929,10 @@ body {
 }
 .bottom-nav {
   padding-bottom: env(safe-area-inset-bottom, 0px);
-  height: calc(60px + env(safe-area-inset-bottom, 0px));
+  height: calc(68px + env(safe-area-inset-bottom, 0px));
 }
 
-/* ── voice-teaser — smaller, more subtle ── */
-.voice-teaser {
-  font-size: 0.67rem; color: var(--text-light); text-align: center;
-  padding: 3px 0 0; opacity: 0.7; letter-spacing: 0.01em;
-}
+/* voice-teaser removed */
 
 /* ── Wordle keys — maintain 44px touch target on small screens ── */
 @media (max-height: 660px) {
@@ -3098,3 +3125,693 @@ body {
   background: #fff; color: #5c1fa8; font-size: 0.92rem; font-weight: 700;
   font-family: var(--font-eng); cursor: pointer; -webkit-tap-highlight-color: transparent;
 }
+
+/* ═══════════════════════════════════════════════════════
+   CELEBRATION ANIMATIONS — Magen David + Confetti
+═══════════════════════════════════════════════════════ */
+@keyframes celebStarSpin {
+  0%   { opacity: 0; transform: translate(-50%,-50%) scale(0) rotate(-200deg); }
+  25%  { opacity: 1; transform: translate(-50%,-50%) scale(1.9) rotate(0deg); }
+  55%  { opacity: 1; transform: translate(-50%,-50%) scale(1.5) rotate(40deg); }
+  100% { opacity: 0; transform: translate(-50%,-50%) scale(0.6) rotate(90deg); }
+}
+@keyframes celebParticle {
+  0%   { opacity: 1; transform: translate(-50%,-50%) rotate(0deg) scale(1); }
+  100% { opacity: 0;
+         transform: translate(calc(-50% + var(--px)), calc(-50% + var(--py)))
+                    rotate(var(--rot)) scale(0.2); }
+}
+.celeb-star {
+  position: fixed;
+  z-index: 99999;
+  pointer-events: none;
+  font-size: 5rem;
+  line-height: 1;
+  animation: celebStarSpin 1.25s cubic-bezier(0.22,1,0.36,1) forwards;
+  filter: drop-shadow(0 0 12px rgba(255,215,0,0.9))
+          drop-shadow(0 0 28px rgba(255,200,0,0.6));
+}
+.celeb-particle {
+  position: fixed;
+  z-index: 99998;
+  pointer-events: none;
+  border-radius: var(--br, 50%);
+  animation: celebParticle var(--dur, 0.85s) ease-out var(--delay, 0s) both;
+}
+
+/* ═══════════════════════════════════════════════════════
+   2024 MOBILE UI REDESIGN — Modern Duolingo-style
+═══════════════════════════════════════════════════════ */
+
+/* ── Bottom Navigation ── */
+.bottom-nav {
+  height: 68px;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(24px);
+  -webkit-backdrop-filter: blur(24px);
+  border-top: 1.5px solid rgba(0,56,184,0.1);
+  box-shadow: 0 -6px 32px rgba(0,56,184,0.13);
+}
+.nav-btn {
+  position: relative;
+  padding: 8px 4px 6px;
+  gap: 3px;
+  transition: color 0.18s, transform 0.15s;
+}
+.nav-btn:active { transform: scale(0.88); }
+.nav-btn .nav-icon {
+  font-size: 1.5rem;
+  transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.nav-btn.active .nav-icon { transform: scale(1.18); }
+.nav-btn.active::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 50%;
+  transform: translateX(-50%);
+  width: 36px; height: 3px;
+  background: var(--blue-deep);
+  border-radius: 0 0 4px 4px;
+}
+.nav-btn .nav-label {
+  font-size: 0.63rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+}
+.nav-btn.active { color: var(--blue-deep); }
+/* Safe-area (iPhone notch) adjustments */
+@media (max-width: 768px) {
+  .bottom-nav { height: calc(68px + env(safe-area-inset-bottom, 0px)); }
+  .mob-panel  { bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+  .pwa-banner { bottom: calc(68px + env(safe-area-inset-bottom, 0px)); }
+  #mob-games  { bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important; }
+}
+
+/* ── Mobile Panel Header ── */
+.mob-panel-hdr {
+  padding: 20px 20px 16px;
+  background: linear-gradient(135deg, var(--blue-deep) 0%, var(--blue-mid) 100%);
+  border-bottom: none;
+  flex-shrink: 0;
+}
+.mob-panel-title {
+  font-size: 1.3rem;
+  font-weight: 900;
+  color: var(--white);
+  letter-spacing: -0.01em;
+}
+.mob-panel-sub {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.72);
+  margin-top: 3px;
+}
+
+/* ── Game cards unique theme accents ── */
+.mob-games-body .mob-game-card {
+  border-radius: 22px;
+  border: none;
+  overflow: hidden;
+  padding: 0;
+  box-shadow: 0 6px 28px rgba(0,56,184,0.14), 0 2px 8px rgba(0,0,0,0.06);
+  transition: transform 0.15s, box-shadow 0.15s;
+}
+.mob-games-body .mob-game-card:active {
+  transform: scale(0.96);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+}
+.mob-game-inner {
+  padding: 22px 20px 20px;
+}
+.mob-games-body .mob-game-card:nth-child(1) .mob-game-inner { border-top: 5px solid #FF6B00; }
+.mob-games-body .mob-game-card:nth-child(2) .mob-game-inner { border-top: 5px solid #538d4e; }
+.mob-games-body .mob-game-card:nth-child(3) .mob-game-inner { border-top: 5px solid #7c3aed; }
+
+.mob-games-body .mob-game-card:nth-child(1) .mob-game-btn {
+  background: linear-gradient(135deg, #FF5500, #FF8C00);
+  box-shadow: 0 3px 0 #c94000;
+}
+.mob-games-body .mob-game-card:nth-child(2) .mob-game-btn {
+  background: linear-gradient(135deg, #3d7b37, #6aaa64);
+  box-shadow: 0 3px 0 #2a5726;
+}
+.mob-games-body .mob-game-card:nth-child(3) .mob-game-btn {
+  background: linear-gradient(135deg, #5c1fa8, #7c3aed);
+  box-shadow: 0 3px 0 #3f1175;
+}
+.mob-game-btn {
+  padding: 11px 28px;
+  border-radius: 14px;
+  font-size: 0.95rem;
+  font-weight: 900;
+  display: inline-block;
+  font-family: var(--font-eng);
+  transition: transform 0.1s, box-shadow 0.1s;
+  letter-spacing: 0.01em;
+}
+.mob-game-card:active .mob-game-btn {
+  transform: translateY(3px);
+  box-shadow: 0 0 0 transparent !important;
+}
+.mob-game-icon { font-size: 2.6rem; margin-bottom: 10px; display: block; }
+.mob-game-title {
+  font-size: 1.2rem; font-weight: 900; color: var(--text-dark);
+  margin-bottom: 5px; letter-spacing: -0.01em;
+}
+.mob-game-desc { font-size: 0.81rem; color: var(--text-light); margin-bottom: 16px; line-height: 1.5; }
+
+/* ── Chat messages — modern bubbles ── */
+.message.morah .msg-bubble {
+  background: var(--white);
+  border: none;
+  border-left: 4px solid var(--blue-mid);
+  border-bottom-left-radius: 4px;
+  border-radius: 20px;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 4px 20px rgba(0,56,184,0.09), 0 1px 4px rgba(0,0,0,0.04);
+  padding: 14px 18px;
+}
+.message.user .msg-bubble {
+  background: linear-gradient(145deg, #0033AA, #1B5EE0);
+  border-radius: 20px;
+  border-bottom-right-radius: 4px;
+  box-shadow: 0 5px 20px rgba(0,56,184,0.38);
+  padding: 14px 18px;
+}
+.msg-avatar {
+  width: 40px; height: 40px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.4rem;
+  flex-shrink: 0;
+  margin-top: 4px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.12);
+}
+
+/* ── Chat input area ── */
+.chat-input-area {
+  padding: 14px 20px 18px;
+  background: rgba(255,255,255,0.97);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border-top: 1.5px solid rgba(0,56,184,0.08);
+  box-shadow: 0 -8px 32px rgba(0,56,184,0.07);
+}
+#user-input {
+  border-radius: 24px;
+  border: 2px solid var(--border);
+  padding: 12px 18px;
+  background: var(--blue-bg);
+  transition: border-color 0.2s, background 0.2s, box-shadow 0.2s;
+  line-height: 1.5;
+  font-size: 0.95rem;
+}
+#user-input:focus {
+  border-color: var(--blue-mid);
+  background: var(--white);
+  box-shadow: 0 0 0 4px rgba(0,56,184,0.09);
+}
+.btn-send {
+  border-radius: 20px;
+  background: linear-gradient(145deg, #002FA0, #1B5EE0);
+  box-shadow: 0 4px 0 #001E70, 0 6px 20px rgba(0,56,184,0.28);
+  min-width: 70px;
+  transition: transform 0.12s, box-shadow 0.12s;
+}
+.btn-send:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 0 #001E70, 0 10px 28px rgba(0,56,184,0.38);
+}
+.btn-send:active:not(:disabled) {
+  transform: translateY(4px);
+  box-shadow: 0 0 0 #001E70, 0 2px 10px rgba(0,56,184,0.18);
+}
+.btn-mic {
+  border-radius: 18px;
+  height: 56px;
+  border: 2px solid var(--border);
+  transition: all 0.18s;
+}
+.btn-mic:hover { background: var(--blue-pale); border-color: var(--blue-light); }
+
+/* ── Quick prompts ── */
+.quick-prompts { gap: 7px; margin-top: 11px; }
+.quick-btn {
+  background: var(--white);
+  border: 1.5px solid var(--border);
+  color: var(--text-mid);
+  padding: 7px 14px;
+  border-radius: 20px;
+  font-size: 0.79rem;
+  font-weight: 700;
+  box-shadow: 0 2px 8px rgba(0,56,184,0.07);
+  transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1);
+}
+.quick-btn:hover {
+  background: var(--blue-deep);
+  border-color: var(--blue-deep);
+  color: var(--white);
+  transform: translateY(-2px) scale(1.03);
+  box-shadow: 0 5px 16px rgba(0,56,184,0.3);
+}
+.quick-btn:active { transform: scale(0.95); }
+
+/* ── Multiple choice buttons — Duolingo 3D press ── */
+.mc-btn {
+  border-radius: 18px;
+  font-weight: 800;
+  box-shadow: 0 5px 0 #b0c0dc, 0 6px 16px rgba(0,56,184,0.08);
+  border: 2px solid #c8d8f0;
+  transition: all 0.12s cubic-bezier(0.34,1.56,0.64,1);
+}
+.mc-btn:hover:not(:disabled) {
+  border-color: var(--blue-mid);
+  background: var(--blue-pale);
+  transform: translateY(-2px);
+  box-shadow: 0 7px 0 #8aa8cc, 0 8px 20px rgba(0,56,184,0.15);
+}
+.mc-btn:active:not(:disabled) {
+  transform: translateY(5px);
+  box-shadow: 0 0 0 #b0c0dc;
+}
+
+/* ── Score & stat boxes ── */
+.stat-box {
+  border-radius: 14px;
+  background: rgba(255,255,255,0.13);
+  border: 1.5px solid rgba(255,255,255,0.18);
+  transition: transform 0.18s;
+}
+.stat-box:hover { transform: scale(1.04); }
+
+/* ── Micro-tap feedback on all interactive elements ── */
+button, [role="button"], .quiz-option, .word-chip, .topic-chip {
+  -webkit-tap-highlight-color: transparent;
+}
+.quiz-option { transition: all 0.18s cubic-bezier(0.34,1.56,0.64,1); }
+.quiz-option:active { transform: scale(0.97); }
+.word-chip:active { transform: scale(0.95); }
+
+/* ── Home screen button ── */
+.btn-start {
+  border-radius: 50px;
+  font-weight: 800;
+  box-shadow: 0 6px 0 rgba(0,0,0,0.18), 0 10px 30px rgba(0,0,0,0.2);
+  transition: all 0.15s;
+  padding: 18px 44px;
+  letter-spacing: 0.02em;
+}
+.btn-start:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 10px 0 rgba(0,0,0,0.18), 0 16px 40px rgba(0,0,0,0.25);
+}
+.btn-start:active {
+  transform: translateY(6px);
+  box-shadow: 0 0 0 rgba(0,0,0,0.18);
+}
+
+/* ── Register/Quiz next button ── */
+.btn-quiz-next {
+  border-radius: 50px;
+  font-weight: 800;
+  box-shadow: 0 5px 0 #002080, 0 8px 24px rgba(0,56,184,0.32);
+  transition: all 0.12s;
+  padding: 14px 36px;
+  letter-spacing: 0.02em;
+}
+.btn-quiz-next:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 0 #002080, 0 12px 32px rgba(0,56,184,0.4);
+}
+.btn-quiz-next:active {
+  transform: translateY(5px);
+  box-shadow: 0 0 0 #002080;
+}
+
+/* ── Typing indicator — softer ── */
+.typing-indicator {
+  background: rgba(214,232,255,0.5);
+  border-radius: 12px;
+  padding: 7px 14px;
+  margin-bottom: 10px;
+  display: inline-flex;
+  width: auto;
+}
+
+/* ── Toast — improved ── */
+.toast {
+  border-radius: 50px;
+  font-weight: 700;
+  font-size: 0.88rem;
+  padding: 12px 28px;
+  box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+  letter-spacing: 0.01em;
+}
+
+/* ── Chat background texture ── */
+.chat-area { background: #f5f8ff; }
+.chat-messages {
+  background: repeating-linear-gradient(
+    to bottom,
+    transparent 0px,
+    transparent 39px,
+    rgba(0,56,184,0.02) 39px,
+    rgba(0,56,184,0.02) 40px
+  );
+}
+
+/* ═══════════════════════════════════════════════════════
+   TYPOGRAPHY OVERHAUL — Premium 2024 Feel
+═══════════════════════════════════════════════════════ */
+
+/* ── Base body weight ── */
+body { font-weight: 500; }
+
+/* ── Gradient text utility ── */
+.grad-text {
+  background: linear-gradient(135deg, #0038B8 0%, #4A90D9 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.grad-text-gold {
+  background: linear-gradient(135deg, #C8880E 0%, #FFD84E 60%, #D4A017 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Home Screen titles ── */
+.hebrew-title {
+  font-size: clamp(3rem, 9vw, 6rem);
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.05;
+  text-shadow: 0 4px 32px rgba(0,0,0,0.28), 0 1px 0 rgba(255,255,255,0.15);
+}
+.english-title {
+  font-weight: 300;
+  letter-spacing: 0.32em;
+  font-size: clamp(1.1rem, 3.5vw, 2rem);
+  opacity: 0.92;
+}
+.tagline {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.sub-tagline {
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.7;
+}
+
+/* ── Registration card ── */
+.reg-title {
+  font-size: 1.7rem;
+  font-weight: 900;
+  letter-spacing: -0.025em;
+  line-height: 1.15;
+}
+.reg-sub { font-size: 0.93rem; font-weight: 400; line-height: 1.6; }
+.reg-label {
+  font-size: 0.75rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.quiz-name-input {
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+/* ── Morah / Chat header ── */
+.morah-name {
+  font-size: 1.15rem;
+  font-weight: 800;
+  letter-spacing: -0.01em;
+  background: linear-gradient(135deg, #0038B8, #4A90D9);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.morah-status { font-size: 0.78rem; font-weight: 500; letter-spacing: 0.01em; }
+
+/* ── Chat messages ── */
+.msg-bubble { font-size: 0.97rem; font-weight: 500; line-height: 1.7; }
+.msg-bubble strong {
+  font-weight: 800;
+  font-size: 1.2em;
+}
+.msg-time { font-size: 0.7rem; font-weight: 500; letter-spacing: 0.02em; }
+
+/* ── Sidebar ── */
+.sidebar-logo .heb {
+  font-size: 1.75rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+.sidebar-logo .eng {
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.2em;
+}
+.student-name { font-size: 1.05rem; font-weight: 800; letter-spacing: -0.01em; }
+.student-level { font-size: 0.72rem; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; }
+.stat-value { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.02em; }
+.stat-label { font-size: 0.65rem; font-weight: 700; letter-spacing: 0.08em; }
+.section-title { font-size: 0.7rem; font-weight: 800; letter-spacing: 0.12em; }
+
+/* ── Mobile panels ── */
+.mob-panel-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  color: var(--white);
+}
+.mob-panel-sub { font-size: 0.8rem; font-weight: 500; letter-spacing: 0.01em; }
+
+/* ── Mobile Me panel ── */
+.mob-me-name { font-size: 1.4rem; font-weight: 900; letter-spacing: -0.025em; }
+.mob-me-school { font-size: 0.84rem; font-weight: 500; }
+.mob-me-level { font-size: 0.75rem; font-weight: 600; letter-spacing: 0.04em; }
+.mob-stat-val { font-size: 1.6rem; font-weight: 900; letter-spacing: -0.03em; }
+.mob-stat-lbl { font-size: 0.67rem; font-weight: 700; letter-spacing: 0.07em; }
+
+/* ── Game cards ── */
+.mob-game-title {
+  font-size: 1.22rem;
+  font-weight: 900;
+  letter-spacing: -0.02em;
+  line-height: 1.2;
+}
+.mob-game-desc { font-size: 0.82rem; font-weight: 500; line-height: 1.55; }
+.mob-game-btn { font-size: 0.92rem; font-weight: 900; letter-spacing: 0.03em; }
+
+/* ── Speed Round ── */
+.sr-timer-num { font-weight: 900; letter-spacing: -0.03em; }
+.sr-hebrew { font-weight: 900; letter-spacing: 0.01em; line-height: 1.1; }
+.sr-results-msg { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.01em; }
+.sr-stat-val { font-size: 1.7rem; font-weight: 900; letter-spacing: -0.03em; }
+
+/* ── Quiz screen ── */
+.quiz-q-text { font-size: 1.3rem; font-weight: 800; letter-spacing: -0.01em; line-height: 1.35; }
+.quiz-logo { font-size: 1.5rem; font-weight: 900; letter-spacing: -0.01em; }
+.btn-quiz-next { font-size: 0.97rem; font-weight: 900; letter-spacing: 0.03em; }
+
+/* ── Word of the Day ── */
+.wotd-label { font-size: 0.72rem; font-weight: 900; letter-spacing: 0.18em; }
+.wotd-hebrew {
+  font-size: clamp(2.8rem, 10vw, 4.5rem);
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  text-shadow: 0 3px 20px rgba(255,255,255,0.25);
+}
+.wotd-trans { font-size: 1.05rem; font-weight: 600; font-style: italic; }
+.wotd-english { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em; }
+
+/* ── Progress/Leaderboard headers ── */
+.mob-lb-title, .prog-title {
+  font-weight: 900;
+  letter-spacing: -0.02em;
+}
+
+/* ── Notebook ── */
+.notebook-name { font-size: 1.1rem; font-weight: 800; letter-spacing: -0.01em; }
+.nb-heb { font-size: 1.3rem; font-weight: 800; }
+.nb-eng { font-size: 0.85rem; font-weight: 700; }
+
+/* ── Toast ── */
+.toast { font-size: 0.9rem; font-weight: 700; letter-spacing: 0.01em; }
+
+/* ── Quick prompts ── */
+.quick-btn { font-size: 0.8rem; font-weight: 700; letter-spacing: 0.01em; }
+
+/* ── Hebrew text — larger and more prominent everywhere ── */
+.heb-small {
+  font-family: var(--font-heb);
+  font-size: 1.05em;
+  font-weight: 700;
+  letter-spacing: 0.01em;
+}
+.word-chip-heb { font-size: 1.1rem; font-weight: 700; }
+.word-badge-heb { font-size: 1.1em; font-weight: 900; }
+.tt-hebrew { font-size: 1.9rem; font-weight: 800; }
+
+/* ── Unscramble ── */
+.us-english { font-size: 1.85rem; font-weight: 900; letter-spacing: -0.025em; }
+.us-title { font-size: 1.15rem; font-weight: 900; letter-spacing: -0.01em; }
+.us-slot, .us-tile { font-size: 1.45rem; font-weight: 900; }
+
+/* ── Gradient headings on key panels ── */
+.mob-panel-title {
+  background: rgba(255,255,255,0.98);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Feature pills on home ── */
+.feature-pill { font-size: 0.85rem; font-weight: 600; letter-spacing: 0.01em; }
+
+/* ── Returns user card ── */
+.returning-name { font-size: 0.98rem; font-weight: 700; }
+
+/* ── Scrollbar styling ── */
+.mob-games-body::-webkit-scrollbar { width: 4px; }
+.mob-games-body::-webkit-scrollbar-track { background: transparent; }
+.mob-games-body::-webkit-scrollbar-thumb {
+  background: rgba(0,56,184,0.2);
+  border-radius: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   GAMES PANEL — Complete rewrite with CSS Grid
+   (Bypasses all previous flexbox/overflow conflicts)
+═══════════════════════════════════════════════════════ */
+
+/* The panel itself: CSS grid with header row + scroll row */
+#mob-games {
+  display: none;
+  position: fixed !important;
+  top: 0 !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: 68px !important;
+  z-index: 500 !important;
+  background: #f0f4ff !important;
+  /* Grid: header takes its natural height, scroll area fills rest */
+  grid-template-rows: auto 1fr;
+  grid-template-columns: 1fr;
+  overflow: hidden !important;
+}
+
+/* Shown on mobile when games tab active */
+@media (max-width: 768px) {
+  #screen-lesson.mob-tab-games #mob-games {
+    display: grid !important;
+  }
+}
+
+/* ── Header bar ── */
+.gp-header {
+  grid-row: 1;
+  padding: 20px 20px 16px;
+  background: linear-gradient(135deg, #0038B8, #1B5EE0);
+  flex-shrink: 0;
+}
+.gp-title {
+  font-size: 1.35rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: -0.02em;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.gp-ver {
+  font-size: 0.65rem;
+  font-weight: 700;
+  background: rgba(255,255,255,0.25);
+  color: rgba(255,255,255,0.9);
+  border-radius: 20px;
+  padding: 2px 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+.gp-sub {
+  font-size: 0.8rem;
+  font-weight: 500;
+  color: rgba(255,255,255,0.72);
+  margin-top: 3px;
+}
+
+/* ── Scrollable area: grid row 2 with definite height ── */
+.gp-scroll {
+  grid-row: 2;
+  /* grid gives this a fixed height = panel height - header height */
+  min-height: 0;          /* allows grid child to be smaller than content */
+  overflow-y: scroll;     /* always-on scroll */
+  -webkit-overflow-scrolling: touch;
+  overscroll-behavior-y: contain;
+  padding: 16px 16px 32px;
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+}
+
+/* ── Individual game cards ── */
+.gp-card {
+  width: 100%;
+  flex-shrink: 0;        /* don't collapse in the flex scroll container */
+  background: #fff;
+  border-radius: 20px;
+  border: none;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0,56,184,0.12), 0 1px 4px rgba(0,0,0,0.06);
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
+  text-align: left;
+  transition: transform 0.14s, box-shadow 0.14s;
+  display: block;
+  padding: 0;
+}
+.gp-card:active {
+  transform: scale(0.97);
+  box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+}
+
+/* Coloured accent stripe at top of each card */
+.gp-card-accent { height: 5px; width: 100%; }
+.gp-speed   .gp-card-accent { background: linear-gradient(90deg, #FF5500, #FF8C00); }
+.gp-wordle  .gp-card-accent { background: linear-gradient(90deg, #2E8B57, #6aaa64); }
+.gp-unscramble .gp-card-accent { background: linear-gradient(90deg, #5c1fa8, #7c3aed); }
+
+/* Card inner content */
+.gp-card-body { padding: 18px 20px 20px; }
+.gp-icon { font-size: 2.4rem; line-height: 1; margin-bottom: 10px; display: block; }
+.gp-name {
+  font-size: 1.15rem;
+  font-weight: 900;
+  color: #1a1a2e;
+  letter-spacing: -0.02em;
+  margin-bottom: 5px;
+}
+.gp-desc {
+  font-size: 0.82rem;
+  color: #6B7BA8;
+  font-weight: 500;
+  line-height: 1.5;
+  margin-bottom: 16px;
+}
+.gp-play {
+  display: inline-block;
+  padding: 10px 26px;
+  border-radius: 12px;
+  font-size: 0.9rem;
+  font-weight: 900;
+  letter-spacing: 0.02em;
+  color: #fff;
+}
+.gp-speed    .gp-play { background: linear-gradient(135deg, #FF5500, #FF8C00); box-shadow: 0 3px 0 #b83c00; }
+.gp-wordle   .gp-play { background: linear-gradient(135deg, #2E8B57, #6aaa64); box-shadow: 0 3px 0 #1a5c38; }
+.gp-unscramble .gp-play { background: linear-gradient(135deg, #5c1fa8, #7c3aed); box-shadow: 0 3px 0 #3a1068; }
+.gp-card:active .gp-play { box-shadow: none; transform: translateY(3px); }

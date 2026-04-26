@@ -1824,7 +1824,7 @@ function awardChallengePoints(correct, pts) {
   state.progress.points += pts;
   updateStats();
   saveProgress();
-  playCorrectTone();
+
   showCorrectBurst(pts);
   triggerConfetti();
 }
@@ -1848,25 +1848,6 @@ function triggerConfetti() {
   }
 }
 
-function playCorrectTone() {
-  try {
-    const ctx = new (window.AudioContext || window.webkitAudioContext)();
-    const notes = [523, 659, 784]; // C5-E5-G5 major chord
-    notes.forEach(function(freq, i) {
-      const osc = ctx.createOscillator();
-      const gain = ctx.createGain();
-      osc.connect(gain);
-      gain.connect(ctx.destination);
-      osc.type = 'sine';
-      osc.frequency.value = freq;
-      gain.gain.setValueAtTime(0, ctx.currentTime + i * 0.1);
-      gain.gain.linearRampToValueAtTime(0.18, ctx.currentTime + i * 0.1 + 0.02);
-      gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + i * 0.1 + 0.35);
-      osc.start(ctx.currentTime + i * 0.1);
-      osc.stop(ctx.currentTime + i * 0.1 + 0.4);
-    });
-  } catch(e) {}
-}
 
 function showCorrectBurst(pts) {
   const el = document.createElement('div');
@@ -2319,7 +2300,8 @@ function answerSR(chosen, correct, btn, container) {
     state.progress.points += 10;
     updateStats();
     saveProgress();
-    playCorrectTone();
+  
+    triggerCelebration();
   }
 
   // Brief pause then advance
@@ -3041,6 +3023,7 @@ function wordleSubmit() {
       _wlBumpStreak(true);
       _wlUpdateStreakBadge();
       _wlShowMsg(_WL_WIN_MSGS[Math.min(rowIdx, _WL_WIN_MSGS.length-1)], '#6aaa64');
+      triggerCelebration();
       setTimeout(function() { _wlBounceRow(rowIdx); _wlShowResult(true); }, 400);
     } else if (state.lost) {
       _wlShowMsg('The word was: ' + _wlDaily().display, '#ff6b6b');
@@ -3438,6 +3421,7 @@ function _usShowCorrect(pts) {
   slots.forEach(function(s) { s.classList.add('us-slot-correct'); });
   // Show points pop
   _usPtsPop('+' + pts);
+  triggerCelebration();
   // Brief celebration then next word
   setTimeout(function() {
     US.idx++;
@@ -3533,3 +3517,51 @@ function hideUnscrambleGame() {
 }
 
 // ▲▲▲  END HEBREW UNSCRAMBLE  ▲▲▲
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  CELEBRATION ANIMATION — Magen David + Blue/White/Gold confetti
+// ═══════════════════════════════════════════════════════════════════════════
+function triggerCelebration(cx, cy) {
+  cx = cx != null ? cx : window.innerWidth  / 2;
+  cy = cy != null ? cy : window.innerHeight / 2;
+
+  // Magen David star burst
+  var star = document.createElement('div');
+  star.className = 'celeb-star';
+  star.textContent = '✡';
+  star.style.left = cx + 'px';
+  star.style.top  = cy + 'px';
+  document.body.appendChild(star);
+  setTimeout(function() { if (star.parentNode) star.parentNode.removeChild(star); }, 1400);
+
+  // Confetti particles in Israeli blue/white/gold
+  var palette = ['#0038B8','#1B5EE0','#4A90D9','#D4A017','#FFE57F','#ffffff','#003399'];
+  for (var i = 0; i < 44; i++) {
+    (function(i) {
+      var angle  = (i / 44) * Math.PI * 2 + (Math.random() - 0.5) * 0.4;
+      var dist   = 70 + Math.random() * 160;
+      var px     = Math.cos(angle) * dist;
+      var py     = Math.sin(angle) * dist;
+      var size   = 7 + Math.random() * 9;
+      var isRect = Math.random() > 0.55;
+      var dur    = 0.55 + Math.random() * 0.55;
+      var delay  = Math.random() * 0.18;
+      var color  = palette[Math.floor(Math.random() * palette.length)];
+      var rot    = (Math.random() * 720 - 360) + 'deg';
+
+      var p = document.createElement('div');
+      p.className = 'celeb-particle';
+      p.style.cssText =
+        'left:' + cx + 'px;top:' + cy + 'px;' +
+        'width:' + size + 'px;height:' + (isRect ? size * 0.45 : size) + 'px;' +
+        'background:' + color + ';' +
+        '--px:' + px + 'px;--py:' + py + 'px;' +
+        '--rot:' + rot + ';' +
+        '--dur:' + dur + 's;' +
+        '--delay:' + delay + 's;' +
+        '--br:' + (isRect ? '2px' : '50%') + ';';
+      document.body.appendChild(p);
+      setTimeout(function() { if (p.parentNode) p.parentNode.removeChild(p); }, (dur + delay) * 1000 + 100);
+    })(i);
+  }
+}
