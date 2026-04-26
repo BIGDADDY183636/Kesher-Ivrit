@@ -1089,16 +1089,22 @@ function _cleanText(raw) {
 }
 
 // ── Transliteration phonetic fixes (Latin segments only) ─────────────────
-function _fixPronunciation(text) {
+// isTransliteration: true when this Latin run sits next to Hebrew in the
+// same line — meaning it is a transliteration, not a pure English word.
+// ch→kh only fires for transliterations to avoid mangling English (church,
+// beach, teach). tz→ts and vowel rules are safe to apply universally.
+function _fixPronunciation(text, isTransliteration) {
   var r = text;
   _PHON_KEYS.forEach(function(w) {
     var re = new RegExp('(?<![\\w-])' + w.replace(/[-]/g, '\\-') + '(?![\\w-])', 'gi');
     r = r.replace(re, _PHONETICS[w]);
   });
-  r = r.replace(/ch/gi, 'kh');          // chet/khaf
-  r = r.replace(/tz/gi, 'ts');          // tzadik
-  r = r.replace(/ai/gi, 'eye');         // diphthong ai → eye
-  r = r.replace(/ei\b/gi, 'ay');        // word-final ei → ay
+  if (isTransliteration) {
+    r = r.replace(/ch/gi, 'kh');        // chet/khaf — only in transliterations
+  }
+  r = r.replace(/tz/gi, 'ts');          // tzadik — always safe
+  r = r.replace(/ai/gi, 'eye');         // diphthong
+  r = r.replace(/ei\b/gi, 'ay');        // word-final ei
   return r;
 }
 
@@ -1128,9 +1134,11 @@ function _buildSegments(cleanedText) {
   lines.forEach(function(line, li) {
     var isLastLine = (li === lines.length - 1);
     _segmentRuns(line).forEach(function(run, ri, arr) {
+      // A Latin run is a transliteration when the same line also has Hebrew runs.
+      var lineHasHebrew = arr.some(function(r) { return r.isHebrew; });
       var spoken = run.isHebrew
         ? run.text.trim()
-        : _fixPronunciation(run.text.trim());
+        : _fixPronunciation(run.text.trim(), lineHasHebrew);
       // Whitelist — \uXXXX escapes, immune to encoding drift:
       spoken = spoken
         .replace(/[^a-zA-Z0-9֐-׿יִ-ﭏ\s\-]/g, ' ')
@@ -1148,30 +1156,61 @@ function _buildSegments(cleanedText) {
 }
 
 // ── Hebrew TTS via Audio element (no Web Speech — no he-IL voice present) ──
-// Tries Google Translate direct URL first (crossOrigin=anonymous).
-// Falls back to /api/tts-hebrew server proxy if direct load fails.
+// Tracks the current audio element so a new segment stops the previous one.
+// 200ms pre-play delay smooths transitions between segments.
+var _heAudioEl = null;
+
+function _stopHeAudio() {
+  if (_heAudioEl) {
+    try { _heAudioEl.pause(); _heAudioEl.src = ''; } catch (e) {}
+    _heAudioEl = null;
+  }
+}
+
 function _speakHebrewText(text, onDone, onError) {
+  _stopHeAudio();   // stop whatever was playing before
+
   var directUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=he&client=tw-ob&q='
                   + encodeURIComponent(text);
   var proxyUrl  = '/api/tts-hebrew?q=' + encodeURIComponent(text);
+  var done = false;   // guard: only call onDone/onError once
 
-  function tryProxy() {
-    console.log('[TTS] Direct failed → proxy:', proxyUrl);
-    var a = new Audio(proxyUrl);
-    a.volume = 1.0;
-    a.onended = onDone;
-    a.onerror  = function(e) { console.error('[TTS] Proxy error:', e.type); onError(); };
-    a.play().catch(function(e) { console.error('[TTS] Proxy play() rejected:', e.message); onError(); });
+  function finish(cb) {
+    if (done) return; done = true;
+    _heAudioEl = null;
+    cb();
   }
 
-  console.log('[TTS] Hebrew audio — trying direct:', directUrl);
-  var a = new Audio();
-  a.crossOrigin = 'anonymous';
-  a.volume = 1.0;
-  a.onended = onDone;
-  a.onerror = function() { tryProxy(); };
-  a.src = directUrl;
-  a.play().catch(function() { tryProxy(); });
+  function tryProxy() {
+    _stopHeAudio();
+    console.log('[TTS] Direct failed → proxy:', proxyUrl);
+    var a = new Audio(proxyUrl);
+    _heAudioEl = a;
+    a.volume = 1.0;
+    a.onended = function() { finish(onDone); };
+    a.onerror = function(e) {
+      console.error('[TTS] Proxy error:', e.type);
+      finish(onError);
+    };
+    a.play().catch(function(e) {
+      console.error('[TTS] Proxy play() rejected:', e.message);
+      finish(onError);
+    });
+  }
+
+  // 200ms delay before play — prevents overlap glitches between segments
+  setTimeout(function() {
+    if (done) return;   // segment was cancelled while waiting
+    console.log('[TTS] Hebrew audio:', JSON.stringify(text));
+    var a = new Audio();
+    _heAudioEl = a;
+    a.crossOrigin = 'anonymous';
+    a.volume = 1.0;
+    a.onended = function() { finish(onDone); };
+    a.onerror = function() { tryProxy(); };
+    a.src = directUrl;
+    a.play().catch(function() { tryProxy(); });
+  }, 200);
 }
 // ── Button state helper ───────────────────────────────────────────────────
 function setSpeakBtnState(btn, active) {
@@ -1183,7 +1222,8 @@ function setSpeakBtnState(btn, active) {
 // ── Stop speech ───────────────────────────────────────────────────────────
 function stopSpeech() {
   ttsActive = false;
-  if (window.speechSynthesis) window.speechSynthesis.cancel();
+  _stopHeAudio();                                    // stop Hebrew Audio element
+  if (window.speechSynthesis) window.speechSynthesis.cancel();  // stop Web Speech
   setSpeakBtnState(activeSpeakBtn, false);
   activeSpeakBtn = null;
 }
