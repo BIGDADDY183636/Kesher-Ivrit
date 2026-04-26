@@ -2714,3 +2714,445 @@ document.addEventListener('click', (e) => {
   if (e.target.id === 'modal-feedback') closeFeedback();
   if (e.target.id === 'modal-streak') closeStreakModal();
 });
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ▼▼▼  HEBREW WORDLE  ▼▼▼
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Word list ─────────────────────────────────────────────────────────────
+var WORDLE_WORDS = [
+  { base:'משפחה', display:'מִשְׁפָּחָה', translit:'mishpacha', english:'family',
+    fact:'In Israeli culture, mishpacha means your entire extended clan, not just nuclear family. "Kol hamishpacha" — the whole family — is heard at every Israeli gathering!' },
+  { base:'תפילה', display:'תְּפִילָה', translit:'tefila', english:'prayer',
+    fact:'Tefila shares a root with "to judge" — prayer in Hebrew originally meant judging oneself. Jewish prayer is a conversation and self-examination, not just a request.' },
+  { base:'מנורה', display:'מְנוֹרָה', translit:'menorah', english:'menorah / candelabra',
+    fact:'The 7-branched menorah was lit in the Jerusalem Temple for over 1,000 years. The Chanukah menorah (chanukiyah) has 9 branches — a related but distinct symbol.' },
+  { base:'אמונה', display:'אֱמוּנָה', translit:'emunah', english:'faith / trust',
+    fact:'Emunah shares a root with "amen" — the word of confirmation. Both come from the root meaning firm, reliable, trustworthy. Faith in Hebrew is about reliability, not blind belief.' },
+  { base:'גבורה', display:'גְּבוּרָה', translit:'gvura', english:'heroism / strength',
+    fact:'Gevurot is one of the central blessings in the Amidah prayer. On Yom HaAtzmaut, gvura symbolizes the strength of the modern Jewish state reborn from the ashes.' },
+  { base:'עבודה', display:'עֲבוֹדָה', translit:'avoda', english:'work / worship / service',
+    fact:'Avoda means both work and worship. In Jewish thought there is no difference — the Temple service was Avodat HaMikdash, and meaningful daily work is itself a form of prayer.' },
+  { base:'זכרון', display:'זִכָּרוֹן', translit:'zikaron', english:'memory / remembrance',
+    fact:'"Zachor" (remember) appears in the Torah 169 times. Yom HaZikaron, Israel\'s Memorial Day, is the most solemn day of the national calendar — a nation that never forgets.' },
+  { base:'סליחה', display:'סְלִיחָה', translit:'slicha', english:'sorry / excuse me / forgiveness',
+    fact:'Slicha does triple duty: excuse me when passing someone, sorry when wrong, and the name of the pre-High Holiday forgiveness prayers (Selichot). One word, three essential uses!' },
+  { base:'תפארת', display:'תִּפְאֶרֶת', translit:'tiferet', english:'glory / beauty / splendor',
+    fact:'Tiferet is the sixth sefira in Kabbalah, representing balance and beauty. It sits at the heart of the Tree of Life, harmonizing divine love (chesed) and judgment (gevurah).' },
+  { base:'חברים', display:'חֲבֵרִים', translit:'chaverim', english:'friends',
+    fact:'Chaver means friend, kibbutz member, and political party member. In Talmudic times a chaver was a scholar following strict purity laws. One word, many communities.' },
+  { base:'ילדים', display:'יְלָדִים', translit:'yeladim', english:'children',
+    fact:'The root yod-lamed-dalet (to give birth) connects yeled (child), leida (birth), and yoledet (a woman who just gave birth). Same root, the full circle of life.' },
+  { base:'דברים', display:'דְּבָרִים', translit:'dvarim', english:'things / words / matters',
+    fact:'Dvarim is also the Hebrew name for Deuteronomy — the Book of Words. Because Deuteronomy is Moses\'s great final speech to the people, "the words" is the perfect name.' },
+  { base:'שירים', display:'שִׁירִים', translit:'shirim', english:'songs',
+    fact:'"Shir HaShirim" (Song of Songs) is one of the most beautiful books of the Hebrew Bible. Rabbi Akiva called it "the Holy of Holies" of all writings in the canon.' },
+  { base:'מלכים', display:'מְלָכִים', translit:'melachim', english:'kings',
+    fact:'Melachim is the Hebrew name for the Books of Kings. The root mem-lamed-kaf gives us malka (queen), mamlacha (kingdom), and the prayer Avinu Malkeinu — Our Father, Our King.' },
+  { base:'אלהים', display:'אֱלֹהִים', translit:'Elohim', english:'God',
+    fact:'Elohim is grammatically plural (the -im ending) but takes singular verbs when referring to God. This "majestic plural" is one of the great grammatical puzzles of Biblical Hebrew.' },
+  { base:'אנשים', display:'אֲנָשִׁים', translit:'anashim', english:'people / men',
+    fact:'The plural of ish (man) is completely irregular — anashim has a totally different root! Like English "person/people," Hebrew has its surprising irregularities too.' },
+  { base:'כלבים', display:'כְּלָבִים', translit:'klavim', english:'dogs',
+    fact:'Dogs in the Bible were not pets — they were working animals. Today in Israel, klavim are beloved pets, and Tel Aviv is one of the most dog-friendly cities in the world.' },
+  { base:'ברכות', display:'בְּרָכוֹת', translit:'brachot', english:'blessings',
+    fact:'Brachot is the first tractate of the Mishnah, dealing with prayers and blessings. Every Hebrew blessing begins "Baruch Atah Adonai" — blessed are You — from the same root.' },
+  { base:'שולחן', display:'שֻׁלְחָן', translit:'shulchan', english:'table',
+    fact:'The Shulchan Aruch ("Set Table") is the most authoritative code of Jewish law, written in 1563. Its name is a metaphor: Jewish law as a beautifully prepared table, ready to use.' },
+  { base:'עפרון', display:'עִפָּרוֹן', translit:'iparon', english:'pencil',
+    fact:'Iparon comes from afar (dust/earth). A pencil is literally "the dusty one" — because graphite leaves dusty marks. Hebrew often builds words from earthy, physical origins.' },
+  { base:'חשבון', display:'חֶשְׁבּוֹן', translit:'cheshbon', english:'bill / math / reckoning',
+    fact:'"Cheshbon HaNefesh" (Accounting of the Soul) is a classical Jewish book about moral self-examination. Even mathematics carries spiritual depth in the Hebrew language.' },
+  { base:'מחברת', display:'מַחְבֶּרֶת', translit:'machberet', english:'notebook',
+    fact:'Machberet comes from the root chet-bet-resh (to connect, to join). A notebook connects pages together. Same root: chaver (friend), chevra (group), and chaber (to compose a book).' },
+  { base:'מסעדה', display:'מִסְעָדָה', translit:'misada', english:'restaurant',
+    fact:'Misada comes from the root samekh-ayin-dalet meaning "to support, to sustain." A restaurant sustains you — literally and linguistically. Israeli food culture is legendary worldwide.' },
+  { base:'אנחנו', display:'אֲנַחְנוּ', translit:'anachnu', english:'we',
+    fact:'Anachnu is one of the first words immigrants learn. In fast spoken Israeli Hebrew it often shortens to just "anu" — a small window into how a living language evolves.' },
+  { base:'הלכנו', display:'הָלַכְנוּ', translit:'halakhnu', english:'we went / we walked',
+    fact:'"Halacha" (Jewish law) literally means "the way to walk." The root heh-lamed-kaf (to go, to walk) is one of the most ancient in Semitic languages — it is the path of life itself.' },
+  { base:'למדנו', display:'לָמַדְנוּ', translit:'lamadnu', english:'we learned / we studied',
+    fact:'The root lamed-mem-dalet connects lomed (student), melamed (teacher), talmid (student), and Talmud (study). In Judaism, learning is not preparation for life — it is life itself.' },
+  { base:'ראינו', display:'רָאִינוּ', translit:"ra'inu", english:'we saw',
+    fact:'The root resh-alef-heh (to see) gives us re\'ia (sight), mar\'e (appearance), and the name Re\'uven — "behold, a son!" God is sometimes called "El Ro\'i" — the God who sees me.' },
+  { base:'ישראל', display:'יִשְׂרָאֵל', translit:'Yisrael', english:'Israel',
+    fact:'"Yisrael" means "one who struggles with God." Given to Jacob after he wrestled with an angel all night and refused to let go. The name captures the Jewish relationship with the divine.' },
+  { base:'גדולה', display:'גְּדוֹלָה', translit:'gdola', english:'big / great (feminine)',
+    fact:'The root gimel-dalet-lamed gives us gadol (big), gdola (big f.), gdolim (great sages), and "Gadlu l\'Adonai iti" — Exalt God with me. Greatness has physical and spiritual dimensions.' },
+  { base:'שאלות', display:'שְׁאֵלוֹת', translit:"she'elot", english:'questions',
+    fact:'Judaism is built on questions. The Passover Seder opens with four questions. The Talmud is structured as questions and answers. "She\'elot u\'teshuvot" is the name for all rabbinic legal responsa.' },
+  { base:'מילים', display:'מִלִּים', translit:'milim', english:'words',
+    fact:'The Hebrew word mila means both "word" AND "circumcision" (brit mila) — different words, identical spelling. In Hebrew, every letter counts. Even a single vowel mark changes meaning completely.' },
+  { base:'ספרים', display:'סְפָרִים', translit:'sfarim', english:'books',
+    fact:'The root samekh-peh-resh gives sefer (book), safra (scribe), mispar (number), and sipur (story). In ancient times, sofrim (scribes) were the most important people — the keepers of all knowledge.' },
+  { base:'לבבות', display:'לְבָבוֹת', translit:'levavot', english:'hearts',
+    fact:'"V\'ahavta et Adonai Elohecha b\'chol levavcha" — Love God with all your heart. Levav in Hebrew is the seat of thought, will, and emotion — not just feeling, but the entire inner self.' },
+  { base:'נפשות', display:'נְפָשׁוֹת', translit:'nafshot', english:'souls / lives',
+    fact:'"Kol hamekayem nefesh achat..." — whoever saves a single soul, it is as if they saved an entire world (Talmud). Nefesh is not just soul — it means the whole living being, breath and all.' },
+  { base:'מצרים', display:'מִצְרַיִם', translit:'Mitzrayim', english:'Egypt',
+    fact:'Mitzrayim is related to metzar (narrow place). Egypt was the "narrow place" — and the Exodus from that narrow place (Yetziat Mitzrayim) is the central story of Jewish identity and freedom.' },
+  { base:'רימון', display:'רִמּוֹן', translit:'rimon', english:'pomegranate',
+    fact:'Tradition says a pomegranate has 613 seeds — one for each mitzvah. Torah scrolls are adorned with silver pomegranate crowns (rimonim), one of the Seven Species of the Land of Israel.' },
+  { base:'זיתים', display:'זֵיתִים', translit:'zeitim', english:'olives',
+    fact:'The olive tree is the symbol of Israel — "And the dove returned with an olive leaf." Central to Israeli cuisine and identity, some olive trees in Israel are over 1,000 years old.' },
+  { base:'שיעור', display:'שִׁיעוּר', translit:'shiur', english:'lesson / class',
+    fact:'A shiur in Jewish tradition is not just a class — it is a sacred encounter with text. Giving a shiur Torah is a mitzvah. Many Israelis attend a weekly Torah shiur well into adulthood.' },
+  { base:'דגלים', display:'דְּגָלִים', translit:'dgalim', english:'flags',
+    fact:'"Degel" (flag) appears in Numbers — each of Israel\'s twelve tribes had its own flag. The modern Israeli flag, with its blue stripes and Star of David, became one of the most recognized symbols on Earth.' },
+];
+
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+var _WL_FINALS = {'ך':'כ','ם':'מ','ן':'נ','ף':'פ','ץ':'צ'};
+
+function _wlNorm(s) {
+  return s.split('').map(function(c) {
+    var code = c.charCodeAt(0);
+    if (code >= 0x05B0 && code <= 0x05C7) return ''; // strip nikud
+    return _WL_FINALS[c] || c;
+  }).join('');
+}
+
+function _wlDateStr() {
+  var d = new Date();
+  return d.getFullYear() + '-' + (d.getMonth()+1) + '-' + d.getDate();
+}
+
+function _wlDaily() {
+  var epoch = new Date(2025, 0, 1);
+  var today = new Date(); today.setHours(0,0,0,0);
+  var day   = Math.floor((today - epoch) / 86400000);
+  return WORDLE_WORDS[((day % WORDLE_WORDS.length) + WORDLE_WORDS.length) % WORDLE_WORDS.length];
+}
+
+var _WL_KEY     = function() { return 'kesher_wordle_' + _wlDateStr(); };
+var _WL_STK_KEY = 'kesher_wordle_streak';
+
+function _wlLoadState()  { try { return JSON.parse(localStorage.getItem(_WL_KEY()))     || {guesses:[],won:false,lost:false}; } catch(e) { return {guesses:[],won:false,lost:false}; } }
+function _wlSaveState(s) { localStorage.setItem(_WL_KEY(), JSON.stringify(s)); }
+function _wlLoadStreak() { try { return JSON.parse(localStorage.getItem(_WL_STK_KEY)) || {n:0,last:null}; } catch(e) { return {n:0,last:null}; } }
+
+function _wlBumpStreak(won) {
+  var stk = _wlLoadStreak();
+  var today = _wlDateStr();
+  if (!won) { localStorage.setItem(_WL_STK_KEY, JSON.stringify(stk)); return stk; }
+  if (stk.last === today) return stk;
+  var yest = new Date(Date.now() - 86400000);
+  var yStr = yest.getFullYear()+'-'+(yest.getMonth()+1)+'-'+yest.getDate();
+  stk.n = (stk.last === yStr) ? stk.n + 1 : 1;
+  stk.last = today;
+  localStorage.setItem(_WL_STK_KEY, JSON.stringify(stk));
+  return stk;
+}
+
+// ─── Guess evaluation ─────────────────────────────────────────────────────────
+function _wlEval(guess, target) {
+  var r     = ['gray','gray','gray','gray','gray'];
+  var tUsed = [false,false,false,false,false];
+  var gUsed = [false,false,false,false,false];
+  for (var i = 0; i < 5; i++) {
+    if (guess[i] === target[i]) { r[i]='green'; tUsed[i]=true; gUsed[i]=true; }
+  }
+  for (var i = 0; i < 5; i++) {
+    if (gUsed[i]) continue;
+    for (var j = 0; j < 5; j++) {
+      if (tUsed[j]) continue;
+      if (guess[i] === target[j]) { r[i]='yellow'; tUsed[j]=true; break; }
+    }
+  }
+  return r;
+}
+
+// ─── Current-guess state ──────────────────────────────────────────────────────
+var _wlCurrent = [];
+var _wlBusy    = false;
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function _wlRenderBoard() {
+  var board = document.getElementById('wl-board');
+  if (!board) return;
+  var state  = _wlLoadState();
+  var target = _wlNorm(_wlDaily().base);
+  var html   = '';
+
+  for (var row = 0; row < 6; row++) {
+    html += '<div class="wl-row" id="wl-row-' + row + '">';
+    var guess = state.guesses[row];
+    if (guess) {
+      var g      = _wlNorm(guess);
+      var colors = _wlEval(g, target);
+      for (var col = 0; col < 5; col++) {
+        html += '<div class="wl-tile wl-' + colors[col] + ' wl-filled" style="animation-delay:' + (col*0.12) + 's">' + guess[col] + '</div>';
+      }
+    } else if (row === state.guesses.length && !state.won && !state.lost) {
+      for (var col = 0; col < 5; col++) {
+        var letter = _wlCurrent[col] || '';
+        html += '<div class="wl-tile' + (letter ? ' wl-active' : '') + '">' + letter + '</div>';
+      }
+    } else {
+      for (var col = 0; col < 5; col++) {
+        html += '<div class="wl-tile"></div>';
+      }
+    }
+    html += '</div>';
+  }
+  board.innerHTML = html;
+}
+
+function _wlKeyColors() {
+  var state  = _wlLoadState();
+  var target = _wlNorm(_wlDaily().base);
+  var pri    = {green:3,yellow:2,gray:1};
+  var colors = {};
+  state.guesses.forEach(function(guess) {
+    var g  = _wlNorm(guess);
+    var rs = _wlEval(g, target);
+    for (var i = 0; i < 5; i++) {
+      var letter = _WL_FINALS[g[i]] || g[i];
+      if (!colors[letter] || pri[rs[i]] > pri[colors[letter]]) colors[letter] = rs[i];
+    }
+  });
+  return colors;
+}
+
+function _wlRenderKeyboard() {
+  var kb = document.getElementById('wl-keyboard');
+  if (!kb) return;
+  var colors = _wlKeyColors();
+  var rows = [
+    ['א','ב','ג','ד','ה','ו','ז','ח','ט'],
+    ['י','כ','ל','מ','נ','ס','ע','פ','צ'],
+    ['ק','ר','ש','ת'],
+    ['ך','ם','ן','ף','ץ'],
+    ['ENTER','⌫'],
+  ];
+  var html = '';
+  rows.forEach(function(row) {
+    html += '<div class="wl-kb-row">';
+    row.forEach(function(k) {
+      var norm  = _WL_FINALS[k] || k;
+      var cls   = colors[norm] ? ' wl-key-' + colors[norm] : '';
+      var wide  = (k === 'ENTER' || k === '⌫') ? ' wl-key-wide' : '';
+      var fn    = k === 'ENTER' ? 'wordleSubmit()' : k === '⌫' ? 'wordleBack()' : "wordleType('" + k + "')";
+      html += '<button class="wl-key' + cls + wide + '" onclick="' + fn + '">' + k + '</button>';
+    });
+    html += '</div>';
+  });
+  kb.innerHTML = html;
+}
+
+function _wlShowMsg(msg, color) {
+  var el = document.getElementById('wl-msg');
+  if (!el) return;
+  el.textContent = msg;
+  el.style.color = color || '#ffffff';
+  clearTimeout(el._t);
+  if (msg) el._t = setTimeout(function(){ el.textContent = ''; }, 2200);
+}
+
+var _WL_WIN_MSGS = ['Metzuyan! 🎉','WALLA! Perfect!','Sababa! 🌟','Kol HaKavod! 🇮🇱','Yesss!','Just in time!'];
+
+function _wlShowResult(won) {
+  var word = _wlDaily();
+  var el   = document.getElementById('wl-result');
+  if (!el) return;
+  var stk  = _wlLoadStreak();
+  el.innerHTML =
+    '<div class="wl-res-word">' + word.display + '</div>' +
+    '<div class="wl-res-translit">' + escapeHtml(word.translit) + '</div>' +
+    '<div class="wl-res-english">' + escapeHtml(word.english) + '</div>' +
+    '<div class="wl-res-fact">' + escapeHtml(word.fact) + '</div>' +
+    (won
+      ? '<div class="wl-res-streak">🔥 Wordle streak: ' + stk.n + ' day' + (stk.n===1?'':'s') + '</div>'
+      : '<div class="wl-res-lost">Come back tomorrow for a new word!</div>'
+    ) +
+    '<button class="wl-share-btn" onclick="wordleShare()">📤 Share Result</button>';
+  el.style.display = 'block';
+}
+
+// ─── Input ────────────────────────────────────────────────────────────────────
+function wordleType(letter) {
+  if (_wlBusy) return;
+  var state = _wlLoadState();
+  if (state.won || state.lost) return;
+  if (_wlCurrent.length >= 5) return;
+  _wlCurrent.push(letter);
+  _wlRenderBoard();
+}
+
+function wordleBack() {
+  if (_wlBusy) return;
+  var state = _wlLoadState();
+  if (state.won || state.lost) return;
+  if (_wlCurrent.length === 0) return;
+  _wlCurrent.pop();
+  _wlRenderBoard();
+}
+
+function wordleSubmit() {
+  if (_wlBusy) return;
+  var state = _wlLoadState();
+  if (state.won || state.lost) return;
+  if (_wlCurrent.length < 5) {
+    _wlShakeRow(state.guesses.length);
+    _wlShowMsg('Need 5 letters!');
+    return;
+  }
+
+  var guess  = _wlCurrent.join('');
+  var gNorm  = _wlNorm(guess);
+  var target = _wlNorm(_wlDaily().base);
+  var colors = _wlEval(gNorm, target);
+  var won    = colors.every(function(c){ return c === 'green'; });
+
+  state.guesses.push(guess);
+  if (won) state.won = true;
+  if (!won && state.guesses.length === 6) state.lost = true;
+  _wlSaveState(state);
+  _wlCurrent = [];
+
+  _wlBusy = true;
+  var rowIdx = state.guesses.length - 1;
+  _wlFlipRow(rowIdx, guess, colors, function() {
+    _wlBusy = false;
+    _wlRenderKeyboard();
+    if (won) {
+      _wlBumpStreak(true);
+      _wlUpdateStreakBadge();
+      _wlShowMsg(_WL_WIN_MSGS[Math.min(rowIdx, _WL_WIN_MSGS.length-1)], '#6aaa64');
+      setTimeout(function() { _wlBounceRow(rowIdx); _wlShowResult(true); }, 400);
+    } else if (state.lost) {
+      _wlShowMsg('The word was: ' + _wlDaily().display, '#ff6b6b');
+      setTimeout(function() { _wlShowResult(false); }, 900);
+    }
+  });
+}
+
+// ─── Animations ───────────────────────────────────────────────────────────────
+function _wlFlipRow(rowIdx, guess, colors, onDone) {
+  var row = document.getElementById('wl-row-' + rowIdx);
+  if (!row) { onDone(); return; }
+  var tiles = row.querySelectorAll('.wl-tile');
+  for (var col = 0; col < 5; col++) {
+    (function(c, tile) {
+      setTimeout(function() {
+        tile.classList.add('wl-flipping');
+        setTimeout(function() {
+          tile.classList.remove('wl-flipping');
+          tile.classList.add('wl-' + colors[c], 'wl-filled');
+          tile.textContent = guess[c];
+          if (c === 4) setTimeout(onDone, 80);
+        }, 240);
+      }, c * 300);
+    })(col, tiles[col]);
+  }
+}
+
+function _wlBounceRow(rowIdx) {
+  var row = document.getElementById('wl-row-' + rowIdx);
+  if (!row) return;
+  row.querySelectorAll('.wl-tile').forEach(function(t, i) {
+    setTimeout(function() { t.classList.add('wl-bounce'); }, i * 100);
+  });
+}
+
+function _wlShakeRow(rowIdx) {
+  var row = document.getElementById('wl-row-' + rowIdx);
+  if (!row) return;
+  row.classList.add('wl-shake');
+  setTimeout(function() { row.classList.remove('wl-shake'); }, 600);
+}
+
+// ─── Streak badge & card button ───────────────────────────────────────────────
+function _wlUpdateStreakBadge() {
+  var badge = document.getElementById('wl-streak-badge');
+  if (badge) badge.textContent = '🔥 ' + _wlLoadStreak().n;
+}
+
+function _wlUpdateCardBtn() {
+  var state = _wlLoadState();
+  var btn   = document.getElementById('wordle-card-btn');
+  if (!btn) return;
+  if (state.won)       { btn.textContent = 'Played Today ✓'; btn.style.background = '#538d4e'; btn.style.color = '#fff'; }
+  else if (state.lost) { btn.textContent = 'See Result'; }
+}
+
+// ─── Physical keyboard ────────────────────────────────────────────────────────
+var _wlKbHandler = null;
+function _wlAttachKb() {
+  _wlKbHandler = function(e) {
+    var overlay = document.getElementById('wordle-overlay');
+    if (!overlay || !overlay.classList.contains('wl-visible')) return;
+    var key = e.key;
+    if (/^[א-תװ-״]$/.test(key)) { wordleType(key); return; }
+    if (key === 'Backspace') { e.preventDefault(); wordleBack(); return; }
+    if (key === 'Enter')     { wordleSubmit(); return; }
+  };
+  document.addEventListener('keydown', _wlKbHandler);
+}
+function _wlDetachKb() {
+  if (_wlKbHandler) { document.removeEventListener('keydown', _wlKbHandler); _wlKbHandler = null; }
+}
+
+// ─── Share ────────────────────────────────────────────────────────────────────
+function wordleShare() {
+  var state  = _wlLoadState();
+  var target = _wlNorm(_wlDaily().base);
+  var EMO    = {green:'🟩',yellow:'🟨',gray:'⬛'};
+  var grid   = state.guesses.map(function(g) {
+    return _wlEval(_wlNorm(g), target).map(function(c){ return EMO[c]; }).join('');
+  }).join('\n');
+  var result = state.won ? state.guesses.length + '/6' : 'X/6';
+  var text   = 'Hebrew Wordle ' + _wlDateStr() + ' ' + result + '\n\n' + grid + '\n\nkesher-ivrit.vercel.app';
+  function copied() { showToast('Copied! Share with your class 🎉'); }
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); copied(); } catch(ex) {}
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(copied).catch(fallback);
+  else fallback();
+}
+
+// ─── Show / Hide ──────────────────────────────────────────────────────────────
+function showWordleGame() {
+  var el = document.getElementById('wordle-overlay');
+  if (!el) return;
+  _wlCurrent = [];
+  _wlBusy    = false;
+  el.classList.remove('wl-gone');
+  el.classList.add('wl-visible');
+  var wlResult = document.getElementById('wl-result');
+  if (wlResult) wlResult.style.display = 'none';
+  document.getElementById('wl-msg').textContent = '';
+  _wlUpdateStreakBadge();
+  _wlRenderBoard();
+  _wlRenderKeyboard();
+  var state = _wlLoadState();
+  if (state.won || state.lost) _wlShowResult(state.won);
+  _wlAttachKb();
+}
+
+function hideWordleGame() {
+  var el = document.getElementById('wordle-overlay');
+  if (!el) return;
+  el.classList.remove('wl-visible');
+  el.classList.add('wl-gone');
+  _wlDetachKb();
+  _wlUpdateCardBtn();
+}
+
+// Patch switchTab to refresh card button when Games tab opens
+(function() {
+  var origSwitch = window.switchTab;
+  if (typeof origSwitch === 'function') {
+    window.switchTab = function(tab) {
+      origSwitch.call(this, tab);
+      if (tab === 'games') setTimeout(_wlUpdateCardBtn, 50);
+    };
+  }
+})();
+
+// ▲▲▲  END HEBREW WORDLE  ▲▲▲

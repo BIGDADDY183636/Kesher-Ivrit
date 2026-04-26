@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=13" />
+  <link rel="stylesheet" href="style.css?v=14" />
 </head>
 <body>
 
@@ -325,6 +325,34 @@
         <div class="mob-game-desc">60 seconds · 10 words · how many can you get?</div>
         <div class="mob-game-btn">Play Now!</div>
       </button>
+      <button class="mob-game-card" onclick="showWordleGame()">
+        <div class="mob-game-icon">🟩</div>
+        <div class="mob-game-title">Hebrew Wordle</div>
+        <div class="mob-game-desc">Guess today's 5-letter Hebrew word in 6 tries. New word every day!</div>
+        <div class="mob-game-btn" id="wordle-card-btn">Play Today!</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ WORDLE OVERLAY ═══ -->
+  <div id="wordle-overlay" class="wordle-overlay wl-gone">
+    <div class="wordle-screen">
+      <div class="wl-header">
+        <div class="wl-header-left">
+          <div class="wl-title">🟩 עברית-ל</div>
+          <div class="wl-subtitle">Hebrew Wordle · Daily Word</div>
+        </div>
+        <div class="wl-header-right">
+          <div class="wl-streak-badge" id="wl-streak-badge">🔥 0</div>
+          <button class="wl-close-btn" onclick="hideWordleGame()">✕</button>
+        </div>
+      </div>
+      <div class="wl-body">
+        <div class="wl-board" id="wl-board"></div>
+        <div class="wl-msg" id="wl-msg"></div>
+        <div class="wl-result" id="wl-result" style="display:none"></div>
+      </div>
+      <div class="wl-keyboard" id="wl-keyboard"></div>
     </div>
   </div>
 
@@ -560,7 +588,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=18"></script>
+<script src="app.js?v=19"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">

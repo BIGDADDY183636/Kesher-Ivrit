@@ -2673,3 +2673,145 @@ body {
 }
 @keyframes lb-spin { to { transform: rotate(360deg); } }
 .lb-loading-text { font-size: 0.88rem; color: var(--text-light); }
+
+/* ═══════════════════════════════════════════════════════
+   HEBREW WORDLE
+═══════════════════════════════════════════════════════ */
+.wordle-overlay {
+  position: fixed; inset: 0; z-index: 2300;
+  background: #121213;
+  display: flex; flex-direction: column;
+  transition: opacity 0.22s, transform 0.22s;
+}
+.wl-gone    { opacity: 0; pointer-events: none; transform: translateY(30px); }
+.wl-visible { opacity: 1; pointer-events: all;  transform: translateY(0); }
+
+.wordle-screen { display: flex; flex-direction: column; height: 100%; overflow: hidden; }
+
+/* Header */
+.wl-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 13px 16px; flex-shrink: 0;
+  background: linear-gradient(135deg, #1a6b1a, #2d8a2d);
+  border-bottom: 1px solid #1a1a1b;
+}
+.wl-header-left { display: flex; flex-direction: column; }
+.wl-title    { font-size: 1.15rem; font-weight: 800; color: #fff; letter-spacing: 0.02em; }
+.wl-subtitle { font-size: 0.7rem; color: rgba(255,255,255,0.7); margin-top: 1px; }
+.wl-header-right { display: flex; align-items: center; gap: 10px; }
+.wl-streak-badge {
+  font-size: 0.85rem; font-weight: 700; color: #fff;
+  background: rgba(255,255,255,0.15); padding: 4px 10px; border-radius: 20px;
+}
+.wl-close-btn {
+  width: 34px; height: 34px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.35); background: rgba(255,255,255,0.1);
+  color: #fff; font-size: 0.95rem; font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Body */
+.wl-body {
+  flex: 1; display: flex; flex-direction: column; align-items: center;
+  justify-content: flex-start; padding: 16px 12px 8px; gap: 10px; overflow-y: auto;
+}
+
+/* Board */
+.wl-board { display: flex; flex-direction: column; gap: 5px; direction: rtl; }
+.wl-row   { display: flex; flex-direction: row; gap: 5px; }
+
+/* Tiles */
+.wl-tile {
+  width: 58px; height: 58px; border: 2px solid #3a3a3c;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.75rem; font-weight: 800; font-family: var(--font-heb);
+  color: #fff; border-radius: 4px; user-select: none;
+  transition: border-color 0.05s;
+}
+@media (max-height: 720px) {
+  .wl-tile { width: 50px; height: 50px; font-size: 1.5rem; }
+}
+@media (max-height: 620px) {
+  .wl-tile { width: 42px; height: 42px; font-size: 1.25rem; }
+}
+.wl-tile.wl-active { border-color: #999; transform: scale(1.05); transition: transform 0.08s; }
+.wl-tile.wl-filled { border-color: transparent; }
+.wl-tile.wl-green  { background: #538d4e; border-color: #538d4e; }
+.wl-tile.wl-yellow { background: #b59f3b; border-color: #b59f3b; }
+.wl-tile.wl-gray   { background: #3a3a3c; border-color: #3a3a3c; }
+
+/* Flip reveal */
+.wl-tile.wl-flipping { animation: wl-flip 0.48s ease-in-out; }
+@keyframes wl-flip {
+  0%   { transform: rotateX(0deg); }
+  49%  { transform: rotateX(-90deg); }
+  50%  { transform: rotateX(-90deg); }
+  100% { transform: rotateX(0deg); }
+}
+
+/* Bounce (win) */
+.wl-tile.wl-bounce { animation: wl-bounce 0.6s cubic-bezier(0.36,0.07,0.19,0.97) forwards; }
+@keyframes wl-bounce {
+  0%   { transform: translateY(0); }
+  35%  { transform: translateY(-22px); }
+  65%  { transform: translateY(-11px); }
+  85%  { transform: translateY(-16px); }
+  100% { transform: translateY(0); }
+}
+
+/* Shake (invalid) */
+.wl-row.wl-shake { animation: wl-shake 0.55s ease; }
+@keyframes wl-shake {
+  0%,100% { transform: translateX(0); }
+  15%,55% { transform: translateX(-5px); }
+  35%,75% { transform: translateX(5px); }
+}
+
+/* Message */
+.wl-msg { font-size: 0.88rem; font-weight: 700; min-height: 22px; text-align: center; }
+
+/* Result card */
+.wl-result {
+  background: #1a1a1b; border: 1px solid #3a3a3c; border-radius: 16px;
+  padding: 16px 18px; text-align: center; width: 100%; max-width: 340px;
+}
+.wl-res-word    { font-size: 2.1rem; font-family: var(--font-heb); color: #6aaa64; margin-bottom: 2px; direction: rtl; }
+.wl-res-translit{ font-size: 0.82rem; color: #888; margin-bottom: 2px; }
+.wl-res-english { font-size: 1.05rem; font-weight: 700; color: #e0e0e0; margin-bottom: 8px; }
+.wl-res-fact    { font-size: 0.78rem; color: #aaa; line-height: 1.55; border-top: 1px solid #2a2a2b; padding-top: 8px; margin-top: 4px; }
+.wl-res-streak  { font-size: 0.85rem; color: #e0a000; font-weight: 700; margin-top: 8px; }
+.wl-res-lost    { font-size: 0.82rem; color: #888; margin-top: 8px; }
+.wl-share-btn {
+  margin-top: 12px; width: 100%; padding: 11px; border: none; border-radius: 10px;
+  background: #538d4e; color: #fff; font-size: 0.9rem; font-weight: 700;
+  cursor: pointer; font-family: var(--font-eng);
+  -webkit-tap-highlight-color: transparent; transition: opacity 0.15s;
+}
+.wl-share-btn:active { opacity: 0.8; }
+
+/* Keyboard */
+.wl-keyboard {
+  padding: 8px 6px 10px; background: #1a1a1b;
+  border-top: 1px solid #2a2a2b; flex-shrink: 0;
+}
+.wl-kb-row { display: flex; justify-content: center; gap: 4px; margin-bottom: 5px; flex-wrap: wrap; }
+.wl-key {
+  height: 50px; min-width: 36px; padding: 0 5px;
+  border-radius: 6px; border: none;
+  background: #818384; color: #fff;
+  font-size: 1.25rem; font-family: var(--font-heb); font-weight: 700;
+  cursor: pointer; display: flex; align-items: center; justify-content: center;
+  -webkit-tap-highlight-color: transparent; transition: background 0.12s;
+}
+@media (max-width: 380px) {
+  .wl-key { min-width: 30px; height: 44px; font-size: 1.1rem; }
+}
+.wl-key-wide  { min-width: 58px; font-size: 0.8rem; font-family: var(--font-eng); }
+.wl-key-green  { background: #538d4e; }
+.wl-key-yellow { background: #b59f3b; }
+.wl-key-gray   { background: #3a3a3c; }
+.wl-key:active { opacity: 0.75; }
+
+/* Wordle game card tweak */
+#wordle-card-btn { transition: background 0.3s, color 0.3s; }
