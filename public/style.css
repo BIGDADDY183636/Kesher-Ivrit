@@ -307,6 +307,205 @@ body {
 .btn-reset:hover { color: rgba(255,255,255,0.8); }
 
 /* ═══════════════════════════════════
+   REGISTRATION SCREEN
+═══════════════════════════════════ */
+#screen-register {
+  background: linear-gradient(160deg, #0038B8 0%, #1B5EE0 40%, #4A90D9 100%);
+  align-items: center;
+  justify-content: center;
+  position: relative;
+}
+
+.reg-bg {
+  width: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 80px 24px;
+  position: relative;
+}
+
+.reg-card {
+  position: relative;
+  z-index: 2;
+}
+
+.reg-header-sub {
+  color: rgba(255,255,255,0.8);
+  font-size: 0.85rem;
+  font-weight: 500;
+}
+
+.reg-body {
+  padding: 32px 28px 28px;
+}
+
+.reg-hero {
+  text-align: center;
+  margin-bottom: 28px;
+}
+
+.reg-star {
+  font-size: 3rem;
+  color: var(--gold);
+  margin-bottom: 10px;
+  display: block;
+  filter: drop-shadow(0 2px 8px rgba(212,160,23,0.4));
+}
+
+.reg-title {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  margin-bottom: 8px;
+}
+
+.reg-sub {
+  font-size: 0.9rem;
+  color: var(--text-mid);
+  line-height: 1.5;
+  max-width: 360px;
+  margin: 0 auto;
+}
+
+.reg-fields {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  margin-bottom: 20px;
+}
+
+.reg-row {
+  display: flex;
+  gap: 12px;
+}
+
+.reg-field {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  flex: 1;
+}
+
+.reg-field-narrow {
+  flex: 0 0 80px;
+}
+
+.reg-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-mid);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.reg-input {
+  width: 100%;
+  margin: 0 !important;
+}
+
+.reg-input-initial {
+  text-align: center;
+  font-size: 1.4rem !important;
+  font-weight: 700 !important;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+}
+
+.reg-error {
+  background: #FFF0F0;
+  border: 1px solid #E74C3C;
+  border-radius: 8px;
+  padding: 10px 14px;
+  font-size: 0.85rem;
+  color: var(--danger);
+  margin-bottom: 14px;
+}
+
+.reg-submit {
+  width: 100%;
+}
+
+/* ─── HOME SCREEN USER BADGE ──────────────────────────── */
+.home-user-badge {
+  position: absolute;
+  top: 90px;
+  right: 24px;
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  background: rgba(255,255,255,0.18);
+  border: 1px solid rgba(255,255,255,0.4);
+  border-radius: 50px;
+  padding: 8px 16px 8px 10px;
+  backdrop-filter: blur(8px);
+  cursor: default;
+}
+
+.hub-avatar {
+  font-size: 1.4rem;
+  line-height: 1;
+}
+
+.hub-info {
+  display: flex;
+  flex-direction: column;
+  gap: 1px;
+}
+
+.hub-name {
+  font-size: 0.88rem;
+  font-weight: 700;
+  color: var(--white);
+  line-height: 1.2;
+}
+
+.hub-school {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.75);
+  line-height: 1.2;
+}
+
+/* ─── LESSON SCREEN USER BADGE ────────────────────────── */
+.lesson-user-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: var(--blue-pale);
+  border: 1px solid var(--border);
+  border-radius: 50px;
+  padding: 6px 14px 6px 8px;
+}
+
+.lub-avatar {
+  font-size: 1.2rem;
+  line-height: 1;
+}
+
+.lub-info {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.lub-name {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--blue-deep);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+.lub-school {
+  font-size: 0.68rem;
+  color: var(--text-light);
+  line-height: 1.2;
+  white-space: nowrap;
+}
+
+/* ═══════════════════════════════════
    QUIZ SCREEN
 ═══════════════════════════════════ */
 #screen-quiz {

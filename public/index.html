@@ -12,10 +12,67 @@
 <body>
 
 <!-- ═══════════════════════════════════════════
+     SCREEN 0: REGISTRATION
+═══════════════════════════════════════════ -->
+<div id="screen-register" class="screen">
+  <div class="reg-bg">
+    <div class="stars-bg"></div>
+    <div class="flag-stripe top"></div>
+    <div class="quiz-container reg-card">
+      <div class="quiz-header">
+        <div class="quiz-logo">קשר עברית</div>
+        <div class="reg-header-sub">Create Your Account</div>
+      </div>
+      <div class="reg-body">
+        <div class="reg-hero">
+          <div class="reg-star">✡</div>
+          <h2 class="reg-title">Welcome to Kesher Ivrit!</h2>
+          <p class="reg-sub">Create your learner account to track progress, join the leaderboard, and connect with classmates.</p>
+        </div>
+        <div class="reg-fields">
+          <div class="reg-row">
+            <div class="reg-field">
+              <label class="reg-label">First Name</label>
+              <input type="text" id="reg-firstname" class="quiz-name-input reg-input"
+                placeholder="e.g. Rivka" maxlength="40"
+                onkeydown="if(event.key==='Enter') document.getElementById('reg-lastinitial').focus()" />
+            </div>
+            <div class="reg-field reg-field-narrow">
+              <label class="reg-label">Last Initial</label>
+              <input type="text" id="reg-lastinitial" class="quiz-name-input reg-input reg-input-initial"
+                placeholder="K" maxlength="1"
+                onkeydown="if(event.key==='Enter') document.getElementById('reg-school').focus()" />
+            </div>
+          </div>
+          <div class="reg-field">
+            <label class="reg-label">School Name</label>
+            <input type="text" id="reg-school" class="quiz-name-input reg-input"
+              placeholder="e.g. Beit Rabban Day School" maxlength="80"
+              onkeydown="if(event.key==='Enter') submitRegistration()" />
+          </div>
+        </div>
+        <div id="reg-error" class="reg-error" style="display:none;"></div>
+        <button class="btn-quiz-next reg-submit" onclick="submitRegistration()">
+          Join — <span class="heb-small">הִצְטָרֵף!</span>
+        </button>
+      </div>
+    </div>
+    <div class="flag-stripe bottom"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
      SCREEN 1: HOME
 ═══════════════════════════════════════════ -->
 <div id="screen-home" class="screen active">
   <div class="stars-bg"></div>
+  <div id="home-user-badge" class="home-user-badge" style="display:none;">
+    <span class="hub-avatar" id="hub-avatar">👤</span>
+    <div class="hub-info">
+      <div class="hub-name" id="hub-name"></div>
+      <div class="hub-school" id="hub-school"></div>
+    </div>
+  </div>
   <div class="home-container">
     <div class="flag-stripe top"></div>
     <div class="home-hero">
@@ -148,6 +205,7 @@
       </div>
 
       <div class="sidebar-actions">
+        <button class="btn-sidebar btn-lesson-path" onclick="showCurriculumMap()">🗺️ Lesson Path</button>
         <button class="btn-sidebar" onclick="showNotebook()">📓 My Notebook</button>
         <button class="btn-sidebar" onclick="showFeedback()">📝 Feedback</button>
         <button class="btn-sidebar btn-secondary" onclick="goHome()">🏠 Home</button>
@@ -165,6 +223,13 @@
           </div>
         </div>
         <div class="chat-header-actions">
+          <div id="lesson-user-badge" class="lesson-user-badge" style="display:none;">
+            <span class="lub-avatar" id="lub-avatar">👤</span>
+            <div class="lub-info">
+              <div class="lub-name" id="lub-name"></div>
+              <div class="lub-school" id="lub-school"></div>
+            </div>
+          </div>
           <select id="topic-select" class="topic-select" onchange="selectTopic(this.value)">
             <option value="Greetings">Greetings</option>
             <option value="Verbs">Verbs</option>
@@ -173,6 +238,7 @@
             <option value="Adjectives">Adjectives</option>
             <option value="Numbers">Numbers</option>
           </select>
+          <button class="btn-lesson-path-header" onclick="showCurriculumMap()" title="Lesson Path">🗺️ Lesson Path</button>
           <button class="btn-speed-round" onclick="startSpeedRound()" title="Speed Round">⚡ Speed Round</button>
           <button class="btn-icon" onclick="newLesson()" title="New Lesson">🔄 Restart</button>
         </div>
@@ -387,6 +453,24 @@
 </div>
 
 <div id="toast" class="toast" style="display:none;"></div>
+
+<!-- CURRICULUM MAP PANEL -->
+<div id="curriculum-panel" class="curriculum-panel" style="display:none;">
+  <div class="curriculum-header">
+    <div class="curriculum-title-row">
+      <span class="curriculum-icon">🗺️</span>
+      <div>
+        <div class="curriculum-name">Lesson Path</div>
+        <div class="curriculum-sub">Your Hebrew Journey — <span class="heb-small">מַסְלוּל הַלִּמּוּד</span></div>
+      </div>
+    </div>
+    <button class="curriculum-close" onclick="closeCurriculumMap()">✕</button>
+  </div>
+  <div class="curriculum-body" id="curriculum-body">
+    <!-- rendered by JS -->
+  </div>
+</div>
+<div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
 <script src="app.js"></script>
 </body>

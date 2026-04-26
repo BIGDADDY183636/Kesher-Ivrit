@@ -1,4 +1,4 @@
-/* ═══════════════════════════════════════════════════════════
+﻿/* ═══════════════════════════════════════════════════════════
    KESHER IVRIT — Frontend App
    קשר עברית
 ═══════════════════════════════════════════════════════════ */
@@ -35,6 +35,10 @@ let state = {
     lastLessonDate: null,
     lessonsCompleted: 0,
     feedbackGiven: 0
+  },
+  curriculumProgress: {
+    completedLessons: [],
+    currentLesson: null
   },
   currentQuizStep: 0,
   quizAnswers: {},
@@ -199,12 +203,96 @@ function renderWordOfDay() {
   card.style.display = 'block';
 }
 
-// ─── INIT ─────────────────────────────────────────────────
-document.addEventListener('DOMContentLoaded', async () => {
-  loadProgress();
+// ─── USER ACCOUNT (registration, separate from learning profile) ─────────────
+let currentUser = null; // { firstName, lastInitial, school, joinedAt }
+
+function loadUser() {
+  try {
+    const saved = localStorage.getItem('kesher_user');
+    if (saved) currentUser = JSON.parse(saved);
+  } catch (e) { currentUser = null; }
+}
+
+function saveUser() {
+  if (currentUser) localStorage.setItem('kesher_user', JSON.stringify(currentUser));
+}
+
+function submitRegistration() {
+  const firstName   = (document.getElementById('reg-firstname').value   || '').trim();
+  const lastInitial = (document.getElementById('reg-lastinitial').value || '').trim().toUpperCase();
+  const school      = (document.getElementById('reg-school').value      || '').trim();
+  const errEl = document.getElementById('reg-error');
+
+  if (!firstName) {
+    errEl.textContent = 'Please enter your first name.';
+    errEl.style.display = 'block';
+    document.getElementById('reg-firstname').focus();
+    return;
+  }
+  if (!lastInitial || !/^[A-Za-z]$/.test(lastInitial)) {
+    errEl.textContent = 'Last initial must be a single letter.';
+    errEl.style.display = 'block';
+    document.getElementById('reg-lastinitial').focus();
+    return;
+  }
+  if (!school) {
+    errEl.textContent = 'Please enter your school name.';
+    errEl.style.display = 'block';
+    document.getElementById('reg-school').focus();
+    return;
+  }
+
+  errEl.style.display = 'none';
+  currentUser = { firstName, lastInitial, school, joinedAt: Date.now() };
+  saveUser();
+  updateUserBadges();
+  showScreen('screen-home');
   renderWordOfDay();
   checkReturningUser();
-  await checkApiKey();
+  checkApiKey();
+}
+
+function updateUserBadges() {
+  if (!currentUser) return;
+  const displayName = `${currentUser.firstName} ${currentUser.lastInitial}.`;
+
+  // Home screen badge
+  const homeBadge = document.getElementById('home-user-badge');
+  if (homeBadge) {
+    document.getElementById('hub-name').textContent   = displayName;
+    document.getElementById('hub-school').textContent = currentUser.school;
+    const lvl = state.userProfile ? state.userProfile.level : null;
+    const avatarMap = { complete_beginner:'🌱', some_exposure:'🌿', basic:'🌳', intermediate:'⭐', advanced:'🔥' };
+    document.getElementById('hub-avatar').textContent = avatarMap[lvl] || '👤';
+    homeBadge.style.display = 'flex';
+  }
+
+  // Lesson screen badge
+  const lessonBadge = document.getElementById('lesson-user-badge');
+  if (lessonBadge) {
+    document.getElementById('lub-name').textContent   = displayName;
+    document.getElementById('lub-school').textContent = currentUser.school;
+    const lvl = state.userProfile ? state.userProfile.level : null;
+    const avatarMap = { complete_beginner:'🌱', some_exposure:'🌿', basic:'🌳', intermediate:'⭐', advanced:'🔥' };
+    document.getElementById('lub-avatar').textContent = avatarMap[lvl] || '👤';
+    lessonBadge.style.display = 'flex';
+  }
+}
+
+// ─── INIT ─────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', async () => {
+  loadUser();
+  loadProgress();
+  renderWordOfDay();
+
+  if (!currentUser) {
+    showScreen('screen-register');
+    setTimeout(() => document.getElementById('reg-firstname').focus(), 100);
+  } else {
+    updateUserBadges();
+    checkReturningUser();
+    await checkApiKey();
+  }
 });
 
 function loadProgress() {
@@ -222,6 +310,10 @@ function loadProgress() {
     if (msgs) {
       state.messages = JSON.parse(msgs);
     }
+    const curr = localStorage.getItem('kesher_curriculum');
+    if (curr) {
+      state.curriculumProgress = JSON.parse(curr);
+    }
   } catch (e) {
     console.warn('Could not load saved progress:', e);
   }
@@ -234,10 +326,10 @@ function saveProgress() {
       localStorage.setItem('kesher_profile', JSON.stringify(state.userProfile));
     }
     if (state.messages.length) {
-      // Only save last 30 messages to avoid bloat
       const recent = state.messages.slice(-30);
       localStorage.setItem('kesher_messages', JSON.stringify(recent));
     }
+    localStorage.setItem('kesher_curriculum', JSON.stringify(state.curriculumProgress));
   } catch (e) {
     console.warn('Could not save progress:', e);
   }
@@ -319,12 +411,17 @@ function showScreen(id) {
 function startOnboarding() {
   state.currentQuizStep = 0;
   state.quizAnswers = {};
+  // Pre-fill name from registration
+  if (currentUser) {
+    state.quizAnswers.name = `${currentUser.firstName} ${currentUser.lastInitial}.`;
+  }
   showScreen('screen-quiz');
   renderQuizStep();
 }
 
 function goHome() {
   showScreen('screen-home');
+  updateUserBadges();
   checkReturningUser();
 }
 
@@ -332,6 +429,7 @@ function continueLearning() {
   if (!state.userProfile) return;
   showScreen('screen-lesson');
   setupLessonScreen();
+  updateUserBadges();
   if (state.messages.length === 0) {
     startLesson();
   } else {
@@ -344,16 +442,21 @@ function resetProgress() {
   localStorage.removeItem('kesher_progress');
   localStorage.removeItem('kesher_profile');
   localStorage.removeItem('kesher_messages');
+  localStorage.removeItem('kesher_user');
+  currentUser = null;
   state = {
     userProfile: null,
     messages: [],
     progress: { points: 0, wordsLearned: [], streak: 0, lastLessonDate: null, lessonsCompleted: 0, feedbackGiven: 0 },
+    curriculumProgress: { completedLessons: [], currentLesson: null },
     currentQuizStep: 0,
     quizAnswers: {},
     feedbackRating: 0
   };
   document.getElementById('returning-user-section').style.display = 'none';
   showToast('Progress cleared. Time for a fresh start! חָדָשׁ!');
+  showScreen('screen-register');
+  setTimeout(() => document.getElementById('reg-firstname').focus(), 100);
 }
 
 // ─── QUIZ ─────────────────────────────────────────────────
@@ -442,6 +545,7 @@ function finishQuiz() {
   showToast(`Shalom, ${state.userProfile.name}! Let's learn! 🇮🇱`);
   showScreen('screen-lesson');
   setupLessonScreen();
+  updateUserBadges();
   startLesson();
 }
 
@@ -715,261 +819,204 @@ function autoScroll() {
   }
 }
 
-// ─── TEXT TO SPEECH (Web Speech API) ─────────────────────
-const msgContentMap = {};
-let msgCounter = 0;
-let activeSpeakBtn = null;
-let ttsActive = false;
+// ═══════════════════════════════════════════════════════════════════════
+// ▼▼▼  CANONICAL VOICE ENGINE — DO NOT MODIFY OR DUPLICATE  ▼▼▼
+//
+//  ALL speech synthesis goes through speakText(rawText, btn).
+//  No other code may call SpeechSynthesisUtterance directly.
+//  No other code may call window.speechSynthesis.speak() directly.
+//  To speak something: speakText(yourText)
+//  To speak a stored message: speakMessage(msgId)   ← thin wrapper only
+//
+// ═══════════════════════════════════════════════════════════════════════
 
-// Load voices early — Chrome populates them async
-let voices = [];
-function loadVoices() { voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : []; }
+// ── State ──────────────────────────────────────────────────────────────
+const msgContentMap = {};
+let msgCounter    = 0;
+let activeSpeakBtn = null;
+let ttsActive      = false;
+
+// ── Voice loading ───────────────────────────────────────────────────────
+// Chrome populates the voice list async; poll to get it early.
+let _voices = [];
+function _loadVoices() {
+  _voices = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+}
 if (window.speechSynthesis) {
-  window.speechSynthesis.onvoiceschanged = loadVoices;
-  setTimeout(loadVoices, 200);
-  setTimeout(loadVoices, 1500);
+  window.speechSynthesis.onvoiceschanged = _loadVoices;
+  setTimeout(_loadVoices, 200);
+  setTimeout(_loadVoices, 1500);
 }
 
-// All known female voice name fragments across Chrome, Edge, Safari, Firefox
-var FEMALE_NAMES = [
+// ── Voice selection ─────────────────────────────────────────────────────
+var _FEMALE = [
   'female','samantha','karen','victoria','moira','fiona','tessa','veena',
   'allison','ava','susan','zira','hazel','eva','emily','sara','linda',
   'joanna','salli','kimberly','kendra','ivy','ruth','helena','alice',
   'amelie','anna','carmit','damayanti','ioana','kyoko','laura','lekha',
   'luciana','maged','mariska','mei-jia','melina','milena','nora','paulina',
   'sin-ji','soledad','tamar','ting-ting','zosia','google uk english female',
-  'microsoft zira','microsoft hazel','microsoft helena','google us english'
+  'microsoft zira','microsoft hazel','microsoft helena'
 ];
-
-function isFemale(v) {
+function _isFemale(v) {
   var n = v.name.toLowerCase();
-  for (var k = 0; k < FEMALE_NAMES.length; k++) {
-    if (n.indexOf(FEMALE_NAMES[k]) !== -1) return true;
-  }
+  for (var k = 0; k < _FEMALE.length; k++) { if (n.indexOf(_FEMALE[k]) !== -1) return true; }
   return false;
 }
-
-// Pick best Hebrew voice
-function pickHebrewVoice() {
-  if (!voices.length) loadVoices();
-  var i;
-  for (i = 0; i < voices.length; i++) { if (voices[i].lang === 'he-IL' && isFemale(voices[i])) return voices[i]; }
-  for (i = 0; i < voices.length; i++) { if (voices[i].lang === 'he-IL') return voices[i]; }
-  for (i = 0; i < voices.length; i++) { if (voices[i].lang.indexOf('he') === 0) return voices[i]; }
+function _heVoice() {
+  if (!_voices.length) _loadVoices();
+  for (var i = 0; i < _voices.length; i++) { if (_voices[i].lang === 'he-IL' && _isFemale(_voices[i])) return _voices[i]; }
+  for (var i = 0; i < _voices.length; i++) { if (_voices[i].lang === 'he-IL') return _voices[i]; }
+  for (var i = 0; i < _voices.length; i++) { if (_voices[i].lang.startsWith('he')) return _voices[i]; }
   return null;
 }
-
-// Pick best female English voice
-function pickEnglishVoice() {
-  if (!voices.length) loadVoices();
-  var i;
-  for (i = 0; i < voices.length; i++) { if (voices[i].name === 'Google UK English Female') return voices[i]; }
-  for (i = 0; i < voices.length; i++) { if (voices[i].name === 'Samantha') return voices[i]; }
-  for (i = 0; i < voices.length; i++) { if (voices[i].lang === 'en-GB' && isFemale(voices[i])) return voices[i]; }
-  for (i = 0; i < voices.length; i++) { if (voices[i].lang === 'en-US' && isFemale(voices[i])) return voices[i]; }
-  for (i = 0; i < voices.length; i++) { if (voices[i].lang.indexOf('en') === 0 && isFemale(voices[i])) return voices[i]; }
-  for (i = 0; i < voices.length; i++) { if (voices[i].lang === 'en-US') return voices[i]; }
-  return voices[0] || null;
+function _enVoice() {
+  if (!_voices.length) _loadVoices();
+  for (var i = 0; i < _voices.length; i++) { if (_voices[i].name === 'Google UK English Female') return _voices[i]; }
+  for (var i = 0; i < _voices.length; i++) { if (_voices[i].lang === 'en-GB' && _isFemale(_voices[i])) return _voices[i]; }
+  for (var i = 0; i < _voices.length; i++) { if (_voices[i].lang === 'en-GB') return _voices[i]; }
+  for (var i = 0; i < _voices.length; i++) { if (_voices[i].name === 'Samantha') return _voices[i]; }
+  for (var i = 0; i < _voices.length; i++) { if (_voices[i].lang === 'en-US' && _isFemale(_voices[i])) return _voices[i]; }
+  for (var i = 0; i < _voices.length; i++) { if (_voices[i].lang.startsWith('en') && _isFemale(_voices[i])) return _voices[i]; }
+  for (var i = 0; i < _voices.length; i++) { if (_voices[i].lang === 'en-US') return _voices[i]; }
+  return _voices[0] || null;
 }
 
-// Returns true if sentence contains significant Hebrew text (>20% Hebrew chars)
-function isHebrewText(s) {
-  var heCount = (s.match(/[֐-׿]/g) || []).length;
-  return heCount > 0 && heCount / s.length > 0.2;
-}
+// ── Pronunciation dictionary ────────────────────────────────────────────
+// Applied to Latin (transliteration) segments only — never to Hebrew script.
+var _PHONETICS = {
+  'shalom':'sha-LOME',        'todah':'to-DAH',           'todah rabah':'to-DAH ra-BAH',
+  'bevakasha':'be-va-ka-SHAH','lehitraot':'le-hit-ra-OHT', 'boker tov':'BOH-ker tov',
+  'erev tov':'EH-rev tov',    'laila tov':'LYE-la tov',   'shabbat shalom':'sha-BAT sha-LOME',
+  'ani':'ah-NEE',  'ata':'ah-TAH',  'at':'aht',  'hu':'hoo',  'hi':'hee',
+  'anachnu':'ah-NAKH-noo',    'atem':'ah-TEM',  'ken':'kehn',  'lo':'loh',
+  'sababa':'sa-BA-ba',        'yalla':'YAH-la',   'walla':'WAH-la',  'stam':'stahm',
+  'nu':'noo',  'achi':'ah-KHEE',  'ahoti':'ah-HOH-tee',  'davka':'DAV-ka',
+  'yoffi':'YOF-ee',           'kol hakavod':'kohl ha-ka-VODE',
+  'metzuyan':'me-tzoo-YAN',   'beseder':'be-SEH-der',
+  'mayim':'MA-yim',    'lechem':'LEH-khem',   'bayit':'BA-yit',    'yom':'yome',
+  'lailah':'LYE-la',   'mishpakhah':'mish-pa-KHAH',  'ahavah':'a-ha-VAH',
+  'eretz':'EH-rets',   'shamayim':'sha-MA-yim', 'sefer':'SEH-fer',  'ir':'eer',
+  'nefesh':'NEH-fesh', 'ruakh':'ROO-akh',       'lev':'lehv',       'emunah':'e-moo-NAH',
+  'emet':'EH-met',     'khesed':'KHEH-sed',     'kavod':'ka-VODE',  'tzedek':'TZEH-dek',
+  'mitzvah':'mitz-VAH','kavanah':'ka-va-NAH',   'bereshit':'be-re-SHEET',
+  'tov':'tove',  'ra':'rah',    'gadol':'ga-DOLE',  'katan':'ka-TAN',
+  'yafeh':'ya-FEH',  'yafah':'ya-FAH',  'kashuv':'ka-SHOOV',  'kashe':'KA-she',  'maher':'ma-HEHR',
+  'larutz':'la-ROOTS',   'ledaber':'le-da-BEHR',  'lakhshov':'lakh-SHOHV',
+  'lehavin':'le-ha-VEEN','likhtov':'likh-TOVE',   'likro':'likh-ROH',  'lalechet':'la-LEH-khet',
+  'halakhti':'ha-lakh-TEE','halakhta':'ha-LAKH-ta','halekhu':'ha-lekh-OO',
+  'halkha':'hal-KHAH',   'yelekh':'ye-LEKH',      'diber':'dee-BEHR',
+  'hevin':'he-VEEN',     'katav':'ka-TAV',         'ratz':'rahtz',
+  'etmol':'et-MOLE',  'makhar':'ma-KHAR',  'akhshav':'akh-SHAHV',  'hayom':'ha-YOME',
+  'binyan':'bin-YAN', 'avar':'a-VAR',      'atid':'a-TEED',        'hove':'HOH-veh',
+  'paal':'pa-AHL',    'piiel':'pee-EL',    'hifil':'hee-FEEL',
+};
+var _PHON_KEYS = Object.keys(_PHONETICS).sort(function(a,b){ return b.length - a.length; });
 
-// Strip all markdown, emojis, and symbols — leave only spoken words and punctuation
-function cleanForSpeech(raw) {
+// ── Internal helpers ────────────────────────────────────────────────────
+
+function _cleanText(raw) {
   return raw
+    // Remove app-specific tags and metadata
     .replace(/\[TEACH\]|\[\/TEACH\]/g, '')
     .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
+    .replace(/\[RESULT:[^\]]*\]/g, '')
     .replace(/📚 WORDS LEARNED:[\s\S]*/g, '')
-    .replace(/\*/g, '')
+    // Strip markdown formatting
+    .replace(/\*+/g, '')
     .replace(/[#`~_>|\\]/g, '')
+    // Strip all emoji ranges
     .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
     .replace(/[\u{2600}-\u{27BF}]/gu, '')
     .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')
-    .replace(/—/g, '.')
+    .replace(/[\u{FE00}-\u{FEFF}]/gu, '')
+    // Normalise dashes and convert sentence-enders so segmentation keeps pauses
+    // but TTS never receives a raw ? or ! to mispronounce
+    .replace(/[—–]/g, ', ')
+    .replace(/[?!]+/g, '.')
+    // Strip all other punctuation TTS might read aloud
+    .replace(/[;:"'()\[\]{}…«»]/g, ' ')
     .replace(/\s+/g, ' ')
     .trim();
 }
 
-// ── HEBREW PRONUNCIATION FIXES ────────────────────────────
-// Applied to non-Hebrew (transliteration / English) segments only.
-// Dictionary: common transliterations → phonetic spelling with stressed syllable in CAPS.
-// Hyphens create micro-pauses that guide the TTS engine toward correct syllabification.
-var HEBREW_PHONETICS = {
-  // Greetings & social
-  'shalom':        'sha-LOME',
-  'todah':         'to-DAH',
-  'todah rabah':   'to-DAH ra-BAH',
-  'bevakasha':     'be-va-ka-SHAH',
-  'lehitraot':     'le-hit-ra-OHT',
-  'boker tov':     'BOH-ker tov',
-  'erev tov':      'EH-rev tov',
-  'laila tov':     'LYE-la tov',
-  'shabbat shalom':'sha-BAT sha-LOME',
-  // Pronouns & basic words
-  'ani':    'ah-NEE',
-  'ata':    'ah-TAH',
-  'at':     'aht',
-  'hu':     'hoo',
-  'hi':     'hee',
-  'anachnu':'ah-NAKH-noo',
-  'atem':   'ah-TEM',
-  'ken':    'kehn',
-  'lo':     'loh',
-  // Slang & expressions
-  'sababa':       'sa-BA-ba',
-  'yalla':        'YAH-la',
-  'walla':        'WAH-la',
-  'stam':         'stahm',
-  'nu':           'noo',
-  'achi':         'ah-KHEE',
-  'ahoti':        'ah-HOH-tee',
-  'davka':        'DAV-ka',
-  'yoffi':        'YOF-ee',
-  'kol hakavod':  'kohl ha-ka-VODE',
-  'metzuyan':     'me-tzoo-YAN',
-  'beseder':      'be-SEH-der',
-  // Common nouns
-  'mayim':      'MA-yim',
-  'lechem':     'LEH-khem',
-  'bayit':      'BA-yit',
-  'yom':        'yome',
-  'lailah':     'LYE-la',
-  'mishpakhah': 'mish-pa-KHAH',
-  'ahavah':     'a-ha-VAH',
-  'eretz':      'EH-rets',
-  'shamayim':   'sha-MA-yim',
-  'sefer':      'SEH-fer',
-  'ir':         'eer',
-  'nefesh':     'NEH-fesh',
-  'ruakh':      'ROO-akh',
-  'lev':        'lehv',
-  'emunah':     'e-moo-NAH',
-  'emet':       'EH-met',
-  'khesed':     'KHEH-sed',
-  'kavod':      'ka-VODE',
-  'tzedek':     'TZEH-dek',
-  'mitzvah':    'mitz-VAH',
-  'kavanah':    'ka-va-NAH',
-  'bereshit':   'be-re-SHEET',
-  // Adjectives
-  'tov':    'tove',
-  'ra':     'rah',
-  'gadol':  'ga-DOLE',
-  'katan':  'ka-TAN',
-  'yafeh':  'ya-FEH',
-  'yafah':  'ya-FAH',
-  'kashuv': 'ka-SHOOV',
-  'kashe':  'KA-she',
-  'maher':  'ma-HEHR',
-  // Verbs (infinitives)
-  'larutz':    'la-ROOTS',
-  'ledaber':   'le-da-BEHR',
-  'lakhshov':  'lakh-SHOHV',
-  'lehavin':   'le-ha-VEEN',
-  'likhtov':   'likh-TOVE',
-  'likro':     'likh-ROH',
-  'lalechet':  'la-LEH-khet',
-  // Past tense conjugations
-  'halakhti':  'ha-lakh-TEE',
-  'halakhta':  'ha-LAKH-ta',
-  'halekhu':   'ha-lekh-OO',
-  'halkha':    'hal-KHAH',
-  'yelekh':    'ye-LEKH',
-  'diber':     'dee-BEHR',
-  'hevin':     'he-VEEN',
-  'katav':     'ka-TAV',
-  'ratz':      'rahtz',
-  // Time words
-  'etmol':   'et-MOLE',
-  'makhar':  'ma-KHAR',
-  'akhshav': 'akh-SHAHV',
-  'hayom':   'ha-YOME',
-  // Grammar terms
-  'binyan':  'bin-YAN',
-  'avar':    'a-VAR',
-  'atid':    'a-TEED',
-  'hove':    'HOH-veh',
-  'paal':    'pa-AHL',
-  'piiel':   'pee-EL',
-  'hifil':   'hee-FEEL',
-};
-
-// Sort by length descending so longer phrases match before their sub-words
-var _SR_KEYS = Object.keys(HEBREW_PHONETICS).sort(function(a,b){ return b.length - a.length; });
-
-function fixHebrewPronunciation(text) {
-  var result = text;
-
-  // 1. Apply word/phrase-level phonetic dictionary (case-insensitive)
-  _SR_KEYS.forEach(function(word) {
-    var re = new RegExp('(?<![\\w-])' + word.replace(/[-]/g,'\\-') + '(?![\\w-])', 'gi');
-    result = result.replace(re, HEBREW_PHONETICS[word]);
+function _fixPronunciation(text) {
+  var r = text;
+  // Dictionary substitutions (longest match first)
+  _PHON_KEYS.forEach(function(w) {
+    var re = new RegExp('(?<![\\w-])' + w.replace(/[-]/g,'\\-') + '(?![\\w-])', 'gi');
+    r = r.replace(re, _PHONETICS[w]);
   });
-
-  // 2. Generic consonant fixes for anything not caught by the dictionary
-  result = result
-    .replace(/\bch/gi, 'kh')         // chet/khaf: challah→khallah
-    .replace(/tz/gi, 'ts')           // tzadik: clearer as "ts" for TTS engines
-    .replace(/\bkh/gi, 'kh');        // khaf: already correct, keep
-
-  // 3. Vowel guidance — help TTS with Hebrew vowel sounds
-  // "a" in transliterations → "ah" (as in father) at word ends
-  result = result.replace(/ah\b/g, 'ah');
-  // diphthong "ai" → "eye" (as in Sinai)
-  result = result.replace(/\bai\b/gi, 'eye');
-  // "ei" at word end → "ay" (adonei → adonay)
-  result = result.replace(/ei\b/gi, 'ay');
-  // "oo" stays "oo" (already correct for moon)
-
-  return result;
+  // Guttural chet/khaf: χ (Greek chi U+03C7) for velar-fricative approximation.
+  // To try h-bar instead: replace 'χ' with 'ħ' (U+0127) on the next line only.
+  r = r.replace(/kh|ch/gi, 'χ');
+  // Tzadik
+  r = r.replace(/tz/gi, 'ts');
+  // Vowel shaping
+  r = r.replace(/\bai\b/gi, 'eye');
+  r = r.replace(/ei\b/gi, 'ay');
+  return r;
 }
 
-// Build a flat list of speech segments from cleaned text.
-// Splits at sentence boundaries AND within each sentence at Hebrew/English boundaries.
-// Every Hebrew run gets isHebrew:true so it's routed to the he-IL voice.
-function buildSpeechSegments(text) {
-  // Step 1: split into sentences for natural pauses
-  var sentenceList = text.replace(/([.!?])\s+/g, '$1\n').split('\n')
-    .map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 1; });
+// Character-level scanner: splits a string into alternating Hebrew / Latin runs.
+// Hebrew Unicode block U+0590–U+05FF plus presentation forms U+FB1D–U+FB4F.
+// Every Hebrew character is captured — nothing is skipped.
+function _segmentRuns(text) {
+  var runs = [], cur = '', curHeb = null;
+  for (var i = 0; i < text.length; i++) {
+    var c = text.charCodeAt(i);
+    var isHeb = (c >= 0x0590 && c <= 0x05FF) || (c >= 0xFB1D && c <= 0xFB4F);
+    if (curHeb === null) curHeb = isHeb;
+    if (isHeb !== curHeb) {
+      if (cur.trim()) runs.push({ text: cur, isHebrew: curHeb });
+      cur = ''; curHeb = isHeb;
+    }
+    cur += text[i];
+  }
+  if (cur.trim()) runs.push({ text: cur, isHebrew: curHeb });
+  return runs;
+}
+
+// Build the final ordered list of utterance segments with pause durations.
+function _buildSegments(cleanedText) {
+  // Split at sentence and clause boundaries to get natural pauses.
+  var chunks = cleanedText
+    .replace(/([.])\s+/g, '$1\n')
+    .replace(/,\s+/g, ',\n')
+    .split('\n')
+    .map(function(s) { return s.trim(); })
+    .filter(function(s) { return s.length > 0; });
 
   var segments = [];
-
-  sentenceList.forEach(function(sentence, si) {
-    var isLastSentence = (si === sentenceList.length - 1);
-
-    // Step 2: within each sentence, split at Hebrew character runs
-    // Regex captures any consecutive Hebrew letters + nikud + cantillation marks
-    var parts = sentence.split(/([֐-׿יִ-ﭏ]+)/g);
-
-    var nonEmpty = parts.filter(function(p) { return p.trim().length > 0; });
-    nonEmpty.forEach(function(part, pi) {
-      var isHebrew = /[א-תְ-ׇ]/.test(part);
-      var spoken   = isHebrew ? part.trim() : fixHebrewPronunciation(part.trim());
+  chunks.forEach(function(chunk) {
+    var gap = /[.]$/.test(chunk) ? 300 : /,$/.test(chunk) ? 200 : 250;
+    var runs = _segmentRuns(chunk);
+    runs.forEach(function(run, ri) {
+      // Apply pronunciation fixes to Latin runs; pass Hebrew script through unchanged.
+      var spoken = run.isHebrew
+        ? run.text.trim()
+        : _fixPronunciation(run.text.trim());
+      // Strip any residual punctuation from the utterance string itself.
+      spoken = spoken.replace(/[.,!?;:'"()\[\]{}…«»]+/g, ' ').replace(/\s+/g, ' ').trim();
       if (!spoken) return;
-
-      var isLastPart = (pi === nonEmpty.length - 1);
       segments.push({
         text:       spoken,
-        isHebrew:   isHebrew,
-        // 300ms after the last segment of a sentence, 70ms between segments in same sentence
-        pauseAfter: isLastPart ? 300 : 70
+        isHebrew:   run.isHebrew,
+        pauseAfter: (ri === runs.length - 1) ? gap : 250,
       });
     });
   });
-
   return segments;
 }
 
+// ── Button state helper ─────────────────────────────────────────────────
 function setSpeakBtnState(btn, active) {
   if (!btn) return;
   btn.innerHTML = active ? '⏹ <span>Stop</span>' : '🔊 <span>Hear Morah</span>';
   btn.classList.toggle('speaking', active);
 }
 
+// ── Stop any in-progress speech ─────────────────────────────────────────
 function stopSpeech() {
   ttsActive = false;
   if (window.speechSynthesis) window.speechSynthesis.cancel();
@@ -977,56 +1024,75 @@ function stopSpeech() {
   activeSpeakBtn = null;
 }
 
-function speakMessage(msgId) {
+// ── ▼▼▼  speakText — THE ONLY ENTRY POINT FOR SPEECH  ▼▼▼ ──────────────
+//
+//   speakText(rawText)         — speak text, no button toggle
+//   speakText(rawText, btn)    — speak text, toggle btn state
+//
+//   Rules:
+//   • Calls nothing except internal _helpers above and window.speechSynthesis.
+//   • Every Hebrew character reaches the he-IL voice. No skipping.
+//   • Every Latin character reaches the en-GB voice with pronunciation fixes.
+//   • rate 0.85 · pitch 1.1 · 250 ms between segments.
+//
+function speakText(rawText, btn) {
   if (!window.speechSynthesis) return;
+  if (!rawText || !rawText.trim()) return;
 
-  var btn = document.querySelector('[data-speak-id="' + msgId + '"]');
-  var raw = msgContentMap[msgId];
-  if (!raw) return;
+  // Toggle off if already speaking from the same button.
+  if (ttsActive) {
+    stopSpeech();
+    if (btn && btn === activeSpeakBtn) return;  // same button → just stop
+  }
 
-  if (ttsActive) { stopSpeech(); return; }
-
-  var clean = cleanForSpeech(raw);
+  var clean = _cleanText(rawText);
   if (!clean) return;
 
-  var segments = buildSpeechSegments(clean);
+  var segments = _buildSegments(clean);
   if (!segments.length) return;
 
-  ttsActive = true;
-  activeSpeakBtn = btn;
+  ttsActive      = true;
+  activeSpeakBtn = btn || null;
   setSpeakBtnState(btn, true);
 
-  var heVoice = pickHebrewVoice();
-  var enVoice = pickEnglishVoice();
+  var heV = _heVoice();
+  var enV = _enVoice();
   var idx = 0;
 
   function next() {
     if (!ttsActive || idx >= segments.length) {
       ttsActive = false;
-      setSpeakBtnState(btn, false);
+      setSpeakBtnState(activeSpeakBtn, false);
       activeSpeakBtn = null;
       return;
     }
     var seg = segments[idx++];
-    var voice = seg.isHebrew ? (heVoice || enVoice) : enVoice;
+    var voice = seg.isHebrew ? (heV || enV) : enV;
 
     var u = new SpeechSynthesisUtterance(seg.text);
     if (voice) { u.voice = voice; u.lang = voice.lang; }
-    else        { u.lang = seg.isHebrew ? 'he-IL' : 'en-US'; }
-    u.rate   = 0.82;
-    u.pitch  = 1.15;
+    else        { u.lang  = seg.isHebrew ? 'he-IL' : 'en-GB'; }
+    u.rate   = 0.85;
+    u.pitch  = 1.1;
     u.volume = 1.0;
     u.onend  = function() { setTimeout(next, seg.pauseAfter); };
     u.onerror = function(e) {
-      if (e.error !== 'interrupted') console.warn('TTS:', e.error);
+      if (e.error !== 'interrupted') console.warn('TTS error:', e.error, seg.text);
       ttsActive = false;
-      setSpeakBtnState(btn, false);
+      setSpeakBtnState(activeSpeakBtn, false);
       activeSpeakBtn = null;
     };
     window.speechSynthesis.speak(u);
   }
 
   next();
+}
+// ▲▲▲  END speakText — DO NOT ADD SPEECH CALLS OUTSIDE THIS BLOCK  ▲▲▲
+
+// ── Thin wrappers (do not put logic here) ──────────────────────────────
+function speakMessage(msgId) {
+  var btn = document.querySelector('[data-speak-id="' + msgId + '"]');
+  speakText(msgContentMap[msgId] || '', btn);
 }
 
 // ─── CHALLENGE STORE ─────────────────────────────────────
@@ -1159,14 +1225,9 @@ function renderMultipleChoice(cId, c, container) {
     </div>
     <div class="challenge-feedback" id="cf-${cId}"></div>`;
 
-  // Auto-speak the Hebrew word so students hear it
-  if (hebMatch && window.speechSynthesis) {
-    const utter = new SpeechSynthesisUtterance(hebMatch[0].trim());
-    utter.lang = 'he-IL';
-    const heVoice = window.speechSynthesis.getVoices().find(v => v.lang.startsWith('he'));
-    if (heVoice) utter.voice = heVoice;
-    utter.rate = 0.8;
-    setTimeout(() => window.speechSynthesis.speak(utter), 400);
+  // Auto-speak the Hebrew word through the canonical speakText() — no direct utterances.
+  if (hebMatch) {
+    setTimeout(() => speakText(hebMatch[0].trim()), 400);
   }
 }
 
@@ -1979,6 +2040,180 @@ function renderNotebook(query) {
     html += '</div></div>';
   });
   body.innerHTML = html;
+}
+
+// ─── CURRICULUM MAP ──────────────────────────────────────
+const CURRICULUM = [
+  {
+    id: 'unit1',
+    title: 'Unit 1: The Basics',
+    titleHeb: 'יְסוֹדוֹת',
+    levelReq: 0,
+    color: '#2E8B57',
+    lessons: [
+      { id: 'u1l1', title: 'The Aleph-Bet',   icon: '🔤', prompt: 'Teach me the Hebrew alphabet — the Aleph-Bet. Start with the first several letters, their names, and how to recognize and write them. Make it fun and visual.' },
+      { id: 'u1l2', title: 'Greetings',        icon: '👋', prompt: 'Teach me essential Hebrew greetings: shalom, boker tov, erev tov, lailah tov, lehitraot, and how to say "how are you" and "what\'s up" in Israeli Hebrew.' },
+      { id: 'u1l3', title: 'Numbers 1–10',     icon: '🔢', prompt: 'Teach me Hebrew numbers 1 through 10. Include both masculine and feminine forms, and how to use them in simple phrases.' },
+      { id: 'u1l4', title: 'Colors',            icon: '🎨', prompt: 'Teach me Hebrew color words: red, blue, white, black, green, yellow, orange, and pink. Show me how adjectives match gender in Hebrew.' },
+      { id: 'u1l5', title: 'Family Words',      icon: '👨‍👩‍👧', prompt: 'Teach me Hebrew family vocabulary: ima, aba, akh, akhot, saba, savta, ben, bat, dod, dodah. Use fun example sentences.' },
+    ]
+  },
+  {
+    id: 'unit2',
+    title: 'Unit 2: Building Sentences',
+    titleHeb: 'מִשְׁפָּטִים',
+    levelReq: 2,
+    color: '#1B5EE0',
+    lessons: [
+      { id: 'u2l1', title: 'Present Tense',    icon: '⚡', prompt: 'Teach me how to conjugate verbs in the Hebrew present tense (hove). Cover holekh/holekhet, medaber/medaberet, akhel/okhelet, roeh/roah for all pronouns.' },
+      { id: 'u2l2', title: 'Food & Drink',     icon: '🥙', prompt: 'Teach me Hebrew words for common food and drink: lechem, mayim, shoko, tapuakh, falafel, hummus, gvina, basar, dag. Include how to order food in a restaurant.' },
+      { id: 'u2l3', title: 'Days & Months',    icon: '📅', prompt: 'Teach me the Hebrew days of the week (yom rishon through shabbat) and the Hebrew months. Include how to say today, yesterday, and tomorrow.' },
+      { id: 'u2l4', title: 'At Home',          icon: '🏠', prompt: 'Teach me Hebrew vocabulary for rooms and objects in a house: bayit, kheder, mitbakh, shulkhan, kise, mita, delet, khalon, ambatya.' },
+      { id: 'u2l5', title: 'Asking Questions', icon: '❓', prompt: 'Teach me how to form questions in Hebrew: ma (what), mi (who), eifoh (where), matai (when), lamah (why), eikh (how), kama (how much/many).' },
+    ]
+  },
+  {
+    id: 'unit3',
+    title: 'Unit 3: Real Conversation',
+    titleHeb: 'שִׂיחָה אֲמִיתִּית',
+    levelReq: 3,
+    color: '#8B4513',
+    lessons: [
+      { id: 'u3l1', title: 'Past Tense',       icon: '⏪', prompt: 'Teach me Hebrew past tense (avar). How to conjugate pa\'al binyan verbs in the past for all pronouns: ani, atah/at, hu/hi, anakhnu, atem/aten, hem/hen.' },
+      { id: 'u3l2', title: 'Future Tense',     icon: '⏩', prompt: 'Teach me Hebrew future tense (atid). How to conjugate pa\'al binyan verbs in the future for all pronouns. Compare with past and present forms.' },
+      { id: 'u3l3', title: 'Adjectives',       icon: '🌟', prompt: 'Teach me common Hebrew adjectives and the rule that they must agree with nouns in gender and number. Cover: gadol/gdolah, katan/ktanah, tov/tovah, yafeh/yafah, etc.' },
+      { id: 'u3l4', title: 'Work & School',    icon: '💼', prompt: 'Teach me Hebrew vocabulary for work and school: misrad, beit sefer, moreh/morah, talmid/talmidah, avoda, boss, khalash, makhshev, telefon.' },
+      { id: 'u3l5', title: 'Israeli Slang',    icon: '😎', prompt: 'Teach me authentic Israeli slang that\'s used every day: sababa, yalla, walla, stam, nu, al hapanim, davka, achi/ahoti, b\'seder, chill, chai b\'seret.' },
+    ]
+  },
+  {
+    id: 'unit4',
+    title: 'Unit 4: Advanced Hebrew',
+    titleHeb: 'עִבְרִית מִתְקַדֶּמֶת',
+    levelReq: 4,
+    color: '#6B0AC9',
+    lessons: [
+      { id: 'u4l1', title: 'The Binyanim',     icon: '🏗️', prompt: 'Teach me the seven Hebrew binyanim (verb patterns): pa\'al, nif\'al, pi\'el, pu\'al, hif\'il, huf\'al, hitpa\'el. Show the pattern and give 2 examples for each.' },
+      { id: 'u4l2', title: 'Hebrew Idioms',    icon: '💡', prompt: 'Teach me authentic Hebrew idioms and expressions that Israelis actually use: al ha\'lev, b\'kef, dai, lama lo, kvar, kacha kacha, ein mah la\'asot.' },
+      { id: 'u4l3', title: 'Complex Grammar',  icon: '📜', prompt: 'Teach me complex Hebrew sentence structures: relative clauses with she-, conditional sentences with im...az, passive voice, and the construct state (smichut).' },
+      { id: 'u4l4', title: 'Biblical Hebrew',  icon: '📖', prompt: 'Teach me the key differences between Biblical Hebrew (lashon hakodesh) and modern Israeli Hebrew. Cover key Torah vocabulary and how ancient roots appear in modern words.' },
+      { id: 'u4l5', title: 'Mastery Challenge',icon: '🏆', prompt: 'Give me a comprehensive mastery challenge covering all levels of Hebrew: vocabulary from all categories, grammar patterns, a short reading comprehension, and a conversation exercise.' },
+    ]
+  }
+];
+
+const LEVEL_ORDER = ['complete_beginner', 'some_exposure', 'basic', 'intermediate', 'advanced'];
+
+function showCurriculumMap() {
+  renderCurriculumMap();
+  document.getElementById('curriculum-panel').style.display = 'flex';
+  document.getElementById('curriculum-overlay').style.display = 'block';
+}
+
+function closeCurriculumMap() {
+  document.getElementById('curriculum-panel').style.display = 'none';
+  document.getElementById('curriculum-overlay').style.display = 'none';
+}
+
+function renderCurriculumMap() {
+  const cp = state.curriculumProgress;
+  const level = (state.userProfile && state.userProfile.level) || 'complete_beginner';
+  const userLevelIdx = LEVEL_ORDER.indexOf(level);
+
+  let html = '<div class="curriculum-map">';
+
+  CURRICULUM.forEach(function(unit, unitIdx) {
+    const unitUnlocked = userLevelIdx >= unit.levelReq;
+    const completedCount = unit.lessons.filter(l => cp.completedLessons.includes(l.id)).length;
+    const unitClass = unitUnlocked ? '' : 'cm-unit-locked';
+
+    html += `<div class="cm-unit ${unitClass}">`;
+    html += `<div class="cm-unit-header" style="background:${unit.color}">
+      <div class="cm-unit-num">${unitIdx + 1}</div>
+      <div class="cm-unit-info">
+        <div class="cm-unit-title">${unitUnlocked ? unit.title : '🔒 ' + unit.title}</div>
+        <div class="cm-unit-heb">${unit.titleHeb}</div>
+      </div>
+      <div class="cm-unit-badge">${completedCount}/${unit.lessons.length}</div>
+    </div>`;
+
+    html += '<div class="cm-lessons-list">';
+
+    unit.lessons.forEach(function(lesson, lessonIdx) {
+      const isCompleted = cp.completedLessons.includes(lesson.id);
+      const isCurrent   = cp.currentLesson === lesson.id;
+      const prevDone    = lessonIdx === 0 || cp.completedLessons.includes(unit.lessons[lessonIdx - 1].id);
+      const isAvailable = unitUnlocked && (isCompleted || isCurrent || prevDone);
+      const isLocked    = !isAvailable;
+
+      const stateClass = isLocked ? 'cm-locked' : (isCompleted ? 'cm-completed' : (isCurrent ? 'cm-current' : 'cm-available'));
+      const clickAttr  = isLocked ? '' : `onclick="startCurriculumLesson('${lesson.id}')"`;
+
+      let iconHtml, statusText;
+      if (isLocked)    { iconHtml = '🔒'; statusText = 'Complete the previous lesson to unlock'; }
+      else if (isCompleted) { iconHtml = '✓'; statusText = 'Completed — tap to review'; }
+      else if (isCurrent)   { iconHtml = lesson.icon; statusText = 'In Progress'; }
+      else                  { iconHtml = lesson.icon; statusText = 'Tap to start'; }
+
+      html += `<div class="cm-lesson-row ${stateClass}" ${clickAttr}>
+        <div class="cm-lesson-circle" style="${unitUnlocked && !isLocked ? '--unit-color:' + unit.color : ''}">${iconHtml}</div>
+        <div class="cm-lesson-info">
+          <div class="cm-lesson-name">${lesson.title}</div>
+          <div class="cm-lesson-status">${statusText}</div>
+        </div>
+        ${isCurrent ? '<div class="cm-current-tag">Current</div>' : ''}
+        ${!isLocked ? '<div class="cm-lesson-arrow">›</div>' : ''}
+      </div>`;
+
+      if (lessonIdx < unit.lessons.length - 1) {
+        html += `<div class="cm-path-line ${isCompleted ? 'cm-path-done' : ''}"></div>`;
+      }
+    });
+
+    html += '</div></div>';
+  });
+
+  html += '</div>';
+  document.getElementById('curriculum-body').innerHTML = html;
+}
+
+function startCurriculumLesson(lessonId) {
+  let lesson = null;
+  for (const unit of CURRICULUM) {
+    for (const l of unit.lessons) {
+      if (l.id === lessonId) { lesson = l; break; }
+    }
+    if (lesson) break;
+  }
+  if (!lesson) return;
+
+  const cp = state.curriculumProgress;
+  const prev = cp.currentLesson;
+  if (prev && prev !== lessonId && !cp.completedLessons.includes(prev)) {
+    cp.completedLessons.push(prev);
+  }
+  cp.currentLesson = lessonId;
+
+  if (state.userProfile) {
+    state.userProfile.lessonContext = lesson.title + ': ' + lesson.prompt;
+  }
+
+  closeCurriculumMap();
+  saveProgress();
+
+  state.messages = [];
+  state.session = {
+    wordsThisSession: [],
+    skipList: [],
+    consecutiveCorrect: 0,
+    consecutiveWrong: 0,
+    totalCorrect: 0,
+    totalWrong: 0
+  };
+
+  renderAllMessages();
+  showToast(lesson.icon + ' Starting: ' + lesson.title);
+  startLesson();
 }
 
 // ─── VOCABULARY TOOLTIPS ─────────────────────────────────
