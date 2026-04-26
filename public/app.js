@@ -1343,37 +1343,106 @@ function toggleMicLang() {
 }
 
 // ─── SPEED ROUND ─────────────────────────────────────────
-const SR_POOL = [
-  { hebrew:'שָׁלוֹם', transliteration:'shalom',   english:'peace / hello' },
-  { hebrew:'תּוֹדָה', transliteration:'todah',    english:'thank you' },
-  { hebrew:'כֵּן',    transliteration:'ken',      english:'yes' },
-  { hebrew:'לֹא',    transliteration:'lo',       english:'no' },
-  { hebrew:'מַיִם',  transliteration:'mayim',    english:'water' },
-  { hebrew:'לֶחֶם',  transliteration:'lechem',   english:'bread' },
-  { hebrew:'בַּיִת',  transliteration:'bayit',    english:'house' },
-  { hebrew:'יוֹם',   transliteration:'yom',      english:'day' },
-  { hebrew:'לַיְלָה', transliteration:'lailah',  english:'night' },
-  { hebrew:'טוֹב',   transliteration:'tov',      english:'good' },
-  { hebrew:'גָּדוֹל', transliteration:'gadol',   english:'big' },
-  { hebrew:'קָטָן',  transliteration:'katan',    english:'small' },
-  { hebrew:'אֶחָד',  transliteration:'echad',    english:'one' },
-  { hebrew:'הָלַךְ', transliteration:'halakh',   english:'went / walked' },
-  { hebrew:'אָכַל',  transliteration:'akhal',    english:'ate' },
-  { hebrew:'אֲנִי',  transliteration:'ani',      english:'I / me' },
-  { hebrew:'אַתָּה',  transliteration:'ata',      english:'you (m)' },
-  { hebrew:'הוּא',   transliteration:'hu',       english:'he' },
-  { hebrew:'הִיא',   transliteration:'hi',       english:'she' },
-  { hebrew:'יִשְׂרָאֵל', transliteration:'Yisrael', english:'Israel' },
-  { hebrew:'עִבְרִית',   transliteration:'Ivrit',   english:'Hebrew' },
-  { hebrew:'מִשְׁפָּחָה', transliteration:'mishpakhah', english:'family' },
-  { hebrew:'אַהֲבָה', transliteration:'ahavah',  english:'love' },
-  { hebrew:'שֶׁמֶשׁ', transliteration:'shemesh',  english:'sun' },
-  { hebrew:'כֶּלֶב',  transliteration:'kelev',    english:'dog' },
-  { hebrew:'חָתוּל',  transliteration:'khatul',   english:'cat' },
-  { hebrew:'סֵפֶר',  transliteration:'sefer',    english:'book' },
-  { hebrew:'עִיר',   transliteration:'ir',       english:'city' },
-  { hebrew:'אֶרֶץ',  transliteration:'eretz',    english:'land / country' },
-  { hebrew:'שָׁמַיִם', transliteration:'shamayim', english:'sky / heaven' },
+// Beginner — greetings, animals, family, basic nouns/adjectives/numbers
+const SR_POOL_BEGINNER = [
+  { hebrew:'שָׁלוֹם',     transliteration:'shalom',    english:'hello / peace' },
+  { hebrew:'תּוֹדָה',     transliteration:'todah',     english:'thank you' },
+  { hebrew:'כֵּן',       transliteration:'ken',       english:'yes' },
+  { hebrew:'לֹא',       transliteration:'lo',        english:'no' },
+  { hebrew:'בְּבַקָּשָׁה', transliteration:'bevakasha', english:'please / you\'re welcome' },
+  { hebrew:'כֶּלֶב',     transliteration:'kelev',     english:'dog' },
+  { hebrew:'חָתוּל',     transliteration:'khatul',    english:'cat' },
+  { hebrew:'צִפּוֹר',    transliteration:'tzipor',    english:'bird' },
+  { hebrew:'דָּג',       transliteration:'dag',       english:'fish' },
+  { hebrew:'אִמָּא',     transliteration:'ima',       english:'mom' },
+  { hebrew:'אַבָּא',     transliteration:'aba',       english:'dad' },
+  { hebrew:'אָח',       transliteration:'akh',       english:'brother' },
+  { hebrew:'אָחוֹת',     transliteration:'akhot',     english:'sister' },
+  { hebrew:'מַיִם',     transliteration:'mayim',     english:'water' },
+  { hebrew:'לֶחֶם',     transliteration:'lechem',    english:'bread' },
+  { hebrew:'בַּיִת',     transliteration:'bayit',     english:'house' },
+  { hebrew:'יוֹם',      transliteration:'yom',       english:'day' },
+  { hebrew:'לַיְלָה',    transliteration:'lailah',    english:'night' },
+  { hebrew:'טוֹב',      transliteration:'tov',       english:'good' },
+  { hebrew:'גָּדוֹל',    transliteration:'gadol',     english:'big' },
+  { hebrew:'קָטָן',     transliteration:'katan',     english:'small' },
+  { hebrew:'אֶחָד',     transliteration:'echad',     english:'one' },
+  { hebrew:'שְׁנַיִם',   transliteration:'shnayim',   english:'two' },
+  { hebrew:'שָׁלוֹשׁ',   transliteration:'shalosh',   english:'three' },
+  { hebrew:'אָדֹם',     transliteration:'adom',      english:'red' },
+  { hebrew:'כָּחוֹל',    transliteration:'kakhol',    english:'blue' },
+  { hebrew:'לָבָן',     transliteration:'lavan',     english:'white' },
+  { hebrew:'שָׁחֹר',    transliteration:'shakhor',   english:'black' },
+  { hebrew:'שֶׁמֶשׁ',    transliteration:'shemesh',   english:'sun' },
+  { hebrew:'סֵפֶר',     transliteration:'sefer',     english:'book' },
+];
+
+// Intermediate — verb conjugations, tenses, adjectives, time words, infinitives
+const SR_POOL_INTERMEDIATE = [
+  { hebrew:'לָרוּץ',     transliteration:'larutz',    english:'to run' },
+  { hebrew:'לְדַבֵּר',   transliteration:'ledaber',   english:'to speak' },
+  { hebrew:'לַחְשֹׁב',   transliteration:'lakhshov',  english:'to think' },
+  { hebrew:'לְהָבִין',   transliteration:'lehavin',   english:'to understand' },
+  { hebrew:'לִכְתֹּב',   transliteration:'likhtov',   english:'to write' },
+  { hebrew:'לִקְרֹא',    transliteration:'likro',     english:'to read' },
+  { hebrew:'לֶאֱכֹל',   transliteration:'le\'ekhol', english:'to eat' },
+  { hebrew:'לָלֶכֶת',   transliteration:'lalechet',  english:'to go / walk' },
+  { hebrew:'הָלַכְתִּי',  transliteration:'halakhti',  english:'I went (past)' },
+  { hebrew:'הָלְכוּ',    transliteration:'halekhu',   english:'they went (past)' },
+  { hebrew:'הִיא הָלְכָה', transliteration:'hi halkha', english:'she went (past)' },
+  { hebrew:'יֵלֵךְ',     transliteration:'yelekh',    english:'he will go (future)' },
+  { hebrew:'אֶכְתֹּב',   transliteration:'ekhtov',    english:'I will write (future)' },
+  { hebrew:'דִּבֵּר',    transliteration:'diber',     english:'he spoke (past)' },
+  { hebrew:'הֵבִין',    transliteration:'hevin',     english:'he understood (past)' },
+  { hebrew:'רָץ',      transliteration:'ratz',      english:'he ran (past)' },
+  { hebrew:'אֶתְמוֹל',   transliteration:'etmol',     english:'yesterday' },
+  { hebrew:'מָחָר',     transliteration:'makhar',    english:'tomorrow' },
+  { hebrew:'עַכְשָׁו',   transliteration:'akhshav',   english:'now' },
+  { hebrew:'יָפֶה',     transliteration:'yafeh',     english:'beautiful (m)' },
+  { hebrew:'יָפָה',     transliteration:'yafah',     english:'beautiful (f)' },
+  { hebrew:'חָשׁוּב',    transliteration:'kashuv',    english:'important' },
+  { hebrew:'מְעַנְיֵן',  transliteration:'me\'anyen', english:'interesting' },
+  { hebrew:'מַהֵר',     transliteration:'maher',     english:'fast / quickly' },
+  { hebrew:'קַל',      transliteration:'kal',       english:'easy / light' },
+  { hebrew:'קָשֶׁה',    transliteration:'kashe',     english:'hard / difficult' },
+  { hebrew:'בִּנְיָן',   transliteration:'binyan',    english:'verb pattern / building' },
+  { hebrew:'עָבָר',     transliteration:'avar',      english:'past tense / passed' },
+  { hebrew:'עָתִיד',    transliteration:'atid',      english:'future tense' },
+  { hebrew:'הוֹוֶה',    transliteration:'hove',      english:'present tense' },
+];
+
+// Advanced — idioms, biblical terms, complex grammar, philosophical vocabulary
+const SR_POOL_ADVANCED = [
+  { hebrew:'דַּוְקָא',      transliteration:'davka',       english:'specifically / despite' },
+  { hebrew:'סְתָם',        transliteration:'stam',        english:'just / for no reason' },
+  { hebrew:'עַל הַפָּנִים', transliteration:'al hapanim',  english:'awesome (lit: on the face)' },
+  { hebrew:'חֶסֶד',        transliteration:'khesed',      english:'lovingkindness / mercy' },
+  { hebrew:'אֱמֶת',        transliteration:'emet',        english:'truth' },
+  { hebrew:'אֱמוּנָה',     transliteration:'emunah',      english:'faith / belief' },
+  { hebrew:'צֶדֶק',        transliteration:'tzedek',      english:'justice / righteousness' },
+  { hebrew:'חוֹפֶשׁ',      transliteration:'khofesh',     english:'freedom / vacation' },
+  { hebrew:'כָּבוֹד',      transliteration:'kavod',       english:'honor / respect' },
+  { hebrew:'נֶפֶשׁ',       transliteration:'nefesh',      english:'soul / self' },
+  { hebrew:'רוּחַ',        transliteration:'ruakh',       english:'spirit / wind' },
+  { hebrew:'לֵב',         transliteration:'lev',         english:'heart / mind' },
+  { hebrew:'מִצְוָה',      transliteration:'mitzvah',     english:'commandment / good deed' },
+  { hebrew:'גָּלוּת',      transliteration:'galut',       english:'exile / diaspora' },
+  { hebrew:'בְּרֵאשִׁית',   transliteration:'bereshit',    english:'in the beginning (Genesis)' },
+  { hebrew:'תִּקּוּן עוֹלָם', transliteration:'tikkun olam', english:'repairing the world' },
+  { hebrew:'לְדוֹר וָדוֹר', transliteration:'ledor vador', english:'from generation to generation' },
+  { hebrew:'חִנָּם',        transliteration:'khinam',      english:'for free / in vain' },
+  { hebrew:'לְהִתְבּוֹנֵן',  transliteration:'lehitbonen',  english:'to contemplate' },
+  { hebrew:'לְהִתְפַּשֵּׁר',  transliteration:'lehitpasher', english:'to compromise' },
+  { hebrew:'הִתְפַּעֲלוּת',  transliteration:'hitpa\'alut', english:'excitement / hitpa\'el form' },
+  { hebrew:'גְּאֻלָּה',     transliteration:'ge\'ulah',    english:'redemption' },
+  { hebrew:'שְׁכִינָה',     transliteration:'shekhinah',   english:'divine presence' },
+  { hebrew:'כִּבְיָכוֹל',   transliteration:'kivyakhol',   english:'so to speak / as it were' },
+  { hebrew:'עַמְּךָ עַמִּי', transliteration:'amekha ami',  english:'your people are my people' },
+  { hebrew:'לֹא בַשָּׁמַיִם הִיא', transliteration:'lo vashamayim hi', english:'it is not in heaven (Deut)' },
+  { hebrew:'מִדָּה כְּנֶגֶד מִדָּה', transliteration:'mida keneged mida', english:'measure for measure' },
+  { hebrew:'בִּלְשׁוֹן הַקֹּדֶשׁ', transliteration:'bilshon hakodesh', english:'in the holy tongue' },
+  { hebrew:'צַדִּיק',       transliteration:'tzaddik',     english:'righteous person' },
+  { hebrew:'כַּוָּנָה',      transliteration:'kavanah',     english:'intention / devotion' },
 ];
 
 const SR_MESSAGES = [
@@ -1395,14 +1464,22 @@ const sr = {
   pointsEarned: 0
 };
 
+function getSRBuiltInPool() {
+  var level = (state.userProfile && state.userProfile.level) || 'complete_beginner';
+  if (level === 'advanced') return SR_POOL_ADVANCED;
+  if (level === 'intermediate') return SR_POOL_INTERMEDIATE;
+  return SR_POOL_BEGINNER; // complete_beginner, some_exposure, basic
+}
+
 function buildSRPool() {
-  // Merge learned words with built-in pool, deduplicate by hebrew
-  const learned = state.progress.wordsLearned.map(function(w) {
+  var builtIn = getSRBuiltInPool();
+  // Include learned words — Morah already taught them at the right level
+  var learned = state.progress.wordsLearned.map(function(w) {
     return { hebrew: w.hebrew, transliteration: w.transliteration, english: w.english };
   });
-  const seen = {};
-  const combined = [];
-  learned.concat(SR_POOL).forEach(function(w) {
+  var seen = {};
+  var combined = [];
+  learned.concat(builtIn).forEach(function(w) {
     if (!seen[w.hebrew] && w.english) { seen[w.hebrew] = true; combined.push(w); }
   });
   return combined;
