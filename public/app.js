@@ -34,7 +34,9 @@ let state = {
     streak: 0,
     lastLessonDate: null,
     lessonsCompleted: 0,
-    feedbackGiven: 0
+    feedbackGiven: 0,
+    activityDays: [],
+    topicStats: {}
   },
   curriculumProgress: {
     completedLessons: [],
@@ -447,7 +449,7 @@ function resetProgress() {
   state = {
     userProfile: null,
     messages: [],
-    progress: { points: 0, wordsLearned: [], streak: 0, lastLessonDate: null, lessonsCompleted: 0, feedbackGiven: 0 },
+    progress: { points: 0, wordsLearned: [], streak: 0, lastLessonDate: null, lessonsCompleted: 0, feedbackGiven: 0, activityDays: [], topicStats: {} },
     curriculumProgress: { completedLessons: [], currentLesson: null },
     currentQuizStep: 0,
     quizAnswers: {},
@@ -626,56 +628,404 @@ function renderMobilePath() {
   body.innerHTML = html;
 }
 
+// ─── LEADERBOARD ──────────────────────────────────────────────────────────
+var LB_MESSAGES = [
+  { min:500, emoji:'🇮🇱', text:'Ata mamash Israeli! You are basically a sabra!',     color:'#D4A017' },
+  { min:300, emoji:'🔥', text:'Kol HaKavod! You are absolutely crushing Hebrew!',   color:'#2E8B57' },
+  { min:150, emoji:'⭐', text:'Yalla! Keep going — fluency is within reach!',       color:'#1B5EE0' },
+  { min:75,  emoji:'💪', text:"B'seder! Great start — the streak is everything!",  color:'#8B4513' },
+  { min:0,   emoji:'🌱', text:"Yalla, let's learn! Every word counts!",            color:'#2E8B57' },
+];
+
+function _lbId() {
+  if (!currentUser) return null;
+  return (currentUser.firstName + '_' + currentUser.lastInitial + '_' + currentUser.school)
+    .toLowerCase().replace(/[^a-z0-9_]/g, '_');
+}
+
+function saveLeaderboardEntry() {
+  if (!currentUser) return;
+  try {
+    var id    = _lbId();
+    var board = getLeaderboard();
+    var idx   = board.findIndex(function(e) { return e.id === id; });
+    var entry = {
+      id:      id,
+      name:    currentUser.firstName + ' ' + currentUser.lastInitial + '.',
+      school:  currentUser.school,
+      points:  state.progress.points,
+      streak:  state.progress.streak,
+      words:   state.progress.wordsLearned.length,
+      updated: Date.now()
+    };
+    if (idx >= 0) board[idx] = entry; else board.push(entry);
+    localStorage.setItem('kesher_leaderboard', JSON.stringify(board));
+  } catch(e) {}
+}
+
+function getLeaderboard() {
+  try { var s = localStorage.getItem('kesher_leaderboard'); return s ? JSON.parse(s) : []; }
+  catch(e) { return []; }
+}
+
+function shareScore() {
+  if (!currentUser) return;
+  var pts = state.progress.points;
+  var msg = (LB_MESSAGES.find(function(m){ return pts >= m.min; }) || LB_MESSAGES[LB_MESSAGES.length-1]);
+  var text =
+    'Kesher Ivrit — Hebrew Challenge\n' +
+    '━━━━━━━━━━━━━━━━━━━━\n' +
+    currentUser.firstName + ' ' + currentUser.lastInitial + '.  |  ' + currentUser.school + '\n' +
+    pts + ' pts   ' + state.progress.streak + '-day streak   ' + state.progress.wordsLearned.length + ' words\n' +
+    msg.emoji + ' ' + msg.text + '\n' +
+    '━━━━━━━━━━━━━━━━━━━━\n' +
+    'Can you beat me? kesher-ivrit.vercel.app';
+
+  function copied() { showToast('Copied! Share with your classmates!'); }
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); copied(); } catch(e) { showToast('Long-press to copy manually'); }
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(text).then(copied).catch(fallback);
+  else fallback();
+}
+
 function renderMobileProfile() {
   var body = document.getElementById('mob-me-body');
   if (!body) return;
-  var avatarMap = { complete_beginner:'🌱', some_exposure:'🌿', basic:'🌳', intermediate:'⭐', advanced:'🔥' };
+  saveLeaderboardEntry();
+
+  var avatarMap  = { complete_beginner:'🌱', some_exposure:'🌿', basic:'🌳', intermediate:'⭐', advanced:'🔥' };
   var levelNames = { complete_beginner:'Complete Beginner', some_exposure:'Some Exposure',
                      basic:'Basic', intermediate:'Intermediate', advanced:'Advanced' };
-  var lvl  = state.userProfile ? state.userProfile.level : null;
-  var name = currentUser
-    ? (currentUser.firstName + ' ' + currentUser.lastInitial + '.')
-    : (state.userProfile ? state.userProfile.name : 'Student');
+  var lvl    = state.userProfile ? state.userProfile.level : null;
+  var name   = currentUser ? (currentUser.firstName + ' ' + currentUser.lastInitial + '.') : (state.userProfile ? state.userProfile.name : 'Student');
   var school = currentUser ? currentUser.school : '';
+  var pts    = state.progress.points;
+  var lbMsg  = LB_MESSAGES.find(function(m){ return pts >= m.min; }) || LB_MESSAGES[LB_MESSAGES.length-1];
+  var MEDALS = ['🥇','🥈','🥉'];
+  var board  = getLeaderboard().sort(function(a,b){ return b.points - a.points; });
+  var myId   = _lbId();
+  var myRank = board.findIndex(function(e){ return e.id === myId; }) + 1;
+
+  var lbRows = board.slice(0, 10).map(function(entry, i) {
+    var isMe  = entry.id === myId;
+    var badge = i < 3 ? MEDALS[i] : '#' + (i+1);
+    return '<div class="mob-lb-row' + (isMe ? ' lb-me' : '') + '">' +
+      '<span class="mob-lb-rank">' + badge + '</span>' +
+      '<div class="mob-lb-info">' +
+        '<div class="mob-lb-name">' + escapeHtml(entry.name) + (isMe ? ' <span class="lb-you-tag">YOU</span>' : '') + '</div>' +
+        '<div class="mob-lb-school">' + escapeHtml(entry.school) + '</div>' +
+      '</div>' +
+      '<div class="mob-lb-right">' +
+        '<div class="mob-lb-pts">' + entry.points + '</div>' +
+        '<div class="mob-lb-meta">🔥' + entry.streak + ' · 📖' + entry.words + '</div>' +
+      '</div>' +
+    '</div>';
+  }).join('');
 
   body.innerHTML =
     '<div class="mob-me-hero">' +
-      '<div class="mob-me-avatar">' + (avatarMap[lvl] || '👤') + '</div>' +
-      '<div class="mob-me-name">'   + escapeHtml(name) + '</div>' +
+      '<div class="mob-me-avatar">' + (avatarMap[lvl]||'👤') + '</div>' +
+      '<div class="mob-me-name">' + escapeHtml(name) + '</div>' +
       (school ? '<div class="mob-me-school">' + escapeHtml(school) + '</div>' : '') +
-      '<div class="mob-me-level">'  + (levelNames[lvl] || 'Hebrew Learner') + '</div>' +
+      '<div class="mob-me-level">' + (levelNames[lvl]||'Hebrew Learner') + '</div>' +
     '</div>' +
     '<div class="mob-stats-grid">' +
-      '<div class="mob-stat"><div class="mob-stat-icon">🔥</div>' +
-        '<div class="mob-stat-val">' + state.progress.streak + '</div>' +
-        '<div class="mob-stat-lbl">Streak</div></div>' +
-      '<div class="mob-stat"><div class="mob-stat-icon">📖</div>' +
-        '<div class="mob-stat-val">' + state.progress.wordsLearned.length + '</div>' +
-        '<div class="mob-stat-lbl">Words</div></div>' +
-      '<div class="mob-stat"><div class="mob-stat-icon">⭐</div>' +
-        '<div class="mob-stat-val">' + state.progress.points + '</div>' +
-        '<div class="mob-stat-lbl">Points</div></div>' +
-      '<div class="mob-stat"><div class="mob-stat-icon">📅</div>' +
-        '<div class="mob-stat-val">' + state.progress.lessonsCompleted + '</div>' +
-        '<div class="mob-stat-lbl">Lessons</div></div>' +
+      '<div class="mob-stat"><div class="mob-stat-icon">🔥</div><div class="mob-stat-val">' + state.progress.streak + '</div><div class="mob-stat-lbl">Streak</div></div>' +
+      '<div class="mob-stat"><div class="mob-stat-icon">📖</div><div class="mob-stat-val">' + state.progress.wordsLearned.length + '</div><div class="mob-stat-lbl">Words</div></div>' +
+      '<div class="mob-stat"><div class="mob-stat-icon">⭐</div><div class="mob-stat-val">' + pts + '</div><div class="mob-stat-lbl">Points</div></div>' +
+      '<div class="mob-stat"><div class="mob-stat-icon">📅</div><div class="mob-stat-val">' + state.progress.lessonsCompleted + '</div><div class="mob-stat-lbl">Lessons</div></div>' +
+    '</div>' +
+    '<div class="mob-score-msg" style="border-color:' + lbMsg.color + '">' +
+      '<span class="mob-score-emoji">' + lbMsg.emoji + '</span>' +
+      '<span>' + lbMsg.text + '</span>' +
+    '</div>' +
+    '<button class="mob-progress-btn" onclick="showProgressScreen()">📊 My Progress</button>' +
+    '<button class="mob-share-btn" onclick="shareScore()">📤 Share My Score</button>' +
+    '<div class="mob-leaderboard">' +
+      '<div class="mob-lb-hdr">' +
+        '<div>' +
+          '<div class="mob-lb-title">🏆 Leaderboard</div>' +
+          '<div class="mob-lb-sub">' + (board.length > 1 ? board.length + ' learners competing' : 'Be the first to share your score!') + '</div>' +
+        '</div>' +
+        (myRank > 0 ? '<div class="mob-lb-yourrank">' + (myRank <= 3 ? MEDALS[myRank-1] : '#'+myRank) + ' You</div>' : '') +
+      '</div>' +
+      (lbRows || '<div class="mob-lb-empty">Complete a lesson to appear here!</div>') +
     '</div>' +
     '<div class="mob-action-list">' +
       '<button class="mob-action-btn" onclick="showNotebook()">' +
         '<span class="mob-action-icon">📓</span>' +
-        '<div><div class="mob-action-title">My Notebook</div>' +
-        '<div class="mob-action-sub">' + state.progress.wordsLearned.length + ' words collected</div></div>' +
+        '<div><div class="mob-action-title">My Notebook</div><div class="mob-action-sub">' + state.progress.wordsLearned.length + ' words collected</div></div>' +
       '</button>' +
       '<button class="mob-action-btn" onclick="showFeedback()">' +
         '<span class="mob-action-icon">📝</span>' +
-        '<div><div class="mob-action-title">Lesson Feedback</div>' +
-        '<div class="mob-action-sub">Rate your session</div></div>' +
+        '<div><div class="mob-action-title">Lesson Feedback</div><div class="mob-action-sub">Rate your session</div></div>' +
       '</button>' +
-      '<button class="mob-action-btn" onclick="goHome();switchTab(\'learn\')">' +
+      '<button class="mob-action-btn" onclick="goHome();switchTab(' + "'learn'" + ')">' +
         '<span class="mob-action-icon">🏠</span>' +
-        '<div><div class="mob-action-title">Home</div>' +
-        '<div class="mob-action-sub">Word of the Day &amp; settings</div></div>' +
+        '<div><div class="mob-action-title">Home</div><div class="mob-action-sub">Word of the Day &amp; settings</div></div>' +
       '</button>' +
     '</div>';
+}
+
+// ─── LEVEL SYSTEM & PROGRESS SCREEN ──────────────────────────────────────────
+var LEVELS = [
+  { name:'Beginner',     emoji:'🌱', min:0,    max:99,   color:'#2E8B57' },
+  { name:'Elementary',   emoji:'🌿', min:100,  max:299,  color:'#27ae60' },
+  { name:'Intermediate', emoji:'🌳', min:300,  max:599,  color:'#1B5EE0' },
+  { name:'Advanced',     emoji:'⭐', min:600,  max:999,  color:'#D4A017' },
+  { name:'Fluent',       emoji:'🔥', min:1000, max:99999,color:'#C0392B' },
+];
+
+function _getLevel(pts) {
+  for (var i = LEVELS.length - 1; i >= 0; i--) {
+    if (pts >= LEVELS[i].min) return LEVELS[i];
+  }
+  return LEVELS[0];
+}
+
+function showProgressScreen() {
+  renderProgressScreen();
+  var el = document.getElementById('progress-overlay');
+  if (el) { el.classList.remove('prog-hidden'); el.classList.add('prog-visible'); }
+}
+
+function hideProgressScreen() {
+  var el = document.getElementById('progress-overlay');
+  if (el) { el.classList.remove('prog-visible'); el.classList.add('prog-hidden'); }
+}
+
+function renderProgressScreen() {
+  var body = document.getElementById('progress-body');
+  if (!body) return;
+
+  var pts          = state.progress.points;
+  var words        = state.progress.wordsLearned.length;
+  var streak       = state.progress.streak;
+  var lessons      = state.progress.lessonsCompleted;
+  var activityDays = state.progress.activityDays || [];
+  var topicStats   = state.progress.topicStats   || {};
+
+  // Level progress
+  var level    = _getLevel(pts);
+  var lvlIdx   = LEVELS.indexOf(level);
+  var nextLvl  = lvlIdx < LEVELS.length - 1 ? LEVELS[lvlIdx + 1] : null;
+  var lvlPct   = nextLvl ? Math.min(100, Math.round(((pts - level.min) / (nextLvl.min - level.min)) * 100)) : 100;
+  var toNext   = nextLvl ? (nextLvl.min - pts) : 0;
+
+  // Words goal
+  var wordGoals = [25, 50, 100, 200, 500, 1000];
+  var wordGoal  = wordGoals.find(function(g){ return g > words; }) || (words + 100);
+  var wordPct   = Math.min(100, Math.round((words / wordGoal) * 100));
+
+  // Topics / curriculum
+  var completed  = (state.curriculumProgress && state.curriculumProgress.completedLessons) || [];
+  var totalLsn   = 0;
+  if (typeof CURRICULUM !== 'undefined') {
+    CURRICULUM.forEach(function(u){ totalLsn += (u.lessons||[]).length; });
+  }
+  var masterPct = totalLsn > 0 ? Math.round((completed.length / totalLsn) * 100) : 0;
+
+  // Weekly activity (last 7 days)
+  var today      = new Date();
+  var DAY_SHORT  = ['Su','M','Tu','W','Th','F','Sa'];
+  var weekDots   = '';
+  var weekCount  = 0;
+  for (var d = 6; d >= 0; d--) {
+    var day     = new Date(today.getFullYear(), today.getMonth(), today.getDate() - d);
+    var iso     = day.toISOString().split('T')[0];
+    var active  = activityDays.indexOf(iso) >= 0;
+    var isToday = d === 0;
+    if (active) weekCount++;
+    weekDots += '<div class="prog-day' + (active ? ' prog-day-on' : '') + (isToday ? ' prog-day-today' : '') + '">' +
+      '<div class="prog-day-dot"></div>' +
+      '<div class="prog-day-lbl">' + DAY_SHORT[day.getDay()] + '</div>' +
+    '</div>';
+  }
+  var weekMsg = weekCount >= 6 ? 'Perfect week! You are unstoppable!' :
+                weekCount >= 4 ? 'Great consistency this week!' :
+                weekCount >= 2 ? 'Good habit forming — keep going!' :
+                                 'Practice daily to build your streak!';
+
+  // Topic performance
+  var topicPerf = [];
+  Object.keys(topicStats).forEach(function(id) {
+    var s = topicStats[id];
+    var total = (s.correct||0) + (s.wrong||0);
+    if (total < 3) return;
+    topicPerf.push({
+      id: id,
+      label: id,
+      correct: s.correct||0,
+      wrong: s.wrong||0,
+      pct: Math.round(((s.correct||0) / total) * 100),
+      total: total
+    });
+  });
+  topicPerf.sort(function(a,b){ return b.pct - a.pct; });
+  var strongest = topicPerf.slice(0, 3);
+  var weakest   = topicPerf.length > 3 ? topicPerf.slice(-Math.min(3, topicPerf.length - 1)).reverse() : [];
+
+  function barHtml(pct, color, cls) {
+    cls = cls || '';
+    return '<div class="prog-bar-track">' +
+      '<div class="prog-bar-fill ' + cls + '" style="width:0;background:' + color + '" data-pct="' + pct + '"></div>' +
+    '</div>';
+  }
+
+  function topicRowHtml(t, color) {
+    return '<div class="prog-topic-row">' +
+      '<div class="prog-topic-name">' + escapeHtml(t.label) + '</div>' +
+      '<div class="prog-topic-bar-wrap">' +
+        '<div class="prog-topic-bar" style="width:0;background:' + color + '" data-pct="' + t.pct + '"></div>' +
+      '</div>' +
+      '<div class="prog-topic-pct">' + t.pct + '%</div>' +
+    '</div>';
+  }
+
+  var streakEmoji = streak >= 30 ? '🏆' : streak >= 14 ? '🔥' : streak >= 7 ? '⚡' : streak >= 3 ? '✨' : streak > 0 ? '🌟' : '💤';
+  var streakMsg   = streak >= 30 ? 'You are a Hebrew legend!' :
+                    streak >= 14 ? 'Two-week warrior — incredible!' :
+                    streak >= 7  ? 'One whole week! Keep it blazing!' :
+                    streak >= 3  ? 'On a roll! Do not break it!' :
+                    streak > 0   ? 'Great start — come back tomorrow!' :
+                                   'Practice today to start your streak!';
+
+  var html = [];
+
+  // Level card
+  html.push(
+    '<div class="prog-card prog-card-level">',
+      '<div class="prog-level-row">',
+        '<div class="prog-level-badge" style="background:' + level.color + '">' + level.emoji + '</div>',
+        '<div class="prog-level-info">',
+          '<div class="prog-level-name">' + level.name + '</div>',
+          '<div class="prog-level-pts">' + pts + ' points' + (nextLvl ? '  ·  ' + toNext + ' to ' + nextLvl.name : '  ·  MAX LEVEL') + '</div>',
+        '</div>',
+        '<div class="prog-level-pct">' + lvlPct + '%</div>',
+      '</div>',
+      barHtml(lvlPct, level.color),
+      '<div class="prog-level-steps">',
+        LEVELS.map(function(l, i) {
+          var done = pts >= l.min;
+          return '<div class="prog-step' + (done ? ' prog-step-done' : '') + (l === level ? ' prog-step-cur' : '') + '">' +
+            '<div class="prog-step-dot"></div>' +
+            '<div class="prog-step-lbl">' + l.emoji + '</div>' +
+          '</div>';
+        }).join(''),
+      '</div>',
+    '</div>'
+  );
+
+  // Streak card
+  html.push(
+    '<div class="prog-card prog-card-streak">',
+      '<div class="prog-streak-inner">',
+        '<div class="prog-streak-flame">' + (streak > 0 ? '<span class="flame-ani">' + streakEmoji + '</span>' : streakEmoji) + '</div>',
+        '<div>',
+          '<div class="prog-streak-num">' + streak + '</div>',
+          '<div class="prog-streak-lbl">Day Streak</div>',
+        '</div>',
+      '</div>',
+      '<div class="prog-streak-msg">' + streakMsg + '</div>',
+    '</div>'
+  );
+
+  // Words progress
+  html.push(
+    '<div class="prog-card">',
+      '<div class="prog-section-hdr">',
+        '<span class="prog-section-icon">📖</span>',
+        '<span class="prog-section-title">Words Learned</span>',
+        '<span class="prog-section-count">' + words + ' / ' + wordGoal + '</span>',
+      '</div>',
+      barHtml(wordPct, '#1B5EE0'),
+      '<div class="prog-hint">' + (wordPct < 100 ? (wordGoal - words) + ' more words to the next milestone!' : 'Milestone reached! Amazing work!') + '</div>',
+    '</div>'
+  );
+
+  // Weekly chart
+  html.push(
+    '<div class="prog-card">',
+      '<div class="prog-section-hdr">',
+        '<span class="prog-section-icon">📅</span>',
+        '<span class="prog-section-title">This Week</span>',
+        '<span class="prog-section-count">' + weekCount + '/7</span>',
+      '</div>',
+      '<div class="prog-week">' + weekDots + '</div>',
+      '<div class="prog-hint">' + weekMsg + '</div>',
+    '</div>'
+  );
+
+  // Lessons mastered
+  html.push(
+    '<div class="prog-card">',
+      '<div class="prog-section-hdr">',
+        '<span class="prog-section-icon">🗺️</span>',
+        '<span class="prog-section-title">Lessons</span>',
+        '<span class="prog-section-count">' + completed.length + ' / ' + totalLsn + '</span>',
+      '</div>',
+      barHtml(masterPct, '#2E8B57'),
+      '<div class="prog-topics-pills">',
+        TOPICS.map(function(t) {
+          var done = completed.some(function(lid){ return lid.startsWith(t.id); });
+          return '<div class="prog-pill' + (done ? ' prog-pill-done' : '') + '">' + t.label + '</div>';
+        }).join(''),
+      '</div>',
+    '</div>'
+  );
+
+  // Strongest topics
+  if (strongest.length > 0) {
+    html.push(
+      '<div class="prog-card">',
+        '<div class="prog-section-hdr">',
+          '<span class="prog-section-icon">💪</span>',
+          '<span class="prog-section-title">Strongest Topics</span>',
+        '</div>',
+        strongest.map(function(t){ return topicRowHtml(t, '#2E8B57'); }).join(''),
+      '</div>'
+    );
+  }
+
+  // Needs practice
+  if (weakest.length > 0) {
+    html.push(
+      '<div class="prog-card">',
+        '<div class="prog-section-hdr">',
+          '<span class="prog-section-icon">📚</span>',
+          '<span class="prog-section-title">Needs Practice</span>',
+        '</div>',
+        weakest.map(function(t){ return topicRowHtml(t, '#E67E22'); }).join(''),
+      '</div>'
+    );
+  }
+
+  // Empty state
+  if (topicPerf.length === 0) {
+    html.push(
+      '<div class="prog-card prog-empty-card">',
+        '<div class="prog-empty-icon">🎯</div>',
+        '<div class="prog-empty-msg">Answer some quiz questions to see your topic strengths!</div>',
+      '</div>'
+    );
+  }
+
+  body.innerHTML = html.join('');
+
+  // Animate bars after paint
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      body.querySelectorAll('[data-pct]').forEach(function(el) {
+        el.style.width = el.dataset.pct + '%';
+      });
+    });
+  });
 }
 
 // ─── LESSON / CHAT ────────────────────────────────────────
@@ -911,6 +1261,12 @@ function updateStreak() {
     state.progress.lastLessonDate = today;
     state.progress.lessonsCompleted++;
     state.progress.points += 5; // Lesson participation bonus
+    var isoDay = new Date().toISOString().split('T')[0];
+    if (!state.progress.activityDays) state.progress.activityDays = [];
+    if (state.progress.activityDays.indexOf(isoDay) < 0) {
+      state.progress.activityDays.push(isoDay);
+      if (state.progress.activityDays.length > 90) state.progress.activityDays.shift();
+    }
     updateStats();
     saveProgress();
 
@@ -1686,6 +2042,11 @@ function awardChallengePoints(correct, pts) {
     state.session.consecutiveCorrect = 0;
     state.session.totalWrong++;
   }
+
+  if (!state.progress.topicStats) state.progress.topicStats = {};
+  var _ts = state.progress.topicStats;
+  if (!_ts[state.currentTopic]) _ts[state.currentTopic] = { correct: 0, wrong: 0 };
+  if (correct) _ts[state.currentTopic].correct++; else _ts[state.currentTopic].wrong++;
 
   if (!correct || pts <= 0) return;
   state.progress.points += pts;

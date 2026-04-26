@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=8" />
+  <link rel="stylesheet" href="style.css?v=9" />
 </head>
 <body>
 
@@ -317,6 +317,20 @@
     <div class="mob-me-body" id="mob-me-body"></div>
   </div>
 
+  <!-- ═══ PROGRESS OVERLAY — full-screen modal ═══ -->
+  <div id="progress-overlay" class="progress-overlay prog-hidden">
+    <div class="progress-screen">
+      <div class="progress-header">
+        <div class="progress-header-left">
+          <div class="progress-title">My Progress</div>
+          <div class="progress-subtitle">קִדְמָה שֶׁלִּי</div>
+        </div>
+        <button class="progress-close" onclick="hideProgressScreen()" aria-label="Close">✕</button>
+      </div>
+      <div class="progress-body" id="progress-body"></div>
+    </div>
+  </div>
+
   <!-- ═══ BOTTOM NAVIGATION — mobile only ═══ -->
   <nav class="bottom-nav" id="bottom-nav">
     <button class="nav-btn active" data-panel="learn" onclick="switchTab('learn')">
@@ -517,6 +531,6 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=13"></script>
+<script src="app.js?v=14"></script>
 </body>
 </html>
