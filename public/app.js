@@ -3177,3 +3177,359 @@ function hideWordleGame() {
 })();
 
 // ▲▲▲  END HEBREW WORDLE  ▲▲▲
+
+
+// ═══════════════════════════════════════════════════════════════════════════
+// ▼▼▼  HEBREW UNSCRAMBLE  ▼▼▼
+// ═══════════════════════════════════════════════════════════════════════════
+
+// ─── Word pool (organised by difficulty level 1–3) ─────────────────────────
+var US_WORDS = [
+  // Level 1 — 3-4 base letters, core vocabulary
+  { base:'ילד',   display:'יֶלֶד',    english:'boy / child',        level:1 },
+  { base:'ספר',   display:'סֵפֶר',    english:'book',               level:1 },
+  { base:'בית',   display:'בַּיִת',   english:'house / home',       level:1 },
+  { base:'כלב',   display:'כֶּלֶב',   english:'dog',                level:1 },
+  { base:'לחם',   display:'לֶחֶם',    english:'bread',              level:1 },
+  { base:'שמש',   display:'שֶׁמֶשׁ',  english:'sun',                level:1 },
+  { base:'ירח',   display:'יָרֵחַ',   english:'moon',               level:1 },
+  { base:'ראש',   display:'רֹאשׁ',    english:'head',               level:1 },
+  { base:'עין',   display:'עַיִן',    english:'eye',                level:1 },
+  { base:'שנה',   display:'שָׁנָה',   english:'year',               level:1 },
+  { base:'שבת',   display:'שַׁבָּת',  english:'Shabbat / Sabbath',  level:1 },
+  { base:'ערב',   display:'עֶרֶב',    english:'evening',            level:1 },
+  { base:'בקר',   display:'בֹּקֶר',   english:'morning',            level:1 },
+  { base:'שלום',  display:'שָׁלוֹם',  english:'peace / hello',      level:1 },
+  { base:'תודה',  display:'תּוֹדָה',  english:'thank you',          level:1 },
+  { base:'אהבה',  display:'אַהֲבָה',  english:'love',               level:1 },
+  { base:'ילדה',  display:'יַלְדָּה', english:'girl',               level:1 },
+  { base:'מורה',  display:'מוֹרֶה',   english:'teacher',            level:1 },
+  { base:'תורה',  display:'תּוֹרָה',  english:'Torah',              level:1 },
+  { base:'שמחה',  display:'שִׂמְחָה', english:'joy',                level:1 },
+  { base:'כוכב',  display:'כּוֹכָב',  english:'star',               level:1 },
+  { base:'אדמה',  display:'אֲדָמָה',  english:'earth / soil',       level:1 },
+  { base:'שלחן',  display:'שֻׁלְחָן', english:'table',              level:1 },
+  { base:'קדוש',  display:'קָדוֹשׁ',  english:'holy',               level:1 },
+  { base:'שמים',  display:'שָׁמַיִם', english:'sky / heavens',      level:1 },
+  { base:'גדול',  display:'גָּדוֹל',  english:'big / great',        level:1 },
+  { base:'ברוך',  display:'בָּרוּךְ', english:'blessed',            level:1 },
+  { base:'חיים',  display:'חַיִּים',  english:'life',               level:1 },
+  { base:'שלום',  display:'שָׁלוֹם',  english:'peace / hello',      level:1 },
+  // Level 2 — 4-5 base letters, intermediate vocabulary
+  { base:'ישראל', display:'יִשְׂרָאֵל',  english:'Israel',              level:2 },
+  { base:'מנורה', display:'מְנוֹרָה',    english:'menorah',             level:2 },
+  { base:'סליחה', display:'סְלִיחָה',   english:'sorry / excuse me',   level:2 },
+  { base:'תפילה', display:'תְּפִילָה',  english:'prayer',              level:2 },
+  { base:'גבורה', display:'גְּבוּרָה',  english:'strength / heroism',  level:2 },
+  { base:'אמונה', display:'אֱמוּנָה',   english:'faith / trust',       level:2 },
+  { base:'זכרון', display:'זִכָּרוֹן',  english:'memory',              level:2 },
+  { base:'אנחנו', display:'אֲנַחְנוּ',  english:'we',                  level:2 },
+  { base:'ברכות', display:'בְּרָכוֹת',  english:'blessings',           level:2 },
+  { base:'חברים', display:'חֲבֵרִים',   english:'friends',             level:2 },
+  { base:'ילדים', display:'יְלָדִים',   english:'children',            level:2 },
+  { base:'שירים', display:'שִׁירִים',   english:'songs',               level:2 },
+  { base:'מלכים', display:'מְלָכִים',   english:'kings',               level:2 },
+  { base:'עבודה', display:'עֲבוֹדָה',   english:'work / worship',      level:2 },
+  { base:'עפרון', display:'עִפָּרוֹן',  english:'pencil',              level:2 },
+  { base:'חשבון', display:'חֶשְׁבּוֹן', english:'arithmetic / bill',   level:2 },
+  { base:'דגלים', display:'דְּגָלִים',  english:'flags',               level:2 },
+  { base:'כלבים', display:'כְּלָבִים',  english:'dogs',                level:2 },
+  { base:'ספרים', display:'סְפָרִים',   english:'books',               level:2 },
+  { base:'שאלות', display:'שְׁאֵלוֹת',  english:'questions',           level:2 },
+  // Level 3 — 5+ base letters, advanced vocabulary
+  { base:'משפחה', display:'מִשְׁפָּחָה', english:'family',             level:3 },
+  { base:'תפארת', display:'תִּפְאֶרֶת', english:'glory / splendor',   level:3 },
+  { base:'מחברת', display:'מַחְבֶּרֶת', english:'notebook',           level:3 },
+  { base:'לבבות', display:'לְבָבוֹת',   english:'hearts',             level:3 },
+  { base:'נפשות', display:'נְפָשׁוֹת',  english:'souls / lives',      level:3 },
+  { base:'דברים', display:'דְּבָרִים',  english:'things / words',     level:3 },
+  { base:'מסעדה', display:'מִסְעָדָה',  english:'restaurant',         level:3 },
+  { base:'אנשים', display:'אֲנָשִׁים',  english:'people / men',       level:3 },
+  { base:'מצרים', display:'מִצְרַיִם',  english:'Egypt',              level:3 },
+  { base:'שאלות', display:'שְׁאֵלוֹת',  english:'questions',          level:3 },
+];
+
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+var _US_FINALS = {'ך':'כ','ם':'מ','ן':'נ','ף':'פ','ץ':'צ'};
+
+function _usNorm(s) {
+  return s.split('').filter(function(c) {
+    var code = c.charCodeAt(0);
+    return !((code >= 0x05B0 && code <= 0x05C7) || code === 0xFB1E);
+  }).map(function(c) { return _US_FINALS[c] || c; }).join('');
+}
+
+function _usScramble(letters) {
+  var arr = letters.slice(), attempts = 0;
+  var orig = arr.join('');
+  do {
+    for (var i = arr.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var tmp = arr[i]; arr[i] = arr[j]; arr[j] = tmp;
+    }
+    attempts++;
+  } while (arr.join('') === orig && attempts < 20);
+  return arr;
+}
+
+function _usGetLevel() {
+  var pts = state.progress.points;
+  if (pts >= 400) return 3;
+  if (pts >= 100) return 2;
+  return 1;
+}
+
+function _usBuildRound() {
+  var level = _usGetLevel();
+
+  // Pull from student's learned words
+  var learned = (state.progress.wordsLearned || [])
+    .filter(function(w) { return w.hebrew && w.english && _usNorm(w.hebrew).length >= 3; })
+    .map(function(w) {
+      var b = _usNorm(w.hebrew);
+      return { base: b, display: w.hebrew, english: w.english, level: b.length <= 4 ? 1 : b.length <= 5 ? 2 : 3 };
+    });
+
+  // Pool from curated list up to current level
+  var pool = US_WORDS.filter(function(w) { return w.level <= level; });
+
+  // Merge, deduplicate by normalised base
+  var seen = {}, combined = [];
+  learned.concat(pool).forEach(function(w) {
+    var key = _usNorm(w.base);
+    if (!seen[key] && key.length >= 3) { seen[key] = true; combined.push(w); }
+  });
+
+  // Shuffle, then sort by word length (easier first → harder last)
+  combined = combined.sort(function() { return Math.random() - 0.5; });
+  combined.sort(function(a, b) { return _usNorm(a.base).length - _usNorm(b.base).length; });
+
+  // Pad to 10 if needed
+  while (combined.length < 10) { combined = combined.concat(combined); }
+  return combined.slice(0, 10);
+}
+
+// ─── Game state ───────────────────────────────────────────────────────────────
+var US = {
+  words: [], idx: 0, tiles: [], answer: [], origTiles: [],
+  triesThisWord: 0, correct: 0, totalPoints: 0,
+};
+
+// ─── Render ───────────────────────────────────────────────────────────────────
+function _usRenderHeader() {
+  var prog = document.getElementById('us-progress');
+  var scr  = document.getElementById('us-score');
+  var bar  = document.getElementById('us-prog-bar');
+  if (prog) prog.textContent = (US.idx + 1) + ' / ' + US.words.length;
+  if (scr)  scr.textContent  = US.totalPoints + ' pts';
+  if (bar)  bar.style.width  = ((US.idx / US.words.length) * 100) + '%';
+}
+
+function _usTileSize(len) {
+  if (len <= 3) return 68;
+  if (len <= 4) return 60;
+  if (len <= 5) return 52;
+  if (len <= 6) return 46;
+  return 42;
+}
+
+function _usRenderWord() {
+  var word = US.words[US.idx];
+  var base = _usNorm(word.base);
+  var sz   = _usTileSize(base.length);
+
+  document.getElementById('us-english').textContent = word.english;
+
+  // Reset state
+  US.triesThisWord = 0;
+  US.answer = new Array(base.length).fill(null);
+  var scrambled = _usScramble(base.split(''));
+  US.tiles = scrambled.map(function(l, i) { return { id: i, letter: l, used: false }; });
+  US.origTiles = US.tiles.map(function(t) { return { id: t.id, letter: t.letter, used: false }; });
+
+  _usRenderAnswer(sz);
+  _usRenderTiles(sz);
+  _usRenderHeader();
+}
+
+function _usRenderAnswer(sz) {
+  var word = US.words[US.idx];
+  var base = _usNorm(word.base);
+  sz = sz || _usTileSize(base.length);
+  var html = '';
+  US.answer.forEach(function(slot, i) {
+    if (slot) {
+      html += '<div class="us-slot us-slot-filled" style="width:' + sz + 'px;height:' + sz + 'px" onclick="usRemoveLetter(' + i + ')">' + slot.letter + '</div>';
+    } else {
+      html += '<div class="us-slot us-slot-empty" style="width:' + sz + 'px;height:' + sz + 'px"></div>';
+    }
+  });
+  document.getElementById('us-answer').innerHTML = html;
+}
+
+function _usRenderTiles(sz) {
+  var word = US.words[US.idx];
+  var base = _usNorm(word.base);
+  sz = sz || _usTileSize(base.length);
+  var html = '';
+  US.tiles.forEach(function(tile) {
+    if (tile.used) {
+      html += '<div class="us-tile us-tile-ghost" style="width:' + sz + 'px;height:' + sz + 'px"></div>';
+    } else {
+      html += '<div class="us-tile" style="width:' + sz + 'px;height:' + sz + 'px" onclick="usAddLetter(' + tile.id + ')">' + tile.letter + '</div>';
+    }
+  });
+  document.getElementById('us-letters').innerHTML = html;
+}
+
+// ─── Input ────────────────────────────────────────────────────────────────────
+function usAddLetter(tileId) {
+  var tile = null;
+  for (var i = 0; i < US.tiles.length; i++) { if (US.tiles[i].id === tileId) { tile = US.tiles[i]; break; } }
+  if (!tile || tile.used) return;
+  var emptyIdx = US.answer.indexOf(null);
+  if (emptyIdx < 0) return;
+  tile.used = true;
+  US.answer[emptyIdx] = { id: tileId, letter: tile.letter };
+  _usRenderTiles();
+  _usRenderAnswer();
+  if (US.answer.indexOf(null) < 0) {
+    setTimeout(_usCheckAnswer, 120);
+  }
+}
+
+function usRemoveLetter(slotIdx) {
+  var slot = US.answer[slotIdx];
+  if (!slot) return;
+  for (var i = 0; i < US.tiles.length; i++) { if (US.tiles[i].id === slot.id) { US.tiles[i].used = false; break; } }
+  US.answer[slotIdx] = null;
+  _usRenderTiles();
+  _usRenderAnswer();
+}
+
+function usClear() {
+  US.tiles = US.origTiles.map(function(t) { return { id: t.id, letter: t.letter, used: false }; });
+  US.answer = new Array(_usNorm(US.words[US.idx].base).length).fill(null);
+  _usRenderTiles();
+  _usRenderAnswer();
+}
+
+// ─── Check answer ─────────────────────────────────────────────────────────────
+function _usCheckAnswer() {
+  var word   = US.words[US.idx];
+  var target = _usNorm(word.base);
+  var answer = US.answer.map(function(s) { return s ? s.letter : ''; }).join('');
+  US.triesThisWord++;
+
+  if (_usNorm(answer) === target) {
+    var pts = US.triesThisWord === 1 ? 20 : US.triesThisWord === 2 ? 10 : 5;
+    US.totalPoints += pts;
+    if (US.triesThisWord === 1) US.correct++;
+    _usShowCorrect(pts);
+  } else {
+    _usShakeAnswer();
+    setTimeout(usClear, 620);
+  }
+}
+
+function _usShowCorrect(pts) {
+  // Flash answer tiles green
+  var slots = document.querySelectorAll('.us-slot-filled');
+  slots.forEach(function(s) { s.classList.add('us-slot-correct'); });
+  // Show points pop
+  _usPtsPop('+' + pts);
+  // Brief celebration then next word
+  setTimeout(function() {
+    US.idx++;
+    if (US.idx >= US.words.length) {
+      _usShowResults();
+    } else {
+      _usRenderWord();
+    }
+  }, 900);
+}
+
+function _usShakeAnswer() {
+  var el = document.getElementById('us-answer');
+  if (!el) return;
+  el.classList.add('us-shake');
+  // Flash tiles red briefly
+  var slots = document.querySelectorAll('#us-answer .us-slot-filled');
+  slots.forEach(function(s) { s.classList.add('us-slot-wrong'); });
+  setTimeout(function() {
+    el.classList.remove('us-shake');
+    slots.forEach(function(s) { s.classList.remove('us-slot-wrong'); });
+  }, 600);
+}
+
+function _usPtsPop(text) {
+  var el = document.createElement('div');
+  el.className = 'us-pts-pop';
+  el.textContent = text;
+  document.getElementById('us-body').appendChild(el);
+  setTimeout(function() { el.remove(); }, 1000);
+}
+
+// ─── Results ──────────────────────────────────────────────────────────────────
+function _usShowResults() {
+  var pct = Math.round((US.correct / 10) * 100);
+  // Bonus for strong performance
+  var bonus = US.correct >= 10 ? 50 : US.correct >= 8 ? 25 : US.correct >= 6 ? 10 : 0;
+  US.totalPoints += bonus;
+  state.progress.points += US.totalPoints;
+  updateStats();
+  saveProgress();
+
+  var emoji = pct >= 90 ? '🏆' : pct >= 70 ? '🌟' : pct >= 50 ? '💪' : '🌱';
+  var msg   = pct >= 90 ? 'Metzuyan! You crushed it!' :
+              pct >= 70 ? 'Kol HaKavod! Great round!' :
+              pct >= 50 ? "B'seder! Keep it up!" :
+                          'Yalla, practice makes perfect!';
+
+  var body = document.getElementById('us-body');
+  var res  = document.getElementById('us-results');
+  body.style.display = 'none';
+  res.classList.remove('us-hidden');
+
+  res.innerHTML =
+    '<div class="us-res-emoji">' + emoji + '</div>' +
+    '<div class="us-res-correct">' + US.correct + ' / 10 correct</div>' +
+    '<div class="us-res-msg">' + msg + '</div>' +
+    '<div class="us-res-pts">+' + US.totalPoints + ' points' + (bonus > 0 ? ' (incl. ' + bonus + ' pt bonus!)' : '') + '</div>' +
+    '<div class="us-res-actions">' +
+      '<button class="us-btn-primary" onclick="startUnscramble()">▶ Play Again</button>' +
+      '<button class="us-btn-secondary" onclick="hideUnscrambleGame()">Done</button>' +
+    '</div>';
+}
+
+// ─── Show / Hide ──────────────────────────────────────────────────────────────
+function startUnscramble() {
+  US.words = _usBuildRound();
+  US.idx = 0;
+  US.correct = 0;
+  US.totalPoints = 0;
+
+  var body = document.getElementById('us-body');
+  var res  = document.getElementById('us-results');
+  if (body) body.style.display = '';
+  if (res)  res.classList.add('us-hidden');
+
+  _usRenderWord();
+}
+
+function showUnscrambleGame() {
+  var el = document.getElementById('unscramble-overlay');
+  if (!el) return;
+  el.classList.remove('us-gone');
+  el.classList.add('us-visible');
+  startUnscramble();
+}
+
+function hideUnscrambleGame() {
+  var el = document.getElementById('unscramble-overlay');
+  if (!el) return;
+  el.classList.remove('us-visible');
+  el.classList.add('us-gone');
+}
+
+// ▲▲▲  END HEBREW UNSCRAMBLE  ▲▲▲

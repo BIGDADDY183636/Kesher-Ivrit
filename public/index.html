@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=15" />
+  <link rel="stylesheet" href="style.css?v=16" />
 </head>
 <body>
 
@@ -334,6 +334,42 @@
         <div class="mob-game-desc">Guess today's 5-letter Hebrew word in 6 tries. New word every day!</div>
         <div class="mob-game-btn" id="wordle-card-btn">Play Today!</div>
       </button>
+      <button class="mob-game-card" onclick="showUnscrambleGame()">
+        <div class="mob-game-icon">🔤</div>
+        <div class="mob-game-title">Unscramble</div>
+        <div class="mob-game-desc">10 Hebrew words — tap letters in the right order to unscramble!</div>
+        <div class="mob-game-btn">Play Now!</div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ UNSCRAMBLE OVERLAY ═══ -->
+  <div id="unscramble-overlay" class="us-overlay us-gone">
+    <div class="us-screen">
+      <div class="us-header">
+        <div class="us-header-left">
+          <div class="us-title">🔤 Unscramble</div>
+          <div class="us-subtitle">Hebrew Word Scramble</div>
+        </div>
+        <div class="us-header-right">
+          <div class="us-prog-badge" id="us-progress">1 / 10</div>
+          <div class="us-score-badge" id="us-score">0 pts</div>
+          <button class="us-close-btn" onclick="hideUnscrambleGame()">✕</button>
+        </div>
+      </div>
+      <div class="us-progress-bar-wrap"><div class="us-progress-bar" id="us-prog-bar"></div></div>
+      <div class="us-body" id="us-body">
+        <div class="us-prompt-label">What is the Hebrew word for…</div>
+        <div class="us-english" id="us-english">family</div>
+        <div class="us-answer-row" id="us-answer"></div>
+        <div class="us-controls">
+          <button class="us-clear-btn" onclick="usClear()">↩ Clear</button>
+        </div>
+        <div class="us-letters-wrap">
+          <div class="us-letters" id="us-letters"></div>
+        </div>
+      </div>
+      <div class="us-results us-hidden" id="us-results"></div>
     </div>
   </div>
 
@@ -591,7 +627,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=20"></script>
+<script src="app.js?v=21"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">
