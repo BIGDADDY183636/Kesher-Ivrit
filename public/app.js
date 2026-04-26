@@ -946,6 +946,7 @@ function answerMC(cId, selected) {
 
   showChallengeFeedback(cId, correct, challenge.explanation);
   awardChallengePoints(correct, 10);
+  setTimeout(() => sendChallengeResult(correct, challenge, challenge.options ? challenge.options[selected] : null), 800);
 }
 
 function renderFillBlank(cId, c, container) {
@@ -978,6 +979,7 @@ function answerFill(cId) {
 
   showChallengeFeedback(cId, correct, challenge.explanation);
   awardChallengePoints(correct, 10);
+  setTimeout(() => sendChallengeResult(correct, challenge, input.value.trim()), 800);
 }
 
 function renderTrueFalse(cId, c, container) {
@@ -1006,6 +1008,7 @@ function answerTF(cId, selected) {
 
   showChallengeFeedback(cId, correct, challenge.explanation);
   awardChallengePoints(correct, 10);
+  setTimeout(() => sendChallengeResult(correct, challenge, selected ? 'True' : 'False'), 800);
 }
 
 function renderMatch(cId, c, container) {
@@ -1071,6 +1074,7 @@ function selectMatch(btn, side) {
       if (done >= total) {
         challengeStore[cId].answered = true;
         showChallengeFeedback(cId, true, 'Perfect match! Metzuyan! מְצֻיָּן!');
+        setTimeout(() => sendChallengeResult(true, challengeStore[cId].challenge, 'all pairs matched'), 800);
       }
     } else {
       matchSelected.heb.classList.add('match-flash-wrong');
@@ -1094,6 +1098,26 @@ function showChallengeFeedback(cId, correct, explanation) {
     : `<span class="fb-icon">❌</span> <strong>Not quite.</strong> ${escapeHtml(explanation || '')}`;
   fb.style.display = 'flex';
   autoScroll();
+}
+
+// After every challenge answer, send a silent result message so Morah always responds
+function sendChallengeResult(correct, challenge, chosenLabel) {
+  let msg;
+  if (correct) {
+    msg = '[RESULT: correct]';
+    if (challenge.question) msg += ' Question: ' + challenge.question;
+  } else {
+    msg = '[RESULT: wrong]';
+    if (chosenLabel)                                      msg += ' Student chose: "' + chosenLabel + '".';
+    if (challenge.options && challenge.correct !== undefined) msg += ' Correct answer: "' + challenge.options[challenge.correct] + '".';
+    if (challenge.answer)                                 msg += ' Correct answer: "' + challenge.answer + '".';
+    if (challenge.statement)                              msg += ' Statement was: "' + challenge.statement + '". Correct: ' + challenge.correct + '.';
+    if (challenge.explanation)                            msg += ' Explanation: ' + challenge.explanation;
+  }
+  // Push silently — no user bubble in chat
+  state.messages.push({ role: 'user', content: msg });
+  // Trigger Morah's response
+  sendToMorah(state.messages);
 }
 
 function awardChallengePoints(correct, pts) {
