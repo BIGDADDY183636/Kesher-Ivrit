@@ -1048,9 +1048,11 @@ function speakText(rawText, btn) {
   if (!rawText || !rawText.trim()) return;
 
   // Toggle off if already speaking from the same button.
+  // Capture activeSpeakBtn BEFORE stopSpeech() nulls it, then compare.
   if (ttsActive) {
+    var wasBtn = activeSpeakBtn;
     stopSpeech();
-    if (btn && btn === activeSpeakBtn) return;  // same button → just stop
+    if (btn && btn === wasBtn) return;  // same button clicked → stop only, don't restart
   }
 
   var clean = _cleanText(rawText);
