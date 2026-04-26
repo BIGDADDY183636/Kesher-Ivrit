@@ -386,6 +386,35 @@ app.post('/api/speak', async (req, res) => {
   }
 });
 
+// Hebrew TTS proxy — fetches Google Translate audio server-side so the
+// browser has no CORS or content-security issues. Returns audio/mpeg.
+app.get('/api/hebrew-tts', async (req, res) => {
+  const text = (req.query.q || '').trim();
+  if (!text || text.length > 200) return res.status(400).json({ error: 'Invalid text' });
+
+  const url = 'https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=he&ttsspeed=0.7&q='
+              + encodeURIComponent(text);
+  try {
+    const upstream = await fetch(url, {
+      headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Referer':    'https://translate.google.com/'
+      }
+    });
+    if (!upstream.ok) {
+      console.error('Google TTS upstream error:', upstream.status);
+      return res.status(502).json({ error: 'Google TTS failed: ' + upstream.status });
+    }
+    res.setHeader('Content-Type', 'audio/mpeg');
+    res.setHeader('Cache-Control', 'public, max-age=3600');
+    const buf = await upstream.arrayBuffer();
+    res.send(Buffer.from(buf));
+  } catch (err) {
+    console.error('Hebrew TTS proxy error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n🇮🇱 Kesher Ivrit is running!`);

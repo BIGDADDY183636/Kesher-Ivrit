@@ -1208,25 +1208,23 @@ function speakText(rawText, btn) {
       '| googleTTS-fallback=' + (treatAsHebrew && !hv ? 'YES' : 'no')
     );
 
-    // ── HEBREW FALLBACK: Google Translate TTS via Audio element ─────────
-    // Used when no native he-IL voice is installed in the OS.
-    // new Audio() is not subject to CORS restrictions — loads directly.
+    // ── HEBREW FALLBACK: server-side Google TTS proxy ──────────────────
+    // /api/hebrew-tts proxies through our server — no CORS or CSP issues.
     if (treatAsHebrew && !hv) {
-      var gtUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=he&ttsspeed=0.7&q='
-                  + encodeURIComponent(seg.text);
-      var gtAudio = new Audio(gtUrl);
-      gtAudio.volume = 1.0;
-      console.log('[TTS] Google Translate TTS:', seg.text);
-      gtAudio.onended = function() { setTimeout(next, seg.pauseAfter); };
-      gtAudio.onerror = function(e) {
-        console.error('[TTS] Google TTS failed:', e.type, gtUrl);
-        setTimeout(next, seg.pauseAfter);  // skip segment, keep going
+      var proxyUrl = '/api/hebrew-tts?q=' + encodeURIComponent(seg.text);
+      var heAudio = new Audio(proxyUrl);
+      heAudio.volume = 1.0;
+      console.log('[TTS] Hebrew via server proxy:', seg.text, proxyUrl);
+      heAudio.onended = function() { setTimeout(next, seg.pauseAfter); };
+      heAudio.onerror = function(e) {
+        console.error('[TTS] Hebrew proxy audio error — type:', e.type, '| url:', proxyUrl);
+        setTimeout(next, seg.pauseAfter);
       };
-      gtAudio.play().catch(function(err) {
-        console.error('[TTS] Audio.play() rejected:', err.message);
+      heAudio.play().catch(function(err) {
+        console.error('[TTS] heAudio.play() rejected:', err.message);
         setTimeout(next, seg.pauseAfter);
       });
-      return;  // Google TTS handles this segment; Web Speech not called
+      return;
     }
 
     // ── Web Speech API (English always; Hebrew when native voice exists) ─
@@ -1279,9 +1277,25 @@ function speakText(rawText, btn) {
 
 // ── testHebrew() — call this in the browser console to test Hebrew audio ──
 window.testHebrew = function() {
-  var hv = _pickHebrewVoice();
-  console.log('[TTS] testHebrew() called');
-  console.log('[TTS]   native he-IL voice :', hv ? hv.name : 'NONE — will use Google Translate TTS');
+  // ── Voice inventory ────────────────────────────────────────────────────
+  var all  = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
+  var heVoices = all.filter(function(v) { return v.lang.includes('he'); });
+  console.log('[TTS] --- testHebrew() diagnostic ---');
+  console.log('[TTS] Total voices available :', all.length);
+  console.log('[TTS] Hebrew voices (he*)   :', heVoices.length,
+              heVoices.map(function(v){ return v.name + ' (' + v.lang + ')'; }));
+  if (heVoices.length === 0) {
+    console.warn('[TTS] NO HEBREW VOICE FOUND in browser.');
+    console.warn('[TTS] Will fall back to server-side Google TTS proxy.');
+    console.warn('[TTS] To fix natively: Windows Settings > Time & Language >');
+    console.warn('[TTS]   Language & Region > Add Hebrew > install Text-to-speech');
+    console.warn('[TTS]   Then RESTART Windows (not just Chrome) and try again.');
+  }
+  // ── Proxy health check ─────────────────────────────────────────────────
+  fetch('/api/hebrew-tts?q=' + encodeURIComponent('שלום'), { method: 'HEAD' })
+    .then(function(r) { console.log('[TTS] Proxy /api/hebrew-tts status:', r.status, r.headers.get('content-type')); })
+    .catch(function(e) { console.error('[TTS] Proxy unreachable:', e.message); });
+  // ── Speak ──────────────────────────────────────────────────────────────
   speakText('שָׁלוֹם');
 };
 
