@@ -7,7 +7,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=9" />
+  <link rel="stylesheet" href="style.css?v=10" />
 </head>
 <body>
 
@@ -317,6 +317,20 @@
     <div class="mob-me-body" id="mob-me-body"></div>
   </div>
 
+  <!-- ═══ LEADERBOARD OVERLAY ═══ -->
+  <div id="leaderboard-overlay" class="leaderboard-overlay lb-hidden">
+    <div class="lb-screen">
+      <div class="lb-header">
+        <div class="lb-header-left">
+          <div class="lb-header-title">🏆 Leaderboard</div>
+          <div class="lb-header-sub">לוּחַ מַצְלִיחִים</div>
+        </div>
+        <button class="lb-close-btn" onclick="hideLeaderboardScreen()" aria-label="Close">✕</button>
+      </div>
+      <div class="lb-body" id="leaderboard-body"></div>
+    </div>
+  </div>
+
   <!-- ═══ PROGRESS OVERLAY — full-screen modal ═══ -->
   <div id="progress-overlay" class="progress-overlay prog-hidden">
     <div class="progress-screen">
@@ -531,6 +545,6 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=14"></script>
+<script src="app.js?v=15"></script>
 </body>
 </html>

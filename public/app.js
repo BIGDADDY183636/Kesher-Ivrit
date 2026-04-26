@@ -668,32 +668,6 @@ function getLeaderboard() {
   catch(e) { return []; }
 }
 
-function shareScore() {
-  if (!currentUser) return;
-  var pts = state.progress.points;
-  var msg = (LB_MESSAGES.find(function(m){ return pts >= m.min; }) || LB_MESSAGES[LB_MESSAGES.length-1]);
-  var text =
-    'Kesher Ivrit — Hebrew Challenge\n' +
-    '━━━━━━━━━━━━━━━━━━━━\n' +
-    currentUser.firstName + ' ' + currentUser.lastInitial + '.  |  ' + currentUser.school + '\n' +
-    pts + ' pts   ' + state.progress.streak + '-day streak   ' + state.progress.wordsLearned.length + ' words\n' +
-    msg.emoji + ' ' + msg.text + '\n' +
-    '━━━━━━━━━━━━━━━━━━━━\n' +
-    'Can you beat me? kesher-ivrit.vercel.app';
-
-  function copied() { showToast('Copied! Share with your classmates!'); }
-  function fallback() {
-    var ta = document.createElement('textarea');
-    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
-    document.body.appendChild(ta); ta.select();
-    try { document.execCommand('copy'); copied(); } catch(e) { showToast('Long-press to copy manually'); }
-    document.body.removeChild(ta);
-  }
-  if (navigator.clipboard && navigator.clipboard.writeText)
-    navigator.clipboard.writeText(text).then(copied).catch(fallback);
-  else fallback();
-}
-
 function renderMobileProfile() {
   var body = document.getElementById('mob-me-body');
   if (!body) return;
@@ -707,26 +681,6 @@ function renderMobileProfile() {
   var school = currentUser ? currentUser.school : '';
   var pts    = state.progress.points;
   var lbMsg  = LB_MESSAGES.find(function(m){ return pts >= m.min; }) || LB_MESSAGES[LB_MESSAGES.length-1];
-  var MEDALS = ['🥇','🥈','🥉'];
-  var board  = getLeaderboard().sort(function(a,b){ return b.points - a.points; });
-  var myId   = _lbId();
-  var myRank = board.findIndex(function(e){ return e.id === myId; }) + 1;
-
-  var lbRows = board.slice(0, 10).map(function(entry, i) {
-    var isMe  = entry.id === myId;
-    var badge = i < 3 ? MEDALS[i] : '#' + (i+1);
-    return '<div class="mob-lb-row' + (isMe ? ' lb-me' : '') + '">' +
-      '<span class="mob-lb-rank">' + badge + '</span>' +
-      '<div class="mob-lb-info">' +
-        '<div class="mob-lb-name">' + escapeHtml(entry.name) + (isMe ? ' <span class="lb-you-tag">YOU</span>' : '') + '</div>' +
-        '<div class="mob-lb-school">' + escapeHtml(entry.school) + '</div>' +
-      '</div>' +
-      '<div class="mob-lb-right">' +
-        '<div class="mob-lb-pts">' + entry.points + '</div>' +
-        '<div class="mob-lb-meta">🔥' + entry.streak + ' · 📖' + entry.words + '</div>' +
-      '</div>' +
-    '</div>';
-  }).join('');
 
   body.innerHTML =
     '<div class="mob-me-hero">' +
@@ -746,17 +700,8 @@ function renderMobileProfile() {
       '<span>' + lbMsg.text + '</span>' +
     '</div>' +
     '<button class="mob-progress-btn" onclick="showProgressScreen()">📊 My Progress</button>' +
+    '<button class="mob-lb-open-btn" onclick="showLeaderboardScreen()">🏆 Leaderboard</button>' +
     '<button class="mob-share-btn" onclick="shareScore()">📤 Share My Score</button>' +
-    '<div class="mob-leaderboard">' +
-      '<div class="mob-lb-hdr">' +
-        '<div>' +
-          '<div class="mob-lb-title">🏆 Leaderboard</div>' +
-          '<div class="mob-lb-sub">' + (board.length > 1 ? board.length + ' learners competing' : 'Be the first to share your score!') + '</div>' +
-        '</div>' +
-        (myRank > 0 ? '<div class="mob-lb-yourrank">' + (myRank <= 3 ? MEDALS[myRank-1] : '#'+myRank) + ' You</div>' : '') +
-      '</div>' +
-      (lbRows || '<div class="mob-lb-empty">Complete a lesson to appear here!</div>') +
-    '</div>' +
     '<div class="mob-action-list">' +
       '<button class="mob-action-btn" onclick="showNotebook()">' +
         '<span class="mob-action-icon">📓</span>' +
@@ -771,6 +716,174 @@ function renderMobileProfile() {
         '<div><div class="mob-action-title">Home</div><div class="mob-action-sub">Word of the Day &amp; settings</div></div>' +
       '</button>' +
     '</div>';
+}
+
+// ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
+var MOCK_LEADERS = [
+  { id:'mock_yael',    name:'Yael K.',    school:'Beit Rabban',      points:847, streak:23, words:94  },
+  { id:'mock_avi',     name:'Avi S.',     school:'Beit Rabban',      points:712, streak:15, words:78  },
+  { id:'mock_miriam',  name:'Miriam L.',  school:'Heschel School',   points:634, streak:19, words:71  },
+  { id:'mock_noam',    name:'Noam B.',    school:'Ramaz',            points:589, streak:12, words:65  },
+  { id:'mock_talia',   name:'Talia R.',   school:'SAR Academy',      points:521, streak:10, words:58  },
+  { id:'mock_ethan',   name:'Ethan M.',   school:'Heschel School',   points:478, streak:8,  words:52  },
+  { id:'mock_shira',   name:'Shira D.',   school:'Salanter Akiba',   points:412, streak:14, words:46  },
+  { id:'mock_lev',     name:'Lev C.',     school:'Ramaz',            points:356, streak:6,  words:40  },
+  { id:'mock_dina',    name:'Dina F.',    school:'SAR Academy',      points:298, streak:9,  words:33  },
+  { id:'mock_ori',     name:'Ori G.',     school:'Beit Rabban',      points:241, streak:5,  words:27  },
+  { id:'mock_maya',    name:'Maya T.',    school:'Heschel School',   points:189, streak:4,  words:22  },
+  { id:'mock_jonah',   name:'Jonah W.',   school:'JCHS',             points:145, streak:7,  words:17  },
+  { id:'mock_sara',    name:'Sara P.',    school:'Salanter Akiba',   points:98,  streak:3,  words:12  },
+  { id:'mock_ben',     name:'Ben H.',     school:'Ramaz',            points:67,  streak:2,  words:8   },
+  { id:'mock_rachel',  name:'Rachel Z.',  school:'Beit Rabban',      points:34,  streak:1,  words:5   },
+];
+
+function _buildFullBoard() {
+  var board = MOCK_LEADERS.slice();
+  if (currentUser) {
+    var myId = _lbId();
+    board = board.filter(function(e) { return e.id !== myId; });
+    board.push({
+      id:     myId,
+      name:   currentUser.firstName + ' ' + currentUser.lastInitial + '.',
+      school: currentUser.school,
+      points: state.progress.points,
+      streak: state.progress.streak,
+      words:  state.progress.wordsLearned.length,
+      isMe:   true
+    });
+  }
+  board.sort(function(a,b){ return b.points - a.points; });
+  return board;
+}
+
+function showLeaderboardScreen() {
+  renderLeaderboardScreen();
+  var el = document.getElementById('leaderboard-overlay');
+  if (el) { el.classList.remove('lb-hidden'); el.classList.add('lb-visible'); }
+}
+
+function hideLeaderboardScreen() {
+  var el = document.getElementById('leaderboard-overlay');
+  if (el) { el.classList.remove('lb-visible'); el.classList.add('lb-hidden'); }
+}
+
+function renderLeaderboardScreen() {
+  var body = document.getElementById('leaderboard-body');
+  if (!body) return;
+
+  var board  = _buildFullBoard();
+  var myId   = _lbId();
+  var myRank = 0;
+  for (var i = 0; i < board.length; i++) {
+    if (board[i].id === myId || board[i].isMe) { myRank = i + 1; break; }
+  }
+  var myEntry = myRank > 0 ? board[myRank - 1] : null;
+
+  var MEDALS    = ['🥇','🥈','🥉'];
+  var MEDAL_BG  = ['#FFF3CD','#F0F0F0','#FFE8D6'];
+  var MEDAL_CLR = ['#9A6B00','#6B6B6B','#8B4000'];
+
+  function rankBadge(i) {
+    return i < 3
+      ? '<span class="lb-medal" style="background:' + MEDAL_BG[i] + ';color:' + MEDAL_CLR[i] + '">' + MEDALS[i] + '</span>'
+      : '<span class="lb-rank-num">#' + (i+1) + '</span>';
+  }
+
+  function rowHtml(entry, i) {
+    var isMe = entry.id === myId || entry.isMe;
+    var lvl  = _getLevel ? _getLevel(entry.points) : null;
+    return '<div class="lb-row' + (isMe ? ' lb-row-me' : '') + (i < 3 ? ' lb-row-top' : '') + '">' +
+      '<div class="lb-row-rank">' + rankBadge(i) + '</div>' +
+      '<div class="lb-row-info">' +
+        '<div class="lb-row-name">' + escapeHtml(entry.name) +
+          (isMe ? ' <span class="lb-you-chip">YOU</span>' : '') +
+        '</div>' +
+        '<div class="lb-row-school">' + escapeHtml(entry.school) + '</div>' +
+      '</div>' +
+      '<div class="lb-row-right">' +
+        '<div class="lb-row-pts">' + entry.points + ' <span class="lb-pts-label">pts</span></div>' +
+        '<div class="lb-row-meta">🔥' + entry.streak + '&nbsp;&nbsp;📖' + entry.words + '</div>' +
+      '</div>' +
+    '</div>';
+  }
+
+  var SHOW_TOP = 10;
+  var topRows  = board.slice(0, SHOW_TOP).map(rowHtml).join('');
+  var showSep  = myRank > SHOW_TOP && myEntry;
+  var myRowHtml = showSep
+    ? '<div class="lb-sep">· · ·</div>' + rowHtml(myEntry, myRank - 1)
+    : '';
+
+  // Rank card for current user
+  var rankCardHtml = myEntry
+    ? '<div class="lb-my-rank-card">' +
+        '<div class="lb-my-rank-left">' +
+          '<div class="lb-my-rank-num">' + (myRank <= 3 ? MEDALS[myRank-1] : '#' + myRank) + '</div>' +
+          '<div class="lb-my-rank-label">Your Rank</div>' +
+        '</div>' +
+        '<div class="lb-my-rank-stats">' +
+          '<div class="lb-my-stat"><span class="lb-my-stat-val">' + myEntry.points + '</span><span class="lb-my-stat-lbl">pts</span></div>' +
+          '<div class="lb-my-stat"><span class="lb-my-stat-val">' + myEntry.streak + '</span><span class="lb-my-stat-lbl">streak</span></div>' +
+          '<div class="lb-my-stat"><span class="lb-my-stat-val">' + myEntry.words + '</span><span class="lb-my-stat-lbl">words</span></div>' +
+        '</div>' +
+        '<div class="lb-my-rank-msg">' +
+          (myRank === 1 ? '🏆 You are #1!' :
+           myRank <= 3  ? 'Top 3 — incredible!' :
+           myRank <= 5  ? 'Top 5 — keep going!' :
+           myRank <= 10 ? 'Top 10 — push harder!' :
+                          (myRank <= 3 ? '' : 'Beat ' + (board[myRank-2] ? board[myRank-2].name : 'them') + ' to move up!')) +
+        '</div>' +
+      '</div>'
+    : '<div class="lb-my-rank-card lb-no-user">' +
+        '<div class="lb-no-user-msg">Complete a lesson to join the leaderboard!</div>' +
+      '</div>';
+
+  body.innerHTML =
+    rankCardHtml +
+    '<div class="lb-list">' +
+      '<div class="lb-list-hdr">' +
+        '<span>Learner</span>' +
+        '<span>Score</span>' +
+      '</div>' +
+      topRows +
+      myRowHtml +
+    '</div>' +
+    '<button class="lb-share-btn" onclick="shareScore()">📤 Share My Score &amp; Challenge Friends</button>' +
+    '<div class="lb-disclaimer">Rankings include demo students. Compete with real classmates by sharing the app!</div>';
+}
+
+function shareScore() {
+  var board  = _buildFullBoard();
+  var myId   = _lbId();
+  var myRank = 0;
+  for (var i = 0; i < board.length; i++) {
+    if (board[i].id === myId || board[i].isMe) { myRank = i + 1; break; }
+  }
+  var pts  = state.progress.points;
+  var name = currentUser ? (currentUser.firstName + ' ' + currentUser.lastInitial + '.') : 'A learner';
+  var school = currentUser ? currentUser.school : '';
+  var rankLine = myRank > 0 ? 'Ranked #' + myRank + ' out of ' + board.length + ' learners' : '';
+
+  var text =
+    'I am learning Hebrew with Kesher Ivrit!\n' +
+    '---\n' +
+    name + (school ? '  |  ' + school : '') + '\n' +
+    pts + ' points   ' + state.progress.streak + '-day streak   ' + state.progress.wordsLearned.length + ' words\n' +
+    (rankLine ? rankLine + '\n' : '') +
+    '---\n' +
+    'Can you beat me? kesher-ivrit.vercel.app';
+
+  function copied() { showToast('Copied! Share with your classmates!'); }
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = text; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); copied(); } catch(e) { showToast('Long-press to copy manually'); }
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(text).then(copied).catch(fallback);
+  else fallback();
 }
 
 // ─── LEVEL SYSTEM & PROGRESS SCREEN ──────────────────────────────────────────
