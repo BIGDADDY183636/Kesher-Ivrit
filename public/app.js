@@ -1147,6 +1147,32 @@ function _buildSegments(cleanedText) {
   return segments;
 }
 
+// ── Hebrew TTS via Audio element (no Web Speech — no he-IL voice present) ──
+// Tries Google Translate direct URL first (crossOrigin=anonymous).
+// Falls back to /api/tts-hebrew server proxy if direct load fails.
+function _speakHebrewText(text, onDone, onError) {
+  var directUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=he&client=tw-ob&q='
+                  + encodeURIComponent(text);
+  var proxyUrl  = '/api/tts-hebrew?q=' + encodeURIComponent(text);
+
+  function tryProxy() {
+    console.log('[TTS] Direct failed → proxy:', proxyUrl);
+    var a = new Audio(proxyUrl);
+    a.volume = 1.0;
+    a.onended = onDone;
+    a.onerror  = function(e) { console.error('[TTS] Proxy error:', e.type); onError(); };
+    a.play().catch(function(e) { console.error('[TTS] Proxy play() rejected:', e.message); onError(); });
+  }
+
+  console.log('[TTS] Hebrew audio — trying direct:', directUrl);
+  var a = new Audio();
+  a.crossOrigin = 'anonymous';
+  a.volume = 1.0;
+  a.onended = onDone;
+  a.onerror = function() { tryProxy(); };
+  a.src = directUrl;
+  a.play().catch(function() { tryProxy(); });
+}
 // ── Button state helper ───────────────────────────────────────────────────
 function setSpeakBtnState(btn, active) {
   if (!btn) return;
@@ -1195,52 +1221,30 @@ function speakText(rawText, btn) {
     }
     var seg = segments[idx++];
 
-    // Belt-and-suspenders: force Hebrew routing even if segmentation missed it.
     var treatAsHebrew = seg.isHebrew || _containsHebrew(seg.text);
-    var hv = treatAsHebrew ? _pickHebrewVoice() : null;
+    console.log('[TTS seg ' + idx + '/' + segments.length + '] ' +
+                JSON.stringify(seg.text) + ' | hebrew=' + treatAsHebrew);
 
-    // ── Per-segment log (open DevTools Console to see this) ─────────────
-    console.log(
-      '[TTS seg ' + idx + '/' + segments.length + ']',
-      JSON.stringify(seg.text),
-      '| hebrew=' + treatAsHebrew,
-      '| nativeVoice=' + (hv ? hv.name : 'none'),
-      '| googleTTS-fallback=' + (treatAsHebrew && !hv ? 'YES' : 'no')
-    );
-
-    // ── HEBREW FALLBACK: server-side Google TTS proxy ──────────────────
-    // /api/hebrew-tts proxies through our server — no CORS or CSP issues.
-    if (treatAsHebrew && !hv) {
-      var proxyUrl = '/api/hebrew-tts?q=' + encodeURIComponent(seg.text);
-      var heAudio = new Audio(proxyUrl);
-      heAudio.volume = 1.0;
-      console.log('[TTS] Hebrew via server proxy:', seg.text, proxyUrl);
-      heAudio.onended = function() { setTimeout(next, seg.pauseAfter); };
-      heAudio.onerror = function(e) {
-        console.error('[TTS] Hebrew proxy audio error — type:', e.type, '| url:', proxyUrl);
-        setTimeout(next, seg.pauseAfter);
-      };
-      heAudio.play().catch(function(err) {
-        console.error('[TTS] heAudio.play() rejected:', err.message);
-        setTimeout(next, seg.pauseAfter);
-      });
+    // ── HEBREW: always use Audio-element TTS, never Web Speech ───────────
+    // No he-IL voice exists on this machine. _speakHebrewText tries the
+    // Google Translate URL directly first, then falls back to /api/tts-hebrew.
+    if (treatAsHebrew) {
+      _speakHebrewText(seg.text,
+        function() { setTimeout(next, seg.pauseAfter); },
+        function() { setTimeout(next, seg.pauseAfter); }
+      );
       return;
     }
 
-    // ── Web Speech API (English always; Hebrew when native voice exists) ─
+    // ── ENGLISH: Web Speech API with en-GB voice ──────────────────────
     var u = new SpeechSynthesisUtterance(seg.text);
-    if (treatAsHebrew) {
-      u.lang = 'he-IL';
-      if (hv) u.voice = hv;
-    } else {
-      u.lang = 'en-GB';
-      var ev = _pickEnglishVoice();
-      if (ev) { u.voice = ev; u.lang = ev.lang; }
-    }
+    u.lang = 'en-GB';
+    var ev = _pickEnglishVoice();
+    if (ev) { u.voice = ev; u.lang = ev.lang; }
     u.rate = 0.85; u.pitch = 1.1; u.volume = 1.0;
     u.onend  = function() { setTimeout(next, seg.pauseAfter); };
     u.onerror = function(e) {
-      console.error('[TTS error]', e.error, '| text:', seg.text, '| lang:', u.lang);
+      console.error('[TTS error]', e.error, seg.text);
       ttsActive = false;
       setSpeakBtnState(activeSpeakBtn, false);
       activeSpeakBtn = null;

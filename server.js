@@ -268,6 +268,15 @@ CHALLENGE RULES:
 - Wrong answer: gentle encouraging correction ("Almost!" / "Good try!"), explain simply, re-challenge. Never just say "wrong" or "incorrect".
 - Always include 📚 WORDS LEARNED for new words in the TEACH block.
 
+${timeAvail === '5 minutes' ? `
+⚡ 5-MINUTE SESSION — STRICT LIMITS — NO EXCEPTIONS:
+- Every single response: maximum 2 sentences total. Not 3. Not 4. Two.
+- Teach exactly ONE word or concept per message. One.
+- Skip all cultural tangents, slang detours, and extended explanations.
+- [TEACH] block: one line only, always Mode B format regardless of concept type.
+- Get to the [CHALLENGE] immediately after the word. No preamble.
+- Think: flashcard speed. Word → quiz → next word. Nothing else.` : ''}
+
 Start with a half-line greeting to ${name}, then teach the first word.`;
 }
 
@@ -388,7 +397,8 @@ app.post('/api/speak', async (req, res) => {
 
 // Hebrew TTS proxy — fetches Google Translate audio server-side so the
 // browser has no CORS or content-security issues. Returns audio/mpeg.
-app.get('/api/hebrew-tts', async (req, res) => {
+// Registered at both names for backwards compatibility.
+app.get('/api/tts-hebrew', async (req, res) => {
   const text = (req.query.q || '').trim();
   if (!text || text.length > 200) return res.status(400).json({ error: 'Invalid text' });
 
