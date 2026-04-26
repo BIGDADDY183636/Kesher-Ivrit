@@ -1205,25 +1205,28 @@ function speakText(rawText, btn) {
       JSON.stringify(seg.text),
       '| hebrew=' + treatAsHebrew,
       '| nativeVoice=' + (hv ? hv.name : 'none'),
-      '| responsiveVoice=' + (!!window.responsiveVoice)
+      '| googleTTS-fallback=' + (treatAsHebrew && !hv ? 'YES' : 'no')
     );
 
-    // ── HEBREW: ResponsiveVoice fallback when no he-IL native voice ──────
-    if (treatAsHebrew && !hv && window.responsiveVoice) {
-      console.log('[TTS] Using ResponsiveVoice Hebrew Female for:', seg.text);
-      responsiveVoice.speak(seg.text, 'Hebrew Female', {
-        rate:   0.85,
-        pitch:  1.1,
-        volume: 1.0,
-        onend:  function() { setTimeout(next, seg.pauseAfter); },
-        onerror: function(e) {
-          console.error('[TTS] ResponsiveVoice error:', e);
-          ttsActive = false;
-          setSpeakBtnState(activeSpeakBtn, false);
-          activeSpeakBtn = null;
-        }
+    // ── HEBREW FALLBACK: Google Translate TTS via Audio element ─────────
+    // Used when no native he-IL voice is installed in the OS.
+    // new Audio() is not subject to CORS restrictions — loads directly.
+    if (treatAsHebrew && !hv) {
+      var gtUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&client=tw-ob&tl=he&ttsspeed=0.7&q='
+                  + encodeURIComponent(seg.text);
+      var gtAudio = new Audio(gtUrl);
+      gtAudio.volume = 1.0;
+      console.log('[TTS] Google Translate TTS:', seg.text);
+      gtAudio.onended = function() { setTimeout(next, seg.pauseAfter); };
+      gtAudio.onerror = function(e) {
+        console.error('[TTS] Google TTS failed:', e.type, gtUrl);
+        setTimeout(next, seg.pauseAfter);  // skip segment, keep going
+      };
+      gtAudio.play().catch(function(err) {
+        console.error('[TTS] Audio.play() rejected:', err.message);
+        setTimeout(next, seg.pauseAfter);
       });
-      return;   // ResponsiveVoice handles this segment; Web Speech not called
+      return;  // Google TTS handles this segment; Web Speech not called
     }
 
     // ── Web Speech API (English always; Hebrew when native voice exists) ─
@@ -1276,14 +1279,9 @@ function speakText(rawText, btn) {
 
 // ── testHebrew() — call this in the browser console to test Hebrew audio ──
 window.testHebrew = function() {
-  var rv = !!window.responsiveVoice;
   var hv = _pickHebrewVoice();
   console.log('[TTS] testHebrew() called');
-  console.log('[TTS]   native he-IL voice :', hv ? hv.name : 'NONE');
-  console.log('[TTS]   ResponsiveVoice     :', rv ? 'LOADED' : 'NOT LOADED');
-  if (!hv && !rv) {
-    console.warn('[TTS] No Hebrew voice available — install Hebrew in Windows Settings > Language');
-  }
+  console.log('[TTS]   native he-IL voice :', hv ? hv.name : 'NONE — will use Google Translate TTS');
   speakText('שָׁלוֹם');
 };
 
