@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=14" />
+  <link rel="stylesheet" href="style.css?v=15" />
 </head>
 <body>
 
@@ -49,12 +49,14 @@
               <label class="reg-label">First Name</label>
               <input type="text" id="reg-firstname" class="quiz-name-input reg-input"
                 placeholder="e.g. Rivka" maxlength="40"
+                oninput="document.getElementById('reg-error').style.display='none'"
                 onkeydown="if(event.key==='Enter') document.getElementById('reg-lastinitial').focus()" />
             </div>
             <div class="reg-field reg-field-narrow">
               <label class="reg-label">Last Name Initial<span class="reg-label-hint">one letter only — e.g. if Cohen, type C</span></label>
               <input type="text" id="reg-lastinitial" class="quiz-name-input reg-input reg-input-initial"
                 placeholder="C" maxlength="1"
+                oninput="document.getElementById('reg-error').style.display='none'"
                 onkeydown="if(event.key==='Enter') document.getElementById('reg-school').focus()" />
             </div>
           </div>
@@ -62,6 +64,7 @@
             <label class="reg-label">School Name</label>
             <input type="text" id="reg-school" class="quiz-name-input reg-input"
               placeholder="e.g. Beit Rabban Day School" maxlength="80"
+              oninput="document.getElementById('reg-error').style.display='none'"
               onkeydown="if(event.key==='Enter') submitRegistration()" />
           </div>
         </div>
@@ -568,7 +571,7 @@
   <div class="tt-pos" id="tt-pos"></div>
 </div>
 
-<div id="toast" class="toast" style="display:none;"></div>
+<div id="toast" class="toast"></div>
 
 <!-- CURRICULUM MAP PANEL -->
 <div id="curriculum-panel" class="curriculum-panel" style="display:none;">
@@ -588,7 +591,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=19"></script>
+<script src="app.js?v=20"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">

@@ -1285,6 +1285,7 @@ async function sendMessage() {
   if (!text) return;
 
   input.value = '';
+  input.focus();
   appendMessage('user', text);
   state.messages.push({ role: 'user', content: text });
 
@@ -1308,8 +1309,9 @@ async function sendToMorah(messages) {
   const typingIndicator = document.getElementById('typing-indicator');
 
   sendBtn.disabled = true;
+  sendBtn.classList.add('is-loading');
   typingIndicator.style.display = 'flex';
-  setMorahStatus('Thinking... 💭');
+  setMorahStatus('Morah is thinking…');
 
   try {
     const headers = { 'Content-Type': 'application/json' };
@@ -1323,21 +1325,21 @@ async function sendToMorah(messages) {
     });
 
     if (!response.ok) {
-      const err = await response.json();
+      const err = await response.json().catch(() => ({}));
       if (err.error === 'NO_API_KEY') {
         document.getElementById('modal-apikey').style.display = 'flex';
-        throw new Error('API key required. Please enter your Anthropic API key.');
+        throw new Error('no_api_key');
       }
-      throw new Error(err.error || 'Server error');
+      if (response.status === 429) throw new Error('rate_limit');
+      if (response.status >= 500) throw new Error('server_error');
+      throw new Error(err.error || 'unknown');
     }
 
     const data = await response.json();
     const rawContent = data.content;
 
-    // Extract words learned from response
     const wordsData = extractWordsLearned(rawContent);
 
-    // Extract and store any skip tags — [SKIP: topic name]
     const skipMatches = rawContent.matchAll(/\[SKIP:\s*([^\]]+)\]/gi);
     for (const match of skipMatches) {
       const topic = match[1].trim();
@@ -1346,7 +1348,6 @@ async function sendToMorah(messages) {
       }
     }
 
-    // Remove words-learned block and skip tags from displayed text
     const cleanContent = rawContent
       .replace(/📚 WORDS LEARNED:.*$/s, '')
       .replace(/\[SKIP:[^\]]*\]/gi, '')
@@ -1367,10 +1368,12 @@ async function sendToMorah(messages) {
   } catch (error) {
     console.error('Chat error:', error);
     appendErrorMessage(error.message);
-    setMorahStatus('Something went wrong... try again');
+    setMorahStatus('Ready when you are! 🇮🇱');
   } finally {
     sendBtn.disabled = false;
+    sendBtn.classList.remove('is-loading');
     typingIndicator.style.display = 'none';
+    document.getElementById('user-input').focus();
   }
 }
 
@@ -1500,7 +1503,7 @@ function appendMessage(role, content, wordBadges = []) {
     if (wordBadges.length > 0) {
       badgesHtml = `<div class="word-badges">` +
         wordBadges.map((w, i) => `
-          <div class="word-badge" style="animation-delay:${i * 0.1}s">
+          <div class="word-badge" style="animation-delay:${i * 0.04}s">
             <span class="word-badge-heb">${escapeHtml(w.hebrew)}</span>
             <span class="word-badge-trans">${escapeHtml(w.transliteration)}</span>
             <span class="word-badge-eng">${escapeHtml(w.english)}</span>
@@ -1539,17 +1542,27 @@ function appendMessage(role, content, wordBadges = []) {
   }
 }
 
-function appendErrorMessage(errText) {
+function appendErrorMessage(errCode) {
+  const msgs = {
+    no_api_key:   { emoji: '🔑', title: 'No API key set', body: 'Tap the ⚙️ settings icon above to add your key.' },
+    rate_limit:   { emoji: '⏳', title: 'Morah needs a moment!', body: 'Too many messages at once — wait a few seconds and try again.' },
+    server_error: { emoji: '🛠️', title: 'Server hiccup', body: 'Something went wrong on our end. Try sending again in a moment.' },
+  };
+  const offline = !navigator.onLine;
+  let m = msgs[errCode] || (offline
+    ? { emoji: '📶', title: 'No internet connection', body: 'Check your connection and try again.' }
+    : { emoji: '😅', title: 'Something went wrong', body: 'Try sending your message again.' });
+
   const container = document.getElementById('chat-messages');
   const el = document.createElement('div');
   el.className = 'message morah';
   el.innerHTML = `
-    <div class="msg-avatar">⚠️</div>
-    <div>
-      <div class="msg-bubble" style="border-color:#C0392B;background:#FFF5F5;color:#C0392B;">
-        <strong style="background:none;color:#C0392B;">Error:</strong> ${escapeHtml(errText)}
-        <br/><br/>Check that your <code>ANTHROPIC_API_KEY</code> is set correctly.
+    <div class="msg-avatar">${m.emoji}</div>
+    <div style="flex:1">
+      <div class="msg-bubble error-bubble">
+        <strong>${m.title}</strong><br/>${m.body}
       </div>
+      <div class="msg-footer"><span class="msg-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
     </div>`;
   container.appendChild(el);
   autoScroll();
@@ -1887,11 +1900,16 @@ function setMorahStatus(text) {
   document.getElementById('morah-status').textContent = text;
 }
 
-function showToast(msg, duration = 3500) {
+var _toastTimer = null;
+function showToast(msg, duration) {
+  duration = duration || 3500;
   const toast = document.getElementById('toast');
+  clearTimeout(_toastTimer);
   toast.textContent = msg;
-  toast.style.display = 'block';
-  setTimeout(() => { toast.style.display = 'none'; }, duration);
+  toast.classList.add('toast-show');
+  _toastTimer = setTimeout(function() {
+    toast.classList.remove('toast-show');
+  }, duration);
 }
 
 function showPointsPop(points) {
@@ -2210,7 +2228,11 @@ function shuffle(arr) {
 
 function startSpeedRound() {
   sr.pool = buildSRPool();
-  if (sr.pool.length < 4) { showToast('Learn a few more words first!'); return; }
+  if (sr.pool.length < 4) {
+    const need = 4 - sr.pool.length;
+    showToast('Learn ' + need + ' more word' + (need > 1 ? 's' : '') + ' in a lesson first! 📖', 4000);
+    return;
+  }
 
   sr.words   = shuffle(sr.pool).slice(0, 10);
   sr.idx     = 0;
@@ -2235,17 +2257,16 @@ function startSpeedRound() {
 }
 
 function updateSRTimer() {
+  const t   = Math.max(0, sr.timeLeft);
   const num = document.getElementById('sr-timer-num');
   const bar = document.getElementById('sr-timer-bar');
-  if (num) num.textContent = sr.timeLeft;
+  if (num) num.textContent = t;
   if (bar) {
-    bar.style.width = (sr.timeLeft / 60 * 100) + '%';
-    bar.className = 'sr-timer-bar' +
-      (sr.timeLeft <= 10 ? ' danger' : sr.timeLeft <= 20 ? ' warning' : '');
+    bar.style.width = (t / 60 * 100) + '%';
+    bar.className = 'sr-timer-bar' + (t <= 10 ? ' danger' : t <= 20 ? ' warning' : '');
   }
   if (num) {
-    num.className = 'sr-timer-num' +
-      (sr.timeLeft <= 10 ? ' danger' : sr.timeLeft <= 20 ? ' warning' : '');
+    num.className = 'sr-timer-num' + (t <= 10 ? ' danger' : t <= 20 ? ' warning' : '');
   }
 }
 
