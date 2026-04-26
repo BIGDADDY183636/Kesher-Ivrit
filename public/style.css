@@ -389,7 +389,17 @@ body {
 }
 
 .reg-field-narrow {
-  flex: 0 0 80px;
+  flex: 0 0 175px;
+}
+
+.reg-label-hint {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 500;
+  text-transform: none;
+  letter-spacing: 0;
+  color: var(--text-light);
+  margin-top: 2px;
 }
 
 .reg-label {
