@@ -700,15 +700,148 @@ function cleanForSpeech(raw) {
     .replace(/\[TEACH\]|\[\/TEACH\]/g, '')
     .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
     .replace(/📚 WORDS LEARNED:[\s\S]*/g, '')
-    .replace(/\*/g, '')                          // asterisks
-    .replace(/[#`~_>|\\]/g, '')                  // markdown symbols
-    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')      // emoji block 1
-    .replace(/[\u{2600}-\u{27BF}]/gu, '')        // emoji block 2 (misc symbols)
-    .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')      // flag emoji
-    .replace(/—/g, '.')                          // em-dash → full pause
-    .replace(/ch/gi, 'kh')                       // Hebrew chet: "challah"→"khallah", "Chanukah"→"Khanukah"
+    .replace(/\*/g, '')
+    .replace(/[#`~_>|\\]/g, '')
+    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
+    .replace(/[\u{2600}-\u{27BF}]/gu, '')
+    .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')
+    .replace(/—/g, '.')
     .replace(/\s+/g, ' ')
     .trim();
+}
+
+// ── HEBREW PRONUNCIATION FIXES ────────────────────────────
+// Applied to non-Hebrew (transliteration / English) segments only.
+// Dictionary: common transliterations → phonetic spelling with stressed syllable in CAPS.
+// Hyphens create micro-pauses that guide the TTS engine toward correct syllabification.
+var HEBREW_PHONETICS = {
+  // Greetings & social
+  'shalom':        'sha-LOME',
+  'todah':         'to-DAH',
+  'todah rabah':   'to-DAH ra-BAH',
+  'bevakasha':     'be-va-ka-SHAH',
+  'lehitraot':     'le-hit-ra-OHT',
+  'boker tov':     'BOH-ker tov',
+  'erev tov':      'EH-rev tov',
+  'laila tov':     'LYE-la tov',
+  'shabbat shalom':'sha-BAT sha-LOME',
+  // Pronouns & basic words
+  'ani':    'ah-NEE',
+  'ata':    'ah-TAH',
+  'at':     'aht',
+  'hu':     'hoo',
+  'hi':     'hee',
+  'anachnu':'ah-NAKH-noo',
+  'atem':   'ah-TEM',
+  'ken':    'kehn',
+  'lo':     'loh',
+  // Slang & expressions
+  'sababa':       'sa-BA-ba',
+  'yalla':        'YAH-la',
+  'walla':        'WAH-la',
+  'stam':         'stahm',
+  'nu':           'noo',
+  'achi':         'ah-KHEE',
+  'ahoti':        'ah-HOH-tee',
+  'davka':        'DAV-ka',
+  'yoffi':        'YOF-ee',
+  'kol hakavod':  'kohl ha-ka-VODE',
+  'metzuyan':     'me-tzoo-YAN',
+  'beseder':      'be-SEH-der',
+  // Common nouns
+  'mayim':      'MA-yim',
+  'lechem':     'LEH-khem',
+  'bayit':      'BA-yit',
+  'yom':        'yome',
+  'lailah':     'LYE-la',
+  'mishpakhah': 'mish-pa-KHAH',
+  'ahavah':     'a-ha-VAH',
+  'eretz':      'EH-rets',
+  'shamayim':   'sha-MA-yim',
+  'sefer':      'SEH-fer',
+  'ir':         'eer',
+  'nefesh':     'NEH-fesh',
+  'ruakh':      'ROO-akh',
+  'lev':        'lehv',
+  'emunah':     'e-moo-NAH',
+  'emet':       'EH-met',
+  'khesed':     'KHEH-sed',
+  'kavod':      'ka-VODE',
+  'tzedek':     'TZEH-dek',
+  'mitzvah':    'mitz-VAH',
+  'kavanah':    'ka-va-NAH',
+  'bereshit':   'be-re-SHEET',
+  // Adjectives
+  'tov':    'tove',
+  'ra':     'rah',
+  'gadol':  'ga-DOLE',
+  'katan':  'ka-TAN',
+  'yafeh':  'ya-FEH',
+  'yafah':  'ya-FAH',
+  'kashuv': 'ka-SHOOV',
+  'kashe':  'KA-she',
+  'maher':  'ma-HEHR',
+  // Verbs (infinitives)
+  'larutz':    'la-ROOTS',
+  'ledaber':   'le-da-BEHR',
+  'lakhshov':  'lakh-SHOHV',
+  'lehavin':   'le-ha-VEEN',
+  'likhtov':   'likh-TOVE',
+  'likro':     'likh-ROH',
+  'lalechet':  'la-LEH-khet',
+  // Past tense conjugations
+  'halakhti':  'ha-lakh-TEE',
+  'halakhta':  'ha-LAKH-ta',
+  'halekhu':   'ha-lekh-OO',
+  'halkha':    'hal-KHAH',
+  'yelekh':    'ye-LEKH',
+  'diber':     'dee-BEHR',
+  'hevin':     'he-VEEN',
+  'katav':     'ka-TAV',
+  'ratz':      'rahtz',
+  // Time words
+  'etmol':   'et-MOLE',
+  'makhar':  'ma-KHAR',
+  'akhshav': 'akh-SHAHV',
+  'hayom':   'ha-YOME',
+  // Grammar terms
+  'binyan':  'bin-YAN',
+  'avar':    'a-VAR',
+  'atid':    'a-TEED',
+  'hove':    'HOH-veh',
+  'paal':    'pa-AHL',
+  'piiel':   'pee-EL',
+  'hifil':   'hee-FEEL',
+};
+
+// Sort by length descending so longer phrases match before their sub-words
+var _SR_KEYS = Object.keys(HEBREW_PHONETICS).sort(function(a,b){ return b.length - a.length; });
+
+function fixHebrewPronunciation(text) {
+  var result = text;
+
+  // 1. Apply word/phrase-level phonetic dictionary (case-insensitive)
+  _SR_KEYS.forEach(function(word) {
+    var re = new RegExp('(?<![\\w-])' + word.replace(/[-]/g,'\\-') + '(?![\\w-])', 'gi');
+    result = result.replace(re, HEBREW_PHONETICS[word]);
+  });
+
+  // 2. Generic consonant fixes for anything not caught by the dictionary
+  result = result
+    .replace(/\bch/gi, 'kh')         // chet/khaf: challah→khallah
+    .replace(/tz/gi, 'ts')           // tzadik: clearer as "ts" for TTS engines
+    .replace(/\bkh/gi, 'kh');        // khaf: already correct, keep
+
+  // 3. Vowel guidance — help TTS with Hebrew vowel sounds
+  // "a" in transliterations → "ah" (as in father) at word ends
+  result = result.replace(/ah\b/g, 'ah');
+  // diphthong "ai" → "eye" (as in Sinai)
+  result = result.replace(/\bai\b/gi, 'eye');
+  // "ei" at word end → "ay" (adonei → adonay)
+  result = result.replace(/ei\b/gi, 'ay');
+  // "oo" stays "oo" (already correct for moon)
+
+  return result;
 }
 
 // Split at sentence boundaries for clean Alexa-style delivery
@@ -769,7 +902,9 @@ function speakMessage(msgId) {
     var useHebrew = isHebrewText(sentence);
     var voice = useHebrew ? (heVoice || enVoice) : enVoice;
 
-    var u = new SpeechSynthesisUtterance(sentence);
+    // Apply Hebrew pronunciation fixes to transliteration/English — not to actual Hebrew script
+    var spokenText = useHebrew ? sentence : fixHebrewPronunciation(sentence);
+    var u = new SpeechSynthesisUtterance(spokenText);
     if (voice) { u.voice = voice; u.lang = voice.lang; }
     else        { u.lang = useHebrew ? 'he-IL' : 'en-US'; }
     u.rate   = 0.82;
