@@ -650,46 +650,33 @@ function isFemale(v) {
   return false;
 }
 
-function pickVoice() {
+// Pick best Hebrew voice
+function pickHebrewVoice() {
   if (!voices.length) loadVoices();
   var i;
-  // 1. Female he-IL
-  for (i = 0; i < voices.length; i++) {
-    if (voices[i].lang === 'he-IL' && isFemale(voices[i])) return voices[i];
-  }
-  // 2. Any he-IL
-  for (i = 0; i < voices.length; i++) {
-    if (voices[i].lang === 'he-IL') return voices[i];
-  }
-  // 3. Any Hebrew (he-*)
-  for (i = 0; i < voices.length; i++) {
-    if (voices[i].lang.indexOf('he') === 0 && isFemale(voices[i])) return voices[i];
-  }
-  // 4. Google UK English Female (exact)
-  for (i = 0; i < voices.length; i++) {
-    if (voices[i].name === 'Google UK English Female') return voices[i];
-  }
-  // 5. Samantha (clearest macOS voice)
-  for (i = 0; i < voices.length; i++) {
-    if (voices[i].name === 'Samantha') return voices[i];
-  }
-  // 6. Any female en-GB
-  for (i = 0; i < voices.length; i++) {
-    if (voices[i].lang === 'en-GB' && isFemale(voices[i])) return voices[i];
-  }
-  // 7. Any female en-US
-  for (i = 0; i < voices.length; i++) {
-    if (voices[i].lang === 'en-US' && isFemale(voices[i])) return voices[i];
-  }
-  // 8. Any female English
-  for (i = 0; i < voices.length; i++) {
-    if (voices[i].lang.indexOf('en') === 0 && isFemale(voices[i])) return voices[i];
-  }
-  // 9. Any en-US
-  for (i = 0; i < voices.length; i++) {
-    if (voices[i].lang === 'en-US') return voices[i];
-  }
+  for (i = 0; i < voices.length; i++) { if (voices[i].lang === 'he-IL' && isFemale(voices[i])) return voices[i]; }
+  for (i = 0; i < voices.length; i++) { if (voices[i].lang === 'he-IL') return voices[i]; }
+  for (i = 0; i < voices.length; i++) { if (voices[i].lang.indexOf('he') === 0) return voices[i]; }
+  return null;
+}
+
+// Pick best female English voice
+function pickEnglishVoice() {
+  if (!voices.length) loadVoices();
+  var i;
+  for (i = 0; i < voices.length; i++) { if (voices[i].name === 'Google UK English Female') return voices[i]; }
+  for (i = 0; i < voices.length; i++) { if (voices[i].name === 'Samantha') return voices[i]; }
+  for (i = 0; i < voices.length; i++) { if (voices[i].lang === 'en-GB' && isFemale(voices[i])) return voices[i]; }
+  for (i = 0; i < voices.length; i++) { if (voices[i].lang === 'en-US' && isFemale(voices[i])) return voices[i]; }
+  for (i = 0; i < voices.length; i++) { if (voices[i].lang.indexOf('en') === 0 && isFemale(voices[i])) return voices[i]; }
+  for (i = 0; i < voices.length; i++) { if (voices[i].lang === 'en-US') return voices[i]; }
   return voices[0] || null;
+}
+
+// Returns true if sentence contains significant Hebrew text (>20% Hebrew chars)
+function isHebrewText(s) {
+  var heCount = (s.match(/[֐-׿]/g) || []).length;
+  return heCount > 0 && heCount / s.length > 0.2;
 }
 
 // Strip all markdown, emojis, and symbols — leave only spoken words and punctuation
@@ -750,7 +737,9 @@ function speakMessage(msgId) {
   activeSpeakBtn = btn;
   setSpeakBtnState(btn, true);
 
-  var voice = pickVoice();
+  // Resolve both voices once before the chain starts
+  var heVoice = pickHebrewVoice();
+  var enVoice = pickEnglishVoice();
   var idx = 0;
 
   function next() {
@@ -760,9 +749,13 @@ function speakMessage(msgId) {
       activeSpeakBtn = null;
       return;
     }
-    var u = new SpeechSynthesisUtterance(sentences[idx++]);
+    var sentence = sentences[idx++];
+    var useHebrew = isHebrewText(sentence);
+    var voice = useHebrew ? (heVoice || enVoice) : enVoice;
+
+    var u = new SpeechSynthesisUtterance(sentence);
     if (voice) { u.voice = voice; u.lang = voice.lang; }
-    else { u.lang = 'he-IL'; }
+    else        { u.lang = useHebrew ? 'he-IL' : 'en-US'; }
     u.rate   = 0.82;
     u.pitch  = 1.15;
     u.volume = 1.0;
