@@ -131,6 +131,7 @@
       </div>
 
       <div class="sidebar-actions">
+        <button class="btn-sidebar" onclick="showNotebook()">📓 My Notebook</button>
         <button class="btn-sidebar" onclick="showFeedback()">📝 Feedback</button>
         <button class="btn-sidebar btn-secondary" onclick="goHome()">🏠 Home</button>
       </div>
@@ -147,7 +148,15 @@
           </div>
         </div>
         <div class="chat-header-actions">
-          <button class="btn-icon" onclick="newLesson()" title="New Lesson">🔄 New Topic</button>
+          <select id="topic-select" class="topic-select" onchange="selectTopic(this.value)">
+            <option value="Greetings">Greetings</option>
+            <option value="Verbs">Verbs</option>
+            <option value="Infinitives">Infinitives</option>
+            <option value="Nouns">Nouns</option>
+            <option value="Adjectives">Adjectives</option>
+            <option value="Numbers">Numbers</option>
+          </select>
+          <button class="btn-icon" onclick="newLesson()" title="New Lesson">🔄 Restart</button>
         </div>
       </div>
 
@@ -272,6 +281,27 @@
 <!-- ═══════════════════════════════════════════
      TOAST NOTIFICATION
 ═══════════════════════════════════════════ -->
+<!-- NOTEBOOK PANEL -->
+<div id="notebook-panel" class="notebook-panel" style="display:none;">
+  <div class="notebook-header">
+    <div class="notebook-title">
+      <span class="notebook-icon">📓</span>
+      <div>
+        <div class="notebook-name">My Hebrew Notebook</div>
+        <div class="notebook-sub" id="notebook-sub">0 words learned</div>
+      </div>
+    </div>
+    <button class="notebook-close" onclick="closeNotebook()">✕</button>
+  </div>
+  <div class="notebook-search">
+    <input type="text" id="notebook-search" placeholder="Search words..." oninput="filterNotebook(this.value)" />
+  </div>
+  <div class="notebook-body" id="notebook-body">
+    <!-- rendered by JS -->
+  </div>
+</div>
+<div id="notebook-overlay" class="notebook-overlay" onclick="closeNotebook()" style="display:none;"></div>
+
 <!-- VOCABULARY TOOLTIP -->
 <div id="vocab-tooltip" class="vocab-tooltip" style="display:none;">
   <button class="tt-close" onclick="closeTooltip()">✕</button>

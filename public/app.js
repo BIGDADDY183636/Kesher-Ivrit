@@ -1341,6 +1341,78 @@ function toggleMicLang() {
   }
 }
 
+// ─── NOTEBOOK ────────────────────────────────────────────
+const CATEGORY_ORDER = ['verb','noun','adjective','greeting','number','phrase','preposition','adverb','other'];
+const CATEGORY_LABELS = {
+  verb: 'Verbs', noun: 'Nouns', adjective: 'Adjectives', greeting: 'Greetings',
+  number: 'Numbers', phrase: 'Phrases', preposition: 'Prepositions',
+  adverb: 'Adverbs', other: 'Other'
+};
+
+function showNotebook() {
+  renderNotebook('');
+  document.getElementById('notebook-panel').style.display = 'flex';
+  document.getElementById('notebook-overlay').style.display = 'block';
+  document.getElementById('notebook-search').value = '';
+  document.getElementById('notebook-search').focus();
+}
+
+function closeNotebook() {
+  document.getElementById('notebook-panel').style.display = 'none';
+  document.getElementById('notebook-overlay').style.display = 'none';
+}
+
+function filterNotebook(query) {
+  renderNotebook(query.toLowerCase().trim());
+}
+
+function renderNotebook(query) {
+  const words = state.progress.wordsLearned;
+  const filtered = query
+    ? words.filter(w =>
+        (w.hebrew || '').includes(query) ||
+        (w.transliteration || '').toLowerCase().includes(query) ||
+        (w.english || '').toLowerCase().includes(query))
+    : words;
+
+  document.getElementById('notebook-sub').textContent =
+    words.length + ' word' + (words.length !== 1 ? 's' : '') + ' learned';
+
+  // Group by category
+  const groups = {};
+  filtered.forEach(function(w) {
+    const cat = w.category || 'other';
+    if (!groups[cat]) groups[cat] = [];
+    groups[cat].push(w);
+  });
+
+  const body = document.getElementById('notebook-body');
+  if (!filtered.length) {
+    body.innerHTML = '<div class="notebook-empty">' +
+      (query ? 'No words matching "' + escapeHtml(query) + '"' : 'No words yet — start a lesson!') +
+      '</div>';
+    return;
+  }
+
+  let html = '';
+  CATEGORY_ORDER.forEach(function(cat) {
+    if (!groups[cat] || !groups[cat].length) return;
+    html += '<div class="nb-category">';
+    html += '<div class="nb-cat-title">' + (CATEGORY_LABELS[cat] || cat) +
+            ' <span class="nb-cat-count">' + groups[cat].length + '</span></div>';
+    html += '<div class="nb-words">';
+    groups[cat].forEach(function(w) {
+      html += '<div class="nb-word">' +
+        '<span class="nb-heb">' + escapeHtml(w.hebrew || '') + '</span>' +
+        '<span class="nb-trans">' + escapeHtml(w.transliteration || '') + '</span>' +
+        '<span class="nb-eng">' + escapeHtml(w.english || '') + '</span>' +
+        '</div>';
+    });
+    html += '</div></div>';
+  });
+  body.innerHTML = html;
+}
+
 // ─── VOCABULARY TOOLTIPS ─────────────────────────────────
 const HEB_RE = /[א-תְ-ֽיִ-פֿ]/;  // Hebrew letter/vowel range
 let tooltipTimeout = null;

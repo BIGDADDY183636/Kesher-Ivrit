@@ -1060,6 +1060,94 @@ body {
 .modal-streak-box h2 { font-size: 1.6rem; color: var(--text-dark); }
 .modal-streak-box p { font-size: 0.95rem; margin: 10px auto 24px; max-width: 320px; }
 
+/* ═══ NOTEBOOK PANEL ═══ */
+.notebook-overlay {
+  position: fixed; inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: 2000;
+  backdrop-filter: blur(2px);
+}
+
+.notebook-panel {
+  position: fixed;
+  top: 0; right: 0; bottom: 0;
+  width: 380px;
+  max-width: 100vw;
+  background: var(--white);
+  z-index: 2001;
+  flex-direction: column;
+  box-shadow: -8px 0 40px rgba(0,0,0,0.18);
+  animation: slideInRight 0.28s cubic-bezier(0.22, 1, 0.36, 1);
+}
+@keyframes slideInRight {
+  from { transform: translateX(100%); opacity: 0; }
+  to   { transform: translateX(0);    opacity: 1; }
+}
+
+.notebook-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 20px 20px 16px;
+  background: linear-gradient(135deg, var(--blue-deep), var(--blue-mid));
+  color: var(--white);
+  flex-shrink: 0;
+}
+.notebook-title { display: flex; align-items: center; gap: 12px; }
+.notebook-icon  { font-size: 1.8rem; }
+.notebook-name  { font-size: 1.05rem; font-weight: 700; }
+.notebook-sub   { font-size: 0.75rem; color: rgba(255,255,255,0.7); margin-top: 2px; }
+.notebook-close {
+  background: rgba(255,255,255,0.15); border: none; color: var(--white);
+  width: 32px; height: 32px; border-radius: 50%; font-size: 1rem;
+  cursor: pointer; transition: background 0.2s; display: flex; align-items: center; justify-content: center;
+}
+.notebook-close:hover { background: rgba(255,255,255,0.3); }
+
+.notebook-search { padding: 14px 16px 10px; flex-shrink: 0; border-bottom: 1px solid var(--border); }
+.notebook-search input {
+  width: 100%; padding: 9px 14px;
+  border: 2px solid var(--border); border-radius: 10px;
+  font-size: 0.9rem; font-family: var(--font-eng);
+  outline: none; color: var(--text-dark); transition: border-color 0.2s;
+}
+.notebook-search input:focus { border-color: var(--blue-mid); }
+
+.notebook-body {
+  flex: 1; overflow-y: auto; padding: 12px 16px 20px;
+}
+.notebook-body::-webkit-scrollbar { width: 4px; }
+.notebook-body::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+
+.notebook-empty {
+  text-align: center; color: var(--text-light);
+  font-size: 0.9rem; padding: 40px 20px; font-style: italic;
+}
+
+.nb-category { margin-bottom: 20px; }
+.nb-cat-title {
+  font-size: 0.7rem; font-weight: 800; text-transform: uppercase;
+  letter-spacing: 0.1em; color: var(--blue-mid);
+  display: flex; align-items: center; gap: 6px;
+  margin-bottom: 8px; padding-bottom: 5px;
+  border-bottom: 2px solid var(--blue-pale);
+}
+.nb-cat-count {
+  background: var(--blue-pale); color: var(--blue-deep);
+  border-radius: 20px; padding: 1px 7px; font-size: 0.65rem;
+}
+
+.nb-words { display: flex; flex-direction: column; gap: 6px; }
+.nb-word {
+  display: grid; grid-template-columns: 1fr 1fr 1fr;
+  gap: 6px; align-items: center;
+  padding: 10px 12px; background: var(--blue-bg);
+  border-radius: 10px; border: 1px solid var(--border);
+  transition: background 0.15s;
+}
+.nb-word:hover { background: var(--blue-pale); }
+.nb-heb  { font-family: var(--font-heb); font-size: 1.2rem; direction: rtl; color: var(--blue-deep); font-weight: 700; }
+.nb-trans { font-size: 0.78rem; color: var(--text-light); font-style: italic; }
+.nb-eng  { font-size: 0.82rem; color: var(--text-dark); font-weight: 600; }
+
 /* ═══ VOCABULARY TOOLTIP ═══ */
 .vocab-tooltip {
   position: fixed;
