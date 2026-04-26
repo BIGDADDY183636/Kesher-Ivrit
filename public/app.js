@@ -844,13 +844,40 @@ function fixHebrewPronunciation(text) {
   return result;
 }
 
-// Split at sentence boundaries for clean Alexa-style delivery
-function toSentences(text) {
-  return text
-    .replace(/([.!?])\s+/g, '$1\n')
-    .split('\n')
-    .map(function(s) { return s.trim(); })
-    .filter(function(s) { return s.length > 1; });
+// Build a flat list of speech segments from cleaned text.
+// Splits at sentence boundaries AND within each sentence at Hebrew/English boundaries.
+// Every Hebrew run gets isHebrew:true so it's routed to the he-IL voice.
+function buildSpeechSegments(text) {
+  // Step 1: split into sentences for natural pauses
+  var sentenceList = text.replace(/([.!?])\s+/g, '$1\n').split('\n')
+    .map(function(s) { return s.trim(); }).filter(function(s) { return s.length > 1; });
+
+  var segments = [];
+
+  sentenceList.forEach(function(sentence, si) {
+    var isLastSentence = (si === sentenceList.length - 1);
+
+    // Step 2: within each sentence, split at Hebrew character runs
+    // Regex captures any consecutive Hebrew letters + nikud + cantillation marks
+    var parts = sentence.split(/([֐-׿יִ-ﭏ]+)/g);
+
+    var nonEmpty = parts.filter(function(p) { return p.trim().length > 0; });
+    nonEmpty.forEach(function(part, pi) {
+      var isHebrew = /[א-תְ-ׇ]/.test(part);
+      var spoken   = isHebrew ? part.trim() : fixHebrewPronunciation(part.trim());
+      if (!spoken) return;
+
+      var isLastPart = (pi === nonEmpty.length - 1);
+      segments.push({
+        text:       spoken,
+        isHebrew:   isHebrew,
+        // 300ms after the last segment of a sentence, 70ms between segments in same sentence
+        pauseAfter: isLastPart ? 300 : 70
+      });
+    });
+  });
+
+  return segments;
 }
 
 function setSpeakBtnState(btn, active) {
@@ -873,44 +900,39 @@ function speakMessage(msgId) {
   var raw = msgContentMap[msgId];
   if (!raw) return;
 
-  // Toggle off if already speaking
   if (ttsActive) { stopSpeech(); return; }
 
   var clean = cleanForSpeech(raw);
   if (!clean) return;
 
-  var sentences = toSentences(clean);
-  if (!sentences.length) return;
+  var segments = buildSpeechSegments(clean);
+  if (!segments.length) return;
 
   ttsActive = true;
   activeSpeakBtn = btn;
   setSpeakBtnState(btn, true);
 
-  // Resolve both voices once before the chain starts
   var heVoice = pickHebrewVoice();
   var enVoice = pickEnglishVoice();
   var idx = 0;
 
   function next() {
-    if (!ttsActive || idx >= sentences.length) {
+    if (!ttsActive || idx >= segments.length) {
       ttsActive = false;
       setSpeakBtnState(btn, false);
       activeSpeakBtn = null;
       return;
     }
-    var sentence = sentences[idx++];
-    var useHebrew = isHebrewText(sentence);
-    var voice = useHebrew ? (heVoice || enVoice) : enVoice;
+    var seg = segments[idx++];
+    var voice = seg.isHebrew ? (heVoice || enVoice) : enVoice;
 
-    // Apply Hebrew pronunciation fixes to transliteration/English — not to actual Hebrew script
-    var spokenText = useHebrew ? sentence : fixHebrewPronunciation(sentence);
-    var u = new SpeechSynthesisUtterance(spokenText);
+    var u = new SpeechSynthesisUtterance(seg.text);
     if (voice) { u.voice = voice; u.lang = voice.lang; }
-    else        { u.lang = useHebrew ? 'he-IL' : 'en-US'; }
+    else        { u.lang = seg.isHebrew ? 'he-IL' : 'en-US'; }
     u.rate   = 0.82;
     u.pitch  = 1.15;
     u.volume = 1.0;
-    u.onend  = function() { setTimeout(next, 300); };
+    u.onend  = function() { setTimeout(next, seg.pauseAfter); };
     u.onerror = function(e) {
       if (e.error !== 'interrupted') console.warn('TTS:', e.error);
       ttsActive = false;
