@@ -338,92 +338,10 @@ app.post('/api/tooltip', async (req, res) => {
 
 app.get('/api/status', (req, res) => {
   res.json({
-    configured: !!process.env.ANTHROPIC_API_KEY,
-    tts: !!process.env.OPENAI_API_KEY
+    configured: !!process.env.ANTHROPIC_API_KEY
   });
 });
 
-// OpenAI TTS — streams MP3 audio back to client
-app.post('/api/speak', async (req, res) => {
-  const openaiKey = process.env.OPENAI_API_KEY;
-  if (!openaiKey) {
-    return res.status(401).json({ error: 'OPENAI_API_KEY not set in .env' });
-  }
-
-  const { text } = req.body;
-  if (!text || !text.trim()) {
-    return res.status(400).json({ error: 'No text provided' });
-  }
-
-  try {
-    const upstream = await fetch('https://api.openai.com/v1/audio/speech', {
-      method: 'POST',
-      headers: {
-        'Authorization': 'Bearer ' + openaiKey,
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify({
-        model: 'tts-1',
-        input: text.slice(0, 4096),
-        voice: 'nova',
-        response_format: 'mp3',
-        speed: 0.95
-      })
-    });
-
-    if (!upstream.ok) {
-      const errText = await upstream.text();
-      console.error('OpenAI TTS error:', upstream.status, errText);
-      return res.status(upstream.status).json({ error: errText });
-    }
-
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Cache-Control', 'no-cache');
-
-    const reader = upstream.body.getReader();
-    const pump = async () => {
-      const { done, value } = await reader.read();
-      if (done) { res.end(); return; }
-      res.write(Buffer.from(value));
-      return pump();
-    };
-    await pump();
-
-  } catch (err) {
-    console.error('OpenAI TTS error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
-
-// Hebrew TTS proxy — fetches Google Translate audio server-side so the
-// browser has no CORS or content-security issues. Returns audio/mpeg.
-// Registered at both names for backwards compatibility.
-app.get('/api/tts-hebrew', async (req, res) => {
-  const text = (req.query.q || '').trim();
-  if (!text || text.length > 200) return res.status(400).json({ error: 'Invalid text' });
-
-  const url = 'https://translate.googleapis.com/translate_tts?ie=UTF-8&client=gtx&tl=he&ttsspeed=0.7&q='
-              + encodeURIComponent(text);
-  try {
-    const upstream = await fetch(url, {
-      headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-        'Referer':    'https://translate.google.com/'
-      }
-    });
-    if (!upstream.ok) {
-      console.error('Google TTS upstream error:', upstream.status);
-      return res.status(502).json({ error: 'Google TTS failed: ' + upstream.status });
-    }
-    res.setHeader('Content-Type', 'audio/mpeg');
-    res.setHeader('Cache-Control', 'public, max-age=3600');
-    const buf = await upstream.arrayBuffer();
-    res.send(Buffer.from(buf));
-  } catch (err) {
-    console.error('Hebrew TTS proxy error:', err.message);
-    res.status(500).json({ error: err.message });
-  }
-});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

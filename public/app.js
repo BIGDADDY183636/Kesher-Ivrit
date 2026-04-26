@@ -1299,14 +1299,11 @@ async function sendToMorah(messages) {
     state.messages.push({ role: 'assistant', content: rawContent });
     saveProgress();
 
-    const newMsgId = appendMessage('morah', cleanContent, wordsData);
+    appendMessage('morah', cleanContent, wordsData);
 
     if (wordsData.length > 0) {
       addWordsToProgress(wordsData);
     }
-
-    // Auto-play Morah's response via OpenAI TTS
-    if (newMsgId) speakMessage(newMsgId);
 
     updateStreak();
     setMorahStatus('Ready to teach! 🇮🇱');
@@ -1417,406 +1414,6 @@ function autoScroll() {
   }
 }
 
-// ═══════════════════════════════════════════════════════════════════════
-// ▼▼▼  CANONICAL VOICE ENGINE — DO NOT MODIFY OR DUPLICATE  ▼▼▼
-//
-//  ALL speech synthesis goes through speakText(rawText, btn).
-//  No other code may call SpeechSynthesisUtterance directly.
-//  Open the browser DevTools console to see per-segment logs.
-//  Call testHebrew() in the console to test Hebrew audio.
-// ═══════════════════════════════════════════════════════════════════════
-
-// ── State ──────────────────────────────────────────────────────────────
-const msgContentMap = {};
-let msgCounter     = 0;
-let activeSpeakBtn = null;
-let ttsActive      = false;
-
-// ── Female voice heuristic ──────────────────────────────────────────────
-var _FEMALE = [
-  'female','samantha','karen','victoria','moira','fiona','tessa','veena',
-  'allison','ava','susan','zira','hazel','eva','emily','sara','linda',
-  'joanna','salli','kimberly','kendra','ivy','ruth','helena','alice',
-  'amelie','anna','carmit','damayanti','ioana','kyoko','laura','lekha',
-  'luciana','mariska','melina','milena','nora','paulina','tamar','zosia',
-  'google uk english female','microsoft zira','microsoft hazel'
-];
-function _isFemale(v) {
-  var n = v.name.toLowerCase();
-  for (var k = 0; k < _FEMALE.length; k++) {
-    if (n.indexOf(_FEMALE[k]) >= 0) return true;
-  }
-  return false;
-}
-
-// ── Voice pickers — fetch fresh every call so Chrome list is never stale ─
-function _pickHebrewVoice() {
-  var vs = window.speechSynthesis.getVoices();
-  for (var i = 0; i < vs.length; i++) { if (vs[i].lang === 'he-IL' && _isFemale(vs[i])) return vs[i]; }
-  for (var i = 0; i < vs.length; i++) { if (vs[i].lang === 'he-IL') return vs[i]; }
-  for (var i = 0; i < vs.length; i++) { if (vs[i].lang.startsWith('he')) return vs[i]; }
-  return null;
-}
-function _pickEnglishVoice() {
-  var vs = window.speechSynthesis.getVoices();
-  for (var i = 0; i < vs.length; i++) { if (vs[i].name === 'Google UK English Female') return vs[i]; }
-  for (var i = 0; i < vs.length; i++) { if (vs[i].lang === 'en-GB' && _isFemale(vs[i])) return vs[i]; }
-  for (var i = 0; i < vs.length; i++) { if (vs[i].lang === 'en-GB') return vs[i]; }
-  for (var i = 0; i < vs.length; i++) { if (vs[i].name === 'Samantha') return vs[i]; }
-  for (var i = 0; i < vs.length; i++) { if (vs[i].lang === 'en-US' && _isFemale(vs[i])) return vs[i]; }
-  for (var i = 0; i < vs.length; i++) { if (vs[i].lang.startsWith('en') && _isFemale(vs[i])) return vs[i]; }
-  return null;
-}
-
-// ── Hebrew character detection — explicit hex, never raw Unicode ──────────
-// Covers: full Hebrew block U+0590-U+05FF (letters, nikud, cantillation)
-//          + presentation forms U+FB1D-U+FB4F
-function _isHebrewChar(code) {
-  return (code >= 0x0590 && code <= 0x05FF) ||
-         (code >= 0xFB1D && code <= 0xFB4F);
-}
-
-// ── Belt-and-suspenders: check if ANY character in a string is Hebrew ────
-function _containsHebrew(str) {
-  for (var i = 0; i < str.length; i++) {
-    if (_isHebrewChar(str.charCodeAt(i))) return true;
-  }
-  return false;
-}
-
-// ── Pronunciation dictionary (Latin / transliteration segments only) ─────
-var _PHONETICS = {
-  'todah rabah':    'to-DAH ra-BAH',
-  'boker tov':      'BOH-ker tov',
-  'erev tov':       'EH-rev tov',
-  'laila tov':      'LYE-la tov',
-  'shabbat shalom': 'sha-BAT sha-LOME',
-  'kol hakavod':    'kohl ha-ka-VODE',
-  'tikkun olam':    'tee-KOON oh-LAHM',
-  'shalom':    'sha-LOME',   'todah':     'to-DAH',
-  'bevakasha': 'be-va-ka-SHAH', 'lehitraot': 'le-hit-ra-OHT',
-  'anachnu':   'ah-NAKH-noo',  'atem':    'ah-TEM',
-  'sababa':    'sa-BA-ba',    'yalla':   'YAH-la',
-  'walla':     'WAH-la',      'stam':    'stahm',
-  'achi':      'ah-KHEE',     'ahoti':   'ah-HOH-tee',
-  'davka':     'DAV-ka',      'yoffi':   'YOF-ee',
-  'metzuyan':  'me-tsoo-YAN', 'beseder': 'be-SEH-der',
-  'mayim':     'MA-yim',      'lechem':  'LEH-khem',
-  'bayit':     'BA-yit',      'yom':     'yome',
-  'lailah':    'LYE-la',      'ahavah':  'a-ha-VAH',
-  'eretz':     'EH-rets',     'shamayim':'sha-MA-yim',
-  'sefer':     'SEH-fer',     'nefesh':  'NEH-fesh',
-  'ruakh':     'ROO-akh',     'emunah':  'e-moo-NAH',
-  'emet':      'EH-met',      'khesed':  'KHEH-sed',
-  'kavod':     'ka-VODE',     'tzedek':  'TZEH-dek',
-  'mitzvah':   'mitz-VAH',    'kavanah': 'ka-va-NAH',
-  'bereshit':  'be-re-SHEET', 'mishpakhah':'mish-pa-KHAH',
-  'gadol':     'ga-DOLE',     'katan':   'ka-TAN',
-  'yafeh':     'ya-FEH',      'yafah':   'ya-FAH',
-  'kashuv':    'ka-SHOOV',    'maher':   'ma-HEHR',
-  'larutz':    'la-ROOTS',    'ledaber': 'le-da-BEHR',
-  'lakhshov':  'lakh-SHOHV',  'lehavin': 'le-ha-VEEN',
-  'likhtov':   'likh-TOVE',   'lalechet':'la-LEH-khet',
-  'halakhti':  'ha-lakh-TEE', 'halakhta':'ha-LAKH-ta',
-  'halekhu':   'ha-lekh-OO',  'yelekh':  'ye-LEKH',
-  'diber':     'dee-BEHR',    'hevin':   'he-VEEN',
-  'katav':     'ka-TAV',      'etmol':   'et-MOLE',
-  'makhar':    'ma-KHAR',     'akhshav': 'akh-SHAHV',
-  'hayom':     'ha-YOME',     'binyan':  'bin-YAN',
-  'avar':      'a-VAR',       'atid':    'a-TEED',
-  'ani':       'ah-NEE',      'ata':     'ah-TAH',
-  'at':        'aht',         'hu':      'hoo',
-  'hi':        'hee',         'ken':     'kehn',
-  'lo':        'loh',         'nu':      'noo',
-  'tov':       'tove',        'ra':      'rah',
-  'lev':       'lehv',        'ir':      'eer',
-  'paal':      'pa-AHL',      'hifil':   'hee-FEEL',
-};
-var _PHON_KEYS = Object.keys(_PHONETICS).sort(function(a,b){ return b.length - a.length; });
-
-// ── Text cleaning — IMPORTANT: no raw Unicode chars in regex patterns ────
-function _cleanText(raw) {
-  return raw
-    .replace(/\[TEACH\]|\[\/TEACH\]/g, '')
-    .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
-    .replace(/\[RESULT:[^\]]*\]/g, '')
-    .replace(/[\u{1F000}-\u{1FFFF}]/gu, '')
-    .replace(/[\u{2600}-\u{27BF}]/gu, '')
-    .replace(/[\u{1F1E0}-\u{1F1FF}]/gu, '')
-    .replace(/[\u{FE00}-\u{FEFF}]/gu, '')
-    .replace(/📚 WORDS LEARNED:[\s\S]*/g, '')
-    .replace(/\*+/g, '')
-    .replace(/[#`~_>|\\]/g, '')
-    .replace(/[.!?]+/g, '\n')
-    .replace(/[,—–;:]/g, ' ')
-    // WHITELIST — keep only: ASCII letters/digits, Hebrew block, spaces, newlines.
-    // Written with \uXXXX escapes so no encoding drift can corrupt them.
-    .replace(/[^a-zA-Z0-9֐-׿יִ-ﭏ\s\n]/g, '')
-    .replace(/[^\S\n]+/g, ' ')
-    .replace(/\n{2,}/g, '\n')
-    .trim();
-}
-
-// ── Transliteration phonetic fixes (Latin segments only) ─────────────────
-// isTransliteration: true when this Latin run sits next to Hebrew in the
-// same line — meaning it is a transliteration, not a pure English word.
-// ch→kh only fires for transliterations to avoid mangling English (church,
-// beach, teach). tz→ts and vowel rules are safe to apply universally.
-function _fixPronunciation(text, isTransliteration) {
-  var r = text;
-  _PHON_KEYS.forEach(function(w) {
-    var re = new RegExp('(?<![\\w-])' + w.replace(/[-]/g, '\\-') + '(?![\\w-])', 'gi');
-    r = r.replace(re, _PHONETICS[w]);
-  });
-  if (isTransliteration) {
-    r = r.replace(/ch/gi, 'kh');        // chet/khaf — only in transliterations
-  }
-  r = r.replace(/tz/gi, 'ts');          // tzadik — always safe
-  r = r.replace(/ai/gi, 'eye');         // diphthong
-  r = r.replace(/ei\b/gi, 'ay');        // word-final ei
-  return r;
-}
-
-// ── Character-level Hebrew/Latin run splitter ─────────────────────────────
-function _segmentRuns(text) {
-  var runs = [], cur = '', curHeb = null;
-  for (var i = 0; i < text.length; i++) {
-    var isHeb = _isHebrewChar(text.charCodeAt(i));
-    if (curHeb === null) curHeb = isHeb;
-    if (isHeb !== curHeb) {
-      if (cur.trim()) runs.push({ text: cur, isHebrew: curHeb });
-      cur = ''; curHeb = isHeb;
-    }
-    cur += text[i];
-  }
-  if (cur.trim()) runs.push({ text: cur, isHebrew: curHeb });
-  return runs;
-}
-
-// ── Build final utterance segment list ────────────────────────────────────
-function _buildSegments(cleanedText) {
-  var lines = cleanedText.split('\n')
-    .map(function(s) { return s.trim(); })
-    .filter(function(s) { return s.length > 0; });
-
-  var segments = [];
-  lines.forEach(function(line, li) {
-    var isLastLine = (li === lines.length - 1);
-    _segmentRuns(line).forEach(function(run, ri, arr) {
-      // A Latin run is a transliteration when the same line also has Hebrew runs.
-      var lineHasHebrew = arr.some(function(r) { return r.isHebrew; });
-      var spoken = run.isHebrew
-        ? run.text.trim()
-        : _fixPronunciation(run.text.trim(), lineHasHebrew);
-      // Whitelist — \uXXXX escapes, immune to encoding drift:
-      spoken = spoken
-        .replace(/[^a-zA-Z0-9֐-׿יִ-ﭏ\s\-]/g, ' ')
-        .replace(/\s+/g, ' ')
-        .trim();
-      if (!spoken) return;
-      segments.push({
-        text:       spoken,
-        isHebrew:   run.isHebrew,
-        pauseAfter: (ri === arr.length - 1 && !isLastLine) ? 350 : 250,
-      });
-    });
-  });
-  return segments;
-}
-
-// ── Hebrew TTS via Audio element (no Web Speech — no he-IL voice present) ──
-// Tracks the current audio element so a new segment stops the previous one.
-// 200ms pre-play delay smooths transitions between segments.
-var _heAudioEl = null;
-
-function _stopHeAudio() {
-  if (_heAudioEl) {
-    try { _heAudioEl.pause(); _heAudioEl.src = ''; } catch (e) {}
-    _heAudioEl = null;
-  }
-}
-
-function _speakHebrewText(text, onDone, onError) {
-  _stopHeAudio();   // stop whatever was playing before
-
-  var directUrl = 'https://translate.google.com/translate_tts?ie=UTF-8&tl=he&client=tw-ob&q='
-                  + encodeURIComponent(text);
-  var proxyUrl  = '/api/tts-hebrew?q=' + encodeURIComponent(text);
-  var done = false;   // guard: only call onDone/onError once
-
-  function finish(cb) {
-    if (done) return; done = true;
-    _heAudioEl = null;
-    cb();
-  }
-
-  function tryProxy() {
-    _stopHeAudio();
-    console.log('[TTS] Direct failed → proxy:', proxyUrl);
-    var a = new Audio(proxyUrl);
-    _heAudioEl = a;
-    a.volume = 1.0;
-    a.onended = function() { finish(onDone); };
-    a.onerror = function(e) {
-      console.error('[TTS] Proxy error:', e.type);
-      finish(onError);
-    };
-    a.play().catch(function(e) {
-      console.error('[TTS] Proxy play() rejected:', e.message);
-      finish(onError);
-    });
-  }
-
-  // 200ms delay before play — prevents overlap glitches between segments
-  setTimeout(function() {
-    if (done) return;   // segment was cancelled while waiting
-    console.log('[TTS] Hebrew audio:', JSON.stringify(text));
-    var a = new Audio();
-    _heAudioEl = a;
-    a.crossOrigin = 'anonymous';
-    a.volume = 1.0;
-    a.onended = function() { finish(onDone); };
-    a.onerror = function() { tryProxy(); };
-    a.src = directUrl;
-    a.play().catch(function() { tryProxy(); });
-  }, 200);
-}
-// ── Button state helper ───────────────────────────────────────────────────
-function setSpeakBtnState(btn, active) {
-  if (!btn) return;
-  btn.innerHTML = active ? '⏹ <span>Stop</span>' : '🔊 <span>Hear Morah</span>';
-  btn.classList.toggle('speaking', active);
-}
-
-// ── Stop speech ───────────────────────────────────────────────────────────
-function stopSpeech() {
-  ttsActive = false;
-  _stopHeAudio();                                    // stop Hebrew Audio element
-  if (window.speechSynthesis) window.speechSynthesis.cancel();  // stop Web Speech
-  setSpeakBtnState(activeSpeakBtn, false);
-  activeSpeakBtn = null;
-}
-
-// ── speakText — THE ONLY ENTRY POINT ─────────────────────────────────────
-function speakText(rawText, btn) {
-  if (!window.speechSynthesis) return;
-  if (!rawText || !rawText.trim()) return;
-
-  if (ttsActive) {
-    var wasBtn = activeSpeakBtn;
-    stopSpeech();
-    if (btn && btn === wasBtn) return;
-  }
-
-  var clean = _cleanText(rawText);
-  if (!clean) { console.warn('[TTS] _cleanText returned empty for input:', rawText.slice(0,80)); return; }
-
-  var segments = _buildSegments(clean);
-  if (!segments.length) { console.warn('[TTS] No segments after building. Clean text:', clean.slice(0,80)); return; }
-
-  console.log('[TTS] Starting. Segments:', segments.length, '| Raw snippet:', rawText.slice(0,60));
-
-  ttsActive      = true;
-  activeSpeakBtn = btn || null;
-  setSpeakBtnState(btn, true);
-  var idx = 0;
-
-  function next() {
-    if (!ttsActive || idx >= segments.length) {
-      ttsActive = false;
-      setSpeakBtnState(activeSpeakBtn, false);
-      activeSpeakBtn = null;
-      return;
-    }
-    var seg = segments[idx++];
-
-    var treatAsHebrew = seg.isHebrew || _containsHebrew(seg.text);
-    console.log('[TTS seg ' + idx + '/' + segments.length + '] ' +
-                JSON.stringify(seg.text) + ' | hebrew=' + treatAsHebrew);
-
-    // ── HEBREW: always use Audio-element TTS, never Web Speech ───────────
-    // No he-IL voice exists on this machine. _speakHebrewText tries the
-    // Google Translate URL directly first, then falls back to /api/tts-hebrew.
-    if (treatAsHebrew) {
-      _speakHebrewText(seg.text,
-        function() { setTimeout(next, seg.pauseAfter); },
-        function() { setTimeout(next, seg.pauseAfter); }
-      );
-      return;
-    }
-
-    // ── ENGLISH: Web Speech API with en-GB voice ──────────────────────
-    var u = new SpeechSynthesisUtterance(seg.text);
-    u.lang = 'en-GB';
-    var ev = _pickEnglishVoice();
-    if (ev) { u.voice = ev; u.lang = ev.lang; }
-    u.rate = 0.85; u.pitch = 1.1; u.volume = 1.0;
-    u.onend  = function() { setTimeout(next, seg.pauseAfter); };
-    u.onerror = function(e) {
-      console.error('[TTS error]', e.error, seg.text);
-      ttsActive = false;
-      setSpeakBtnState(activeSpeakBtn, false);
-      activeSpeakBtn = null;
-    };
-    window.speechSynthesis.speak(u);
-  }
-
-  if (window.speechSynthesis.getVoices().length === 0) {
-    var _onReady = function() {
-      window.speechSynthesis.removeEventListener('voiceschanged', _onReady);
-      next();
-    };
-    window.speechSynthesis.addEventListener('voiceschanged', _onReady);
-  } else {
-    next();
-  }
-}
-// ▲▲▲  END speakText — DO NOT ADD SPEECH CALLS OUTSIDE THIS BLOCK  ▲▲▲
-
-// ── Self-test (runs once on load) ─────────────────────────────────────────
-(function _ttsSelfTest() {
-  var r = {
-    aleph:   _isHebrewChar(0x05D0),  // must be true
-    shin:    _isHebrewChar(0x05E9),  // must be true
-    nikud:   _isHebrewChar(0x05B8),  // must be true
-    asciiA:  _isHebrewChar(0x0041),  // must be false
-    space:   _isHebrewChar(0x0020),  // must be false
-    shalomStr: _containsHebrew('שָׁלוֹמ') // שָׁלוֹם → true
-  };
-  var ok = r.aleph && r.shin && r.nikud && !r.asciiA && !r.space && r.shalomStr;
-  console.log('[TTS self-test]', ok ? 'PASSED' : 'FAILED', r);
-  if (!ok) console.error('[TTS] SELF-TEST FAILED — Hebrew detection broken. Check _isHebrewChar.');
-})();
-
-// ── testHebrew() — call this in the browser console to test Hebrew audio ──
-window.testHebrew = function() {
-  // ── Voice inventory ────────────────────────────────────────────────────
-  var all  = window.speechSynthesis ? window.speechSynthesis.getVoices() : [];
-  var heVoices = all.filter(function(v) { return v.lang.includes('he'); });
-  console.log('[TTS] --- testHebrew() diagnostic ---');
-  console.log('[TTS] Total voices available :', all.length);
-  console.log('[TTS] Hebrew voices (he*)   :', heVoices.length,
-              heVoices.map(function(v){ return v.name + ' (' + v.lang + ')'; }));
-  if (heVoices.length === 0) {
-    console.warn('[TTS] NO HEBREW VOICE FOUND in browser.');
-    console.warn('[TTS] Will fall back to server-side Google TTS proxy.');
-    console.warn('[TTS] To fix natively: Windows Settings > Time & Language >');
-    console.warn('[TTS]   Language & Region > Add Hebrew > install Text-to-speech');
-    console.warn('[TTS]   Then RESTART Windows (not just Chrome) and try again.');
-  }
-  // ── Proxy health check ─────────────────────────────────────────────────
-  fetch('/api/hebrew-tts?q=' + encodeURIComponent('שלום'), { method: 'HEAD' })
-    .then(function(r) { console.log('[TTS] Proxy /api/hebrew-tts status:', r.status, r.headers.get('content-type')); })
-    .catch(function(e) { console.error('[TTS] Proxy unreachable:', e.message); });
-  // ── Speak ──────────────────────────────────────────────────────────────
-  speakText('שָׁלוֹם');
-};
-
-// ── Thin wrapper ──────────────────────────────────────────────────────────
-function speakMessage(msgId) {
-  var btn = document.querySelector('[data-speak-id="' + msgId + '"]');
-  speakText(msgContentMap[msgId] || '', btn);
-}
 // ─── CHALLENGE STORE ─────────────────────────────────────
 const challengeStore = {};  // challengeId -> { challenge, answered }
 let challengeCounter = 0;
@@ -1841,8 +1438,7 @@ function appendMessage(role, content, wordBadges = []) {
 
   if (role === 'morah') {
     const { teach, challenge } = parseMorahResponse(content);
-    const msgId = ++msgCounter;
-    msgContentMap[msgId] = teach;
+
 
     let badgesHtml = '';
     if (wordBadges.length > 0) {
@@ -1866,16 +1462,13 @@ function appendMessage(role, content, wordBadges = []) {
           ${badgesHtml}
           ${cId ? `<div class="challenge-widget" id="challenge-${cId}"></div>` : ''}
         </div>
-        <button class="btn-hear-morah" data-speak-id="${msgId}" onclick="speakMessage(${msgId})">
-          🔊 <span>Hear Morah</span>
-        </button>
+
         <div class="msg-footer"><span class="msg-time">${time}</span></div>
       </div>`;
 
     container.appendChild(el);
     if (cId) renderChallenge(cId);
     autoScroll();
-    return msgId;
 
   } else {
     el.innerHTML = `
@@ -1947,10 +1540,7 @@ function renderMultipleChoice(cId, c, container) {
     </div>
     <div class="challenge-feedback" id="cf-${cId}"></div>`;
 
-  // Auto-speak the Hebrew word through the canonical speakText() — no direct utterances.
-  if (hebMatch) {
-    setTimeout(() => speakText(hebMatch[0].trim()), 400);
-  }
+
 }
 
 function answerMC(cId, selected) {
