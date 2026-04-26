@@ -34,15 +34,32 @@
         <div class="feature-pill">🔥 Daily Streaks</div>
       </div>
 
+      <!-- Word of the Day -->
+      <div class="wotd-card" id="wotd-card" style="display:none;">
+        <div class="wotd-label">✡ Word of the Day</div>
+        <div class="wotd-hebrew" id="wotd-hebrew"></div>
+        <div class="wotd-trans"  id="wotd-trans"></div>
+        <div class="wotd-english" id="wotd-english"></div>
+        <div class="wotd-example" id="wotd-example"></div>
+      </div>
+
       <button class="btn-start" onclick="startOnboarding()">
         Start Learning — <span class="hebrew-inline">בּוֹא נִלְמַד!</span>
       </button>
 
       <div id="returning-user-section" style="display:none;">
         <div class="divider-or">— or —</div>
-        <button class="btn-continue" onclick="continueLearning()">
-          Continue as <span id="returning-name"></span> 🔥<span id="home-streak"></span>
-        </button>
+        <div class="returning-card" onclick="continueLearning()">
+          <div class="returning-top">
+            <span class="returning-avatar" id="returning-avatar">🌱</span>
+            <div>
+              <div class="returning-name">Welcome back, <strong id="returning-name"></strong>!</div>
+              <div class="returning-stats" id="returning-stats"></div>
+            </div>
+          </div>
+          <div class="returning-preview" id="returning-preview"></div>
+          <button class="btn-continue">Continue Learning →</button>
+        </div>
         <button class="btn-reset" onclick="resetProgress()">Start Fresh</button>
       </div>
     </div>

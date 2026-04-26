@@ -139,9 +139,70 @@ const QUIZ_QUESTIONS = [
   }
 ];
 
+// ─── WORD OF THE DAY ─────────────────────────────────────
+const WOTD_LIST = [
+  { hebrew:'שָׁלוֹם',       trans:'shalom',      english:'peace / hello / goodbye',    example:'שָׁלוֹם לְכֻלָּם — Peace to everyone' },
+  { hebrew:'אַהֲבָה',       trans:'ahavah',      english:'love',                        example:'אַהֲבַת יִשְׂרָאֵל — Love of Israel' },
+  { hebrew:'חוֹפֶשׁ',       trans:'khofesh',     english:'freedom / vacation',          example:'חוֹפֶשׁ הוּא הַחַיִּים — Freedom is life' },
+  { hebrew:'אֱמֶת',        trans:'emet',        english:'truth',                       example:'חוֹתָמוֹ שֶׁל הַקָּדוֹשׁ בָּרוּךְ הוּא אֱמֶת — God\'s seal is truth' },
+  { hebrew:'תִּקְוָה',      trans:'tikvah',      english:'hope',                        example:'עוֹד לֹא אָבְדָה תִּקְוָתֵנוּ — Our hope is not yet lost (Hatikvah)' },
+  { hebrew:'לֵב',          trans:'lev',         english:'heart / mind',               example:'כׇּל עָם יִשְׂרָאֵל לֵב אֶחָד — All of Israel is one heart' },
+  { hebrew:'נֶפֶשׁ',        trans:'nefesh',      english:'soul / self / person',        example:'נֶפֶשׁ יְפָה — A beautiful soul' },
+  { hebrew:'חֶסֶד',        trans:'khesed',      english:'lovingkindness / mercy',      example:'עֲשֵׂה חֶסֶד עִם כֻּלָּם — Do kindness with everyone' },
+  { hebrew:'שַׁבָּת',       trans:'shabbat',     english:'Sabbath / rest',              example:'שַׁבָּת שָׁלוֹם! — A peaceful Sabbath!' },
+  { hebrew:'עַם',          trans:'am',          english:'people / nation',             example:'עַם יִשְׂרָאֵל חַי — The people of Israel live!' },
+  { hebrew:'אֶרֶץ',        trans:'eretz',       english:'land / earth / country',      example:'אֶרֶץ יִשְׂרָאֵל — The Land of Israel' },
+  { hebrew:'שָׁמַיִם',      trans:'shamayim',    english:'sky / heaven',                example:'הַשָּׁמַיִם מְסַפְּרִים כְּבוֹד אֵל — The heavens declare God\'s glory' },
+  { hebrew:'אוֹר',         trans:'or',          english:'light',                       example:'אוֹר לַגּוֹיִם — A light to the nations' },
+  { hebrew:'דֶּרֶךְ',       trans:'derekh',      english:'way / path / road',           example:'לֵךְ בַּדֶּרֶךְ הַטּוֹבָה — Go on the good path' },
+  { hebrew:'כֹּחַ',        trans:'koach',       english:'strength / power / energy',   example:'יְשַׁר כֹּחֲךָ! — Well done! (lit. May your strength be straight)' },
+  { hebrew:'שִׂמְחָה',      trans:'simkhah',     english:'joy / happiness',             example:'שִׂמְחָה שֶׁל מִצְוָה — The joy of a mitzvah' },
+  { hebrew:'זִכָּרוֹן',     trans:'zikaron',     english:'memory / remembrance',        example:'יוֹם הַזִּכָּרוֹן — Memorial Day (Israel)' },
+  { hebrew:'חֲלוֹם',       trans:'khalom',      english:'dream',                       example:'חֲלוֹמוֹת טוֹבִים — Good dreams' },
+  { hebrew:'מַיִם',        trans:'mayim',       english:'water',                       example:'מַיִם חַיִּים — Living water' },
+  { hebrew:'לֶחֶם',        trans:'lechem',      english:'bread',                       example:'לֶחֶם הַפָּנִים — The showbread (Temple)' },
+  { hebrew:'עֵץ',          trans:'etz',         english:'tree / wood',                 example:'עֵץ חַיִּים הִיא — She is a tree of life (Torah)' },
+  { hebrew:'שָׁלֵם',        trans:'shalem',      english:'whole / complete / peaceful', example:'לֵב שָׁלֵם — A whole heart' },
+  { hebrew:'גֶּשֶׁם',       trans:'geshem',      english:'rain',                        example:'גֶּשֶׁם בְּרָכָה — Rain of blessing' },
+  { hebrew:'כֶּלֶב',        trans:'kelev',       english:'dog',                         example:'כֶּלֶב נֶאֱמָן — A faithful dog' },
+  { hebrew:'יֶלֶד',        trans:'yeled',       english:'child / boy',                 example:'מַה יֶּלֶד טוֹב! — What a good child!' },
+  { hebrew:'בַּיִת',        trans:'bayit',       english:'house / home',                example:'בֵּית כְּנֶסֶת — Synagogue (House of Assembly)' },
+  { hebrew:'שִׁיר',        trans:'shir',        english:'song / poem',                 example:'שִׁיר הַשִּׁירִים — Song of Songs' },
+  { hebrew:'יוֹם',         trans:'yom',         english:'day',                         example:'יוֹם טוֹב! — Good day / Happy holiday!' },
+  { hebrew:'לַיְלָה',      trans:'lailah',      english:'night',                       example:'לַיְלָה טוֹב — Good night' },
+  { hebrew:'רָחוֹק',       trans:'rakhok',      english:'far / distant',               example:'לֹא רָחוֹק מִלִּבֵּנוּ — Not far from our hearts' },
+  { hebrew:'קָרוֹב',       trans:'karov',       english:'near / close / relative',     example:'קָרוֹב לַלֵּב — Close to the heart' },
+  { hebrew:'חָכְמָה',      trans:'khokhmah',    english:'wisdom',                      example:'רֵאשִׁית חָכְמָה — The beginning of wisdom' },
+  { hebrew:'בִּינָה',       trans:'binah',       english:'understanding / insight',     example:'בִּינָה יְתֵרָה — Extra understanding' },
+  { hebrew:'עָנָן',        trans:'anan',        english:'cloud',                       example:'עַמּוּד עָנָן — Pillar of cloud (Exodus)' },
+  { hebrew:'שֶׁמֶשׁ',       trans:'shemesh',     english:'sun',                         example:'הַשֶּׁמֶשׁ זָרְחָה — The sun rose' },
+  { hebrew:'יָרֵחַ',       trans:'yareach',     english:'moon',                        example:'כִּרְאוֹת הַיָּרֵחַ — Like seeing the moon' },
+  { hebrew:'כּוֹכָב',       trans:'kokhav',      english:'star',                        example:'כּוֹכְבֵי הַשָּׁמַיִם — Stars of the heaven' },
+  { hebrew:'גָּדוֹל',       trans:'gadol',       english:'great / big',                 example:'כֹּהֵן גָּדוֹל — High Priest' },
+  { hebrew:'תּוֹדָה',       trans:'todah',       english:'thank you / gratitude',       example:'תּוֹדָה רַבָּה — Thank you very much!' },
+  { hebrew:'בְּרָכָה',      trans:'berakhah',    english:'blessing',                    example:'בְּרָכָה וְשָׁלוֹם — Blessing and peace' },
+  { hebrew:'יְשׁוּעָה',     trans:'yeshuah',     english:'salvation / rescue',          example:'יְשׁוּעַת ה׳ — The salvation of God' },
+  { hebrew:'עוֹלָם',       trans:'olam',        english:'world / eternity / forever',  example:'לְעוֹלָם וָעֶד — Forever and ever' },
+  { hebrew:'נֶצַח',        trans:'netzach',     english:'eternity / victory',          example:'נֵצַח יִשְׂרָאֵל לֹא יְשַׁקֵּר — The Eternal One of Israel does not lie' },
+];
+
+function renderWordOfDay() {
+  // Pick word based on day of year — changes every day, same word all day
+  const dayIndex = Math.floor(Date.now() / 86400000) % WOTD_LIST.length;
+  const word = WOTD_LIST[dayIndex];
+  const card = document.getElementById('wotd-card');
+  if (!card) return;
+  document.getElementById('wotd-hebrew').textContent  = word.hebrew;
+  document.getElementById('wotd-trans').textContent   = word.trans;
+  document.getElementById('wotd-english').textContent = word.english;
+  document.getElementById('wotd-example').textContent = word.example;
+  card.style.display = 'block';
+}
+
 // ─── INIT ─────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', async () => {
   loadProgress();
+  renderWordOfDay();
   checkReturningUser();
   await checkApiKey();
 });
@@ -183,12 +244,35 @@ function saveProgress() {
 }
 
 function checkReturningUser() {
-  if (state.userProfile && state.userProfile.name) {
-    document.getElementById('returning-user-section').style.display = 'block';
-    document.getElementById('returning-name').textContent = state.userProfile.name;
-    document.getElementById('home-streak').textContent = state.progress.streak;
-    checkStreak();
+  if (!state.userProfile || !state.userProfile.name) return;
+
+  document.getElementById('returning-user-section').style.display = 'block';
+  document.getElementById('returning-name').textContent = state.userProfile.name;
+
+  // Avatar by level
+  const avatarMap = { complete_beginner:'🌱', some_exposure:'🌿', basic:'🌳', intermediate:'⭐', advanced:'🔥' };
+  const av = document.getElementById('returning-avatar');
+  if (av) av.textContent = avatarMap[state.userProfile.level] || '👤';
+
+  // Stats line
+  const statsEl = document.getElementById('returning-stats');
+  if (statsEl) {
+    const parts = [];
+    if (state.progress.streak > 0)             parts.push('🔥 ' + state.progress.streak + '-day streak');
+    if (state.progress.wordsLearned.length > 0) parts.push('📖 ' + state.progress.wordsLearned.length + ' words learned');
+    if (state.progress.points > 0)              parts.push('⭐ ' + state.progress.points + ' pts');
+    statsEl.textContent = parts.join('  ·  ');
   }
+
+  // Last message preview
+  const previewEl = document.getElementById('returning-preview');
+  if (previewEl && state.messages.length > 0) {
+    const last = state.messages[state.messages.length - 1];
+    const raw = (last.content || '').replace(/\[TEACH\][\s\S]*?\[\/TEACH\]/g, '').replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '').replace(/📚 WORDS LEARNED:.*/s, '').replace(/\*/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
+    previewEl.textContent = last.role === 'assistant' ? '💬 Morah: ' + raw + '…' : '';
+  }
+
+  checkStreak();
 }
 
 function checkStreak() {
