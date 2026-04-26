@@ -21,7 +21,8 @@ let state = {
   messages: [],
   currentTopic: 'Greetings',
   session: {
-    wordsThisSession: [],   // words taught so far this lesson
+    wordsThisSession: [],
+    skipList: [],           // topics student wants their teacher to cover
     consecutiveCorrect: 0,
     consecutiveWrong: 0,
     totalCorrect: 0,
@@ -430,7 +431,7 @@ function renderWordsList() {
 
 async function startLesson() {
   state.messages = [];
-  state.session = { wordsThisSession: [], consecutiveCorrect: 0, consecutiveWrong: 0, totalCorrect: 0, totalWrong: 0 };
+  state.session = { wordsThisSession: [], skipList: [], consecutiveCorrect: 0, consecutiveWrong: 0, totalCorrect: 0, totalWrong: 0 };
   document.getElementById('chat-messages').innerHTML = '';
   setMorahStatus('Starting your lesson...');
   await sendToMorah([{ role: 'user', content: 'Please start our lesson! Greet me and let\'s begin.' }]);
@@ -499,7 +500,21 @@ async function sendToMorah(messages) {
 
     // Extract words learned from response
     const wordsData = extractWordsLearned(rawContent);
-    const cleanContent = rawContent.replace(/📚 WORDS LEARNED:.*$/s, '').trim();
+
+    // Extract and store any skip tags — [SKIP: topic name]
+    const skipMatches = rawContent.matchAll(/\[SKIP:\s*([^\]]+)\]/gi);
+    for (const match of skipMatches) {
+      const topic = match[1].trim();
+      if (topic && !state.session.skipList.includes(topic)) {
+        state.session.skipList.push(topic);
+      }
+    }
+
+    // Remove words-learned block and skip tags from displayed text
+    const cleanContent = rawContent
+      .replace(/📚 WORDS LEARNED:.*$/s, '')
+      .replace(/\[SKIP:[^\]]*\]/gi, '')
+      .trim();
 
     state.messages.push({ role: 'assistant', content: rawContent });
     saveProgress();

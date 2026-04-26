@@ -156,8 +156,18 @@ ${(() => {
   if (s.totalCorrect + s.totalWrong > 0) {
     parts.push(`SESSION STATS: ${s.totalCorrect} correct, ${s.totalWrong} wrong so far this session.`);
   }
+  if (s.skipList && s.skipList.length > 0) {
+    parts.push(`SKIP LIST — NEVER BRING THESE UP AGAIN THIS SESSION: ${s.skipList.join(', ')}. Student wants their teacher to cover these. Do not mention, teach, or challenge on any of these topics.`);
+  }
   return parts.join('\n');
 })()}
+
+SKIP DETECTION — VERY IMPORTANT:
+If a student says anything like: "I don't know this", "my teacher will explain", "skip this", "let's move on", "I'll ask my rabbi/teacher/parent", "not now", "too hard", "leave that for my teacher" — then:
+1. Respond warmly and briefly: "No problem, I'll leave that one for your teacher!" (one line only)
+2. On the very next line, output: [SKIP: topic-name] where topic-name is a short label for what to skip (e.g. "hif'il binyan", "passive voice", "biblical vocabulary")
+3. Then immediately [TEACH] a completely different topic.
+The [SKIP] tag must appear OUTSIDE the [TEACH] block, on its own line.
 
 RESPONSE FORMAT — ALWAYS USE THIS EXACT STRUCTURE:
 
