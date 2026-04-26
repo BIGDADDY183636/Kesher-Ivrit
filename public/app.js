@@ -219,6 +219,43 @@ function saveUser() {
   if (currentUser) localStorage.setItem('kesher_user', JSON.stringify(currentUser));
 }
 
+// ── Supabase registration (fire-and-forget — app works without it) ───────────
+function _registerWithDb(firstName, lastInitial, school) {
+  fetch('/api/register', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ firstName, lastInitial, school })
+  })
+  .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
+  .then(function(data) {
+    if (data && data.userId) {
+      currentUser.userId = data.userId;
+      saveUser();
+      console.log('[DB] Registered, userId:', data.userId);
+    }
+  })
+  .catch(function(e) { console.warn('[DB] Registration sync failed (offline?):', e); });
+}
+
+// ── Score sync — debounced, fire-and-forget ───────────────────────────────────
+var _syncTimer = null;
+function _syncScoreToDb() {
+  if (!currentUser || !currentUser.userId) return;
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(function() {
+    fetch('/api/scores', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId:       currentUser.userId,
+        points:       state.progress.points,
+        streak:       state.progress.streak,
+        wordsLearned: state.progress.wordsLearned.length
+      })
+    }).catch(function(e) { console.warn('[DB] Score sync failed:', e); });
+  }, 3000); // debounce — wait 3s before writing to DB
+}
+
 function submitRegistration() {
   const firstName   = (document.getElementById('reg-firstname').value   || '').trim();
   const lastInitial = (document.getElementById('reg-lastinitial').value || '').trim().toUpperCase();
@@ -252,6 +289,7 @@ function submitRegistration() {
   renderWordOfDay();
   checkReturningUser();
   checkApiKey();
+  _registerWithDb(firstName, lastInitial, school);
 }
 
 function updateUserBadges() {
@@ -335,6 +373,7 @@ function saveProgress() {
   } catch (e) {
     console.warn('Could not save progress:', e);
   }
+  _syncScoreToDb();
 }
 
 function checkReturningUser() {
@@ -737,10 +776,12 @@ var MOCK_LEADERS = [
   { id:'mock_rachel',  name:'Rachel Z.',  school:'Beit Rabban',      points:34,  streak:1,  words:5   },
 ];
 
-function _buildFullBoard() {
-  var board = MOCK_LEADERS.slice();
+function _buildFullBoard(baseBoard) {
+  // baseBoard = real DB rows; falls back to MOCK_LEADERS if unavailable
+  var board = (baseBoard || MOCK_LEADERS).slice();
   if (currentUser) {
-    var myId = _lbId();
+    // Use the Supabase UUID when available so the DB row and the local entry match
+    var myId = currentUser.userId || _lbId();
     board = board.filter(function(e) { return e.id !== myId; });
     board.push({
       id:     myId,
@@ -757,9 +798,19 @@ function _buildFullBoard() {
 }
 
 function showLeaderboardScreen() {
-  renderLeaderboardScreen();
   var el = document.getElementById('leaderboard-overlay');
   if (el) { el.classList.remove('lb-hidden'); el.classList.add('lb-visible'); }
+  renderLeaderboardScreen(null, true); // show immediately with loading state
+
+  fetch('/api/leaderboard')
+    .then(function(r) { return r.ok ? r.json() : Promise.reject('HTTP ' + r.status); })
+    .then(function(data) {
+      renderLeaderboardScreen(Array.isArray(data.leaderboard) ? data.leaderboard : null, false);
+    })
+    .catch(function(e) {
+      console.warn('[DB] Leaderboard fetch failed, using mock data:', e);
+      renderLeaderboardScreen(null, false); // fall back to mock data
+    });
 }
 
 function hideLeaderboardScreen() {
@@ -767,11 +818,16 @@ function hideLeaderboardScreen() {
   if (el) { el.classList.remove('lb-visible'); el.classList.add('lb-hidden'); }
 }
 
-function renderLeaderboardScreen() {
+function renderLeaderboardScreen(dbBoard, loading) {
   var body = document.getElementById('leaderboard-body');
   if (!body) return;
 
-  var board  = _buildFullBoard();
+  if (loading) {
+    body.innerHTML = '<div class="lb-loading"><div class="lb-spinner"></div><div class="lb-loading-text">Loading leaderboard…</div></div>';
+    return;
+  }
+
+  var board  = _buildFullBoard(dbBoard);
   var myId   = _lbId();
   var myRank = 0;
   for (var i = 0; i < board.length; i++) {

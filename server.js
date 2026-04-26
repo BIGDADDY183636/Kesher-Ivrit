@@ -1,7 +1,8 @@
 require('dotenv').config();
-const express = require('express');
+const express   = require('express');
 const Anthropic = require('@anthropic-ai/sdk');
-const path = require('path');
+const path      = require('path');
+const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
 app.use(express.json({ limit: '10mb' }));
@@ -17,6 +18,124 @@ app.use(express.static(path.join(__dirname, 'public'), {
 }));
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// ── Supabase client (optional — app works without it) ────────────────────────
+let supabase = null;
+if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
+  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
+  console.log('[DB] Supabase connected:', process.env.SUPABASE_URL);
+} else {
+  console.warn('[DB] SUPABASE_URL / SUPABASE_ANON_KEY not set — database features disabled');
+}
+
+function dbRequired(res) {
+  if (!supabase) {
+    res.status(503).json({ error: 'Database not configured', hint: 'Set SUPABASE_URL and SUPABASE_ANON_KEY in .env' });
+    return false;
+  }
+  return true;
+}
+
+// ── POST /api/register ───────────────────────────────────────────────────────
+// Creates (or retrieves) a user row and ensures a scores row exists.
+// Returns { userId } — stored in localStorage so the client can sync scores.
+app.post('/api/register', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { firstName, lastInitial, school } = req.body || {};
+  if (!firstName || !lastInitial || !school) {
+    return res.status(400).json({ error: 'firstName, lastInitial and school are required' });
+  }
+
+  const fn  = firstName.trim().slice(0, 60);
+  const li  = lastInitial.trim().toUpperCase().slice(0, 1);
+  const sc  = school.trim().slice(0, 100);
+  if (!/^[A-Za-z]$/.test(li)) return res.status(400).json({ error: 'lastInitial must be a single letter' });
+
+  try {
+    // Upsert user — returns existing row if the unique key matches
+    const { data: uData, error: uErr } = await supabase
+      .from('users')
+      .upsert(
+        { first_name: fn, last_initial: li, school: sc },
+        { onConflict: 'first_name,last_initial,school' }
+      )
+      .select('id')
+      .single();
+
+    if (uErr) throw uErr;
+    const userId = uData.id;
+
+    // Ensure a scores row exists — don't overwrite real scores on re-register
+    await supabase
+      .from('scores')
+      .upsert(
+        { user_id: userId, points: 0, streak: 0, words_learned: 0 },
+        { onConflict: 'user_id', ignoreDuplicates: true }
+      );
+
+    res.json({ userId });
+  } catch (err) {
+    console.error('[DB] /api/register error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/leaderboard ─────────────────────────────────────────────────────
+// Returns top 30 students ranked by points, shaped for the frontend.
+app.get('/api/leaderboard', async (req, res) => {
+  if (!dbRequired(res)) return;
+  try {
+    const { data, error } = await supabase
+      .from('leaderboard')
+      .select('id, first_name, last_initial, school, points, streak, words_learned')
+      .limit(30);
+
+    if (error) throw error;
+
+    const leaderboard = (data || []).map(row => ({
+      id:     row.id,
+      name:   `${row.first_name} ${row.last_initial}.`,
+      school: row.school,
+      points: row.points        || 0,
+      streak: row.streak        || 0,
+      words:  row.words_learned || 0,
+    }));
+
+    res.json({ leaderboard });
+  } catch (err) {
+    console.error('[DB] /api/leaderboard error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/scores ─────────────────────────────────────────────────────────
+// Upserts the student's score. Called by the client after meaningful progress.
+app.post('/api/scores', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { userId, points, streak, wordsLearned } = req.body || {};
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  try {
+    const { error } = await supabase
+      .from('scores')
+      .upsert(
+        {
+          user_id:       userId,
+          points:        Math.max(0, parseInt(points)        || 0),
+          streak:        Math.max(0, parseInt(streak)        || 0),
+          words_learned: Math.max(0, parseInt(wordsLearned)  || 0),
+          updated_at:    new Date().toISOString(),
+        },
+        { onConflict: 'user_id' }
+      );
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[DB] /api/scores error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
 
 function buildSystemPrompt(userProfile) {
   const levelMap = {
