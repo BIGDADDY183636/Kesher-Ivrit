@@ -1195,14 +1195,41 @@ function speakText(rawText, btn) {
     }
     var seg = segments[idx++];
 
-    // Force Hebrew routing if the segment text itself contains Hebrew chars.
-    // This is the belt-and-suspenders catch for any segmentation edge case.
+    // Belt-and-suspenders: force Hebrew routing even if segmentation missed it.
     var treatAsHebrew = seg.isHebrew || _containsHebrew(seg.text);
+    var hv = treatAsHebrew ? _pickHebrewVoice() : null;
 
+    // ── Per-segment log (open DevTools Console to see this) ─────────────
+    console.log(
+      '[TTS seg ' + idx + '/' + segments.length + ']',
+      JSON.stringify(seg.text),
+      '| hebrew=' + treatAsHebrew,
+      '| nativeVoice=' + (hv ? hv.name : 'none'),
+      '| responsiveVoice=' + (!!window.responsiveVoice)
+    );
+
+    // ── HEBREW: ResponsiveVoice fallback when no he-IL native voice ──────
+    if (treatAsHebrew && !hv && window.responsiveVoice) {
+      console.log('[TTS] Using ResponsiveVoice Hebrew Female for:', seg.text);
+      responsiveVoice.speak(seg.text, 'Hebrew Female', {
+        rate:   0.85,
+        pitch:  1.1,
+        volume: 1.0,
+        onend:  function() { setTimeout(next, seg.pauseAfter); },
+        onerror: function(e) {
+          console.error('[TTS] ResponsiveVoice error:', e);
+          ttsActive = false;
+          setSpeakBtnState(activeSpeakBtn, false);
+          activeSpeakBtn = null;
+        }
+      });
+      return;   // ResponsiveVoice handles this segment; Web Speech not called
+    }
+
+    // ── Web Speech API (English always; Hebrew when native voice exists) ─
     var u = new SpeechSynthesisUtterance(seg.text);
     if (treatAsHebrew) {
-      u.lang = 'he-IL';          // ALWAYS set lang before voice
-      var hv = _pickHebrewVoice();
+      u.lang = 'he-IL';
       if (hv) u.voice = hv;
     } else {
       u.lang = 'en-GB';
@@ -1210,18 +1237,6 @@ function speakText(rawText, btn) {
       if (ev) { u.voice = ev; u.lang = ev.lang; }
     }
     u.rate = 0.85; u.pitch = 1.1; u.volume = 1.0;
-
-    // ── Per-segment console log — visible in DevTools ────────────────────
-    console.log(
-      '[TTS seg ' + idx + '/' + segments.length + ']',
-      JSON.stringify(seg.text),
-      '| segClass=' + (seg.isHebrew ? 'HEB' : 'eng'),
-      '| containsHeb=' + _containsHebrew(seg.text),
-      '| forcedHeb=' + treatAsHebrew,
-      '| lang=' + u.lang,
-      '| voice=' + (u.voice ? u.voice.name : '(browser-default)')
-    );
-
     u.onend  = function() { setTimeout(next, seg.pauseAfter); };
     u.onerror = function(e) {
       console.error('[TTS error]', e.error, '| text:', seg.text, '| lang:', u.lang);
@@ -1261,8 +1276,14 @@ function speakText(rawText, btn) {
 
 // ── testHebrew() — call this in the browser console to test Hebrew audio ──
 window.testHebrew = function() {
+  var rv = !!window.responsiveVoice;
+  var hv = _pickHebrewVoice();
   console.log('[TTS] testHebrew() called');
-  // Speak the word shalom using its Unicode code points (encoding-safe)
+  console.log('[TTS]   native he-IL voice :', hv ? hv.name : 'NONE');
+  console.log('[TTS]   ResponsiveVoice     :', rv ? 'LOADED' : 'NOT LOADED');
+  if (!hv && !rv) {
+    console.warn('[TTS] No Hebrew voice available — install Hebrew in Windows Settings > Language');
+  }
   speakText('שָׁלוֹם');
 };
 
