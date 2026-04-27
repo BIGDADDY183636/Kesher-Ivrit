@@ -3063,8 +3063,19 @@ body {
 .error-body {
   font-size: 0.88rem;
   color: #7F1D1D;
-  margin-bottom: 12px;
+  margin-bottom: 8px;
   line-height: 1.5;
+}
+.error-detail {
+  font-size: 0.74rem;
+  font-family: monospace;
+  color: #9B1C1C;
+  background: rgba(220,38,38,0.06);
+  border: 1px solid rgba(220,38,38,0.15);
+  border-radius: 6px;
+  padding: 4px 8px;
+  margin-bottom: 10px;
+  word-break: break-all;
 }
 /* ── Reconnect / retry button ─────────────────────────────────────────────── */
 .reconnect-btn {

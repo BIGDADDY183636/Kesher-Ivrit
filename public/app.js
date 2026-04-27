@@ -2064,7 +2064,12 @@ async function _fetchWithRetry(body, maxAttempts, onAttempt) {
         var errData = await response.json().catch(function() { return {}; });
         if (errData.error === 'NO_API_KEY') throw new Error('no_api_key');
         if (response.status === 429)        throw new Error('rate_limit');
-        throw new Error('server_error');
+        // Preserve the actual server error message for debugging
+        var detail = errData.message || errData.error || ('HTTP ' + response.status);
+        console.error('[Chat] Server error:', response.status, detail);
+        var e = new Error('server_error');
+        e.serverDetail = detail;
+        throw e;
       }
 
       return await response.json();
@@ -2187,7 +2192,6 @@ async function sendToMorah(messages) {
       // Try cached fallback before showing error
       var fallback = _cachedFallback();
       if (fallback) {
-        // Show a cached response so the lesson can continue
         var cleanFallback = fallback
           .replace(/📚 WORDS LEARNED:.*$/s, '')
           .replace(/\[SKIP:[^\]]*\]/gi, '')
@@ -2196,7 +2200,8 @@ async function sendToMorah(messages) {
         showToast('📶 Using a saved response — connection hiccup detected', 4500);
         setMorahStatus('Ready to teach! 🇮🇱');
       } else {
-        appendErrorMessage(error.name === 'AbortError' ? 'timeout' : 'server_error');
+        var errType = error.name === 'AbortError' ? 'timeout' : 'server_error';
+        appendErrorMessage(errType, error.serverDetail || null);
         setMorahStatus('Tap retry to reconnect 🔄');
       }
     }
@@ -2485,7 +2490,7 @@ function _streamBlocks(bubble, htmlContent, onDone) {
   if (onDone) setTimeout(onDone, delay + 20);
 }
 
-function appendErrorMessage(errCode) {
+function appendErrorMessage(errCode, serverDetail) {
   var MSGS = {
     no_api_key:   { emoji: '🔑', title: 'API key needed',             body: 'Tap the ⚙️ icon above to add your Anthropic key.',           retry: false },
     rate_limit:   { emoji: '⏳', title: 'Too many messages!',          body: 'Take a breath for a few seconds, then tap Retry.',            retry: true  },
@@ -2501,6 +2506,9 @@ function appendErrorMessage(errCode) {
   var el = document.createElement('div');
   el.className = 'message morah error-message';
 
+  var detailHtml = (serverDetail && m.retry)
+    ? '<div class="error-detail">' + escapeHtml(serverDetail) + '</div>'
+    : '';
   var retryBtn = m.retry
     ? '<button class="reconnect-btn" onclick="retryLastMessage()">🔄 Retry</button>'
     : '';
@@ -2512,6 +2520,7 @@ function appendErrorMessage(errCode) {
       '<div class="msg-bubble error-bubble">' +
         '<div class="error-title">' + escapeHtml(m.title) + '</div>' +
         '<div class="error-body">'  + escapeHtml(m.body)  + '</div>' +
+        detailHtml +
         retryBtn +
       '</div>' +
       '<div class="msg-footer"><span class="msg-time">' + time + '</span></div>' +

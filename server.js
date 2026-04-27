@@ -796,53 +796,51 @@ ${timeAvail === '5 minutes' ? `
 Start with a half-line greeting to ${name}, then teach the first word.`;
 }
 
-// ── Server-side retry with exponential backoff ───────────────────────────────
-async function withRetry(fn, maxAttempts, baseDelayMs) {
-  let lastErr;
-  for (let i = 0; i < maxAttempts; i++) {
-    try {
-      return await fn();
-    } catch (err) {
-      lastErr = err;
-      const retryable = err.status === 529 || err.status === 503 || err.status === 500
-                     || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT'
-                     || (err.message || '').includes('overloaded');
-      if (!retryable || i === maxAttempts - 1) throw err;
-      console.warn(`[API] Attempt ${i + 1} failed (${err.message}), retrying in ${baseDelayMs * (i + 1)}ms…`);
-      await new Promise(r => setTimeout(r, baseDelayMs * (i + 1)));
-    }
-  }
-  throw lastErr;
-}
-
 app.post('/api/chat', async (req, res) => {
   const { messages, userProfile, myClass } = req.body;
   const apiKey = process.env.ANTHROPIC_API_KEY || req.headers['x-api-key'];
 
   if (!apiKey) {
+    console.error('[API] No API key — set ANTHROPIC_API_KEY in Vercel environment variables');
     return res.status(401).json({ error: 'NO_API_KEY' });
+  }
+
+  // Guard: userProfile must exist to build the system prompt
+  if (!userProfile || typeof userProfile !== 'object') {
+    console.error('[API] Missing or invalid userProfile in request body');
+    return res.status(400).json({ error: 'bad_request', message: 'userProfile is required' });
   }
 
   const client = apiKey === process.env.ANTHROPIC_API_KEY
     ? anthropic
     : new Anthropic({ apiKey });
 
+  let systemPrompt;
   try {
-    const response = await withRetry(() => client.messages.create({
+    systemPrompt = buildSystemPrompt(userProfile, myClass || null);
+  } catch (promptErr) {
+    console.error('[API] buildSystemPrompt threw:', promptErr.message);
+    return res.status(500).json({ error: 'server_error', message: 'Failed to build system prompt: ' + promptErr.message });
+  }
+
+  try {
+    // Single attempt — client handles retries. No server-side delay loops that
+    // would burn Vercel's function timeout budget before a response arrives.
+    const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
-      max_tokens: 300,
-      system: buildSystemPrompt(userProfile, myClass || null),
+      max_tokens: 1024,   // 300 was too low — truncated [CHALLENGE] JSON
+      system: systemPrompt,
       messages: messages.map(m => ({ role: m.role, content: m.content }))
-    }), 3, 1500);
+    });
 
     res.json({ content: response.content[0].text });
+
   } catch (error) {
-    console.error('[API] Chat error after retries:', error.message);
-    const status = error.status === 429 ? 429 : 500;
-    res.status(status).json({
-      error: error.status === 429 ? 'rate_limit' : 'server_error',
-      message: error.message
-    });
+    const status  = error.status === 429 ? 429 : 500;
+    const code    = error.status === 429 ? 'rate_limit' : 'server_error';
+    const detail  = error.message || String(error);
+    console.error(`[API] Anthropic error (status=${error.status}): ${detail}`);
+    res.status(status).json({ error: code, message: detail });
   }
 });
 
@@ -858,14 +856,14 @@ app.post('/api/tooltip', async (req, res) => {
 
   try {
     const client = apiKey === process.env.ANTHROPIC_API_KEY ? anthropic : new Anthropic({ apiKey });
-    const response = await withRetry(() => client.messages.create({
+    const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 80,
       messages: [{
         role: 'user',
         content: `Hebrew word or phrase: "${word.trim()}"\nReply with ONLY a JSON object, no other text:\n{"transliteration":"...","english":"...","partOfSpeech":"noun/verb/adjective/phrase/etc"}`
       }]
-    }), 2, 1000);
+    });
     const raw = response.content[0].text;
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) return res.status(500).json({ error: 'Parse error' });
@@ -876,8 +874,13 @@ app.post('/api/tooltip', async (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
+  const key = process.env.ANTHROPIC_API_KEY || '';
   res.json({
-    configured: !!process.env.ANTHROPIC_API_KEY
+    configured:   !!key,
+    keyPrefix:    key ? key.slice(0, 7) + '…' : '(not set)',
+    nodeVersion:  process.version,
+    environment:  process.env.VERCEL ? 'vercel' : 'local',
+    timestamp:    new Date().toISOString()
   });
 });
 
