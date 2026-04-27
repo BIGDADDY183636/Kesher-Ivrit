@@ -796,6 +796,25 @@ ${timeAvail === '5 minutes' ? `
 Start with a half-line greeting to ${name}, then teach the first word.`;
 }
 
+// ── Server-side retry with exponential backoff ───────────────────────────────
+async function withRetry(fn, maxAttempts, baseDelayMs) {
+  let lastErr;
+  for (let i = 0; i < maxAttempts; i++) {
+    try {
+      return await fn();
+    } catch (err) {
+      lastErr = err;
+      const retryable = err.status === 529 || err.status === 503 || err.status === 500
+                     || err.code === 'ECONNRESET' || err.code === 'ETIMEDOUT'
+                     || (err.message || '').includes('overloaded');
+      if (!retryable || i === maxAttempts - 1) throw err;
+      console.warn(`[API] Attempt ${i + 1} failed (${err.message}), retrying in ${baseDelayMs * (i + 1)}ms…`);
+      await new Promise(r => setTimeout(r, baseDelayMs * (i + 1)));
+    }
+  }
+  throw lastErr;
+}
+
 app.post('/api/chat', async (req, res) => {
   const { messages, userProfile, myClass } = req.body;
   const apiKey = process.env.ANTHROPIC_API_KEY || req.headers['x-api-key'];
@@ -804,22 +823,26 @@ app.post('/api/chat', async (req, res) => {
     return res.status(401).json({ error: 'NO_API_KEY' });
   }
 
-  try {
-    const client = apiKey === process.env.ANTHROPIC_API_KEY
-      ? anthropic
-      : new Anthropic({ apiKey });
+  const client = apiKey === process.env.ANTHROPIC_API_KEY
+    ? anthropic
+    : new Anthropic({ apiKey });
 
-    const response = await client.messages.create({
+  try {
+    const response = await withRetry(() => client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 300,
       system: buildSystemPrompt(userProfile, myClass || null),
       messages: messages.map(m => ({ role: m.role, content: m.content }))
-    });
+    }), 3, 1500);
 
     res.json({ content: response.content[0].text });
   } catch (error) {
-    console.error('API error:', error);
-    res.status(500).json({ error: error.message });
+    console.error('[API] Chat error after retries:', error.message);
+    const status = error.status === 429 ? 429 : 500;
+    res.status(status).json({
+      error: error.status === 429 ? 'rate_limit' : 'server_error',
+      message: error.message
+    });
   }
 });
 
@@ -835,14 +858,14 @@ app.post('/api/tooltip', async (req, res) => {
 
   try {
     const client = apiKey === process.env.ANTHROPIC_API_KEY ? anthropic : new Anthropic({ apiKey });
-    const response = await client.messages.create({
+    const response = await withRetry(() => client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 80,
       messages: [{
         role: 'user',
         content: `Hebrew word or phrase: "${word.trim()}"\nReply with ONLY a JSON object, no other text:\n{"transliteration":"...","english":"...","partOfSpeech":"noun/verb/adjective/phrase/etc"}`
       }]
-    });
+    }), 2, 1000);
     const raw = response.content[0].text;
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) return res.status(500).json({ error: 'Parse error' });

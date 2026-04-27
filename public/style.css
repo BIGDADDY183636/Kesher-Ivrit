@@ -3048,13 +3048,43 @@ body {
   .toast { bottom: 76px; } /* above bottom nav */
 }
 
-/* ── Error bubble — warm amber instead of harsh red ── */
+/* ── Error bubble ────────────────────────────────────────────────────────── */
 .error-bubble {
-  background: #FFF8EE !important;
-  border-color: #F0A030 !important;
-  color: #7A4A00 !important;
+  background: linear-gradient(160deg, #FFF5F5 0%, #FEE9E9 100%) !important;
+  border: 1.5px solid rgba(220, 38, 38, 0.22) !important;
+  box-shadow: 0 2px 10px rgba(220, 38, 38, 0.07) !important;
 }
-.error-bubble strong { color: #7A4A00; }
+.error-title {
+  font-size: 0.94rem;
+  font-weight: 800;
+  color: #B91C1C;
+  margin-bottom: 4px;
+}
+.error-body {
+  font-size: 0.88rem;
+  color: #7F1D1D;
+  margin-bottom: 12px;
+  line-height: 1.5;
+}
+/* ── Reconnect / retry button ─────────────────────────────────────────────── */
+.reconnect-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  background: linear-gradient(135deg, #1B5EE0, #4F8EF7);
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 8px 18px;
+  font-size: 0.86rem;
+  font-weight: 700;
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  transition: transform 0.15s, box-shadow 0.15s;
+  font-family: var(--font-main);
+}
+.reconnect-btn:hover  { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(27,94,224,0.32); }
+.reconnect-btn:active { transform: translateY(0); }
 
 /* ── Send button loading spinner ── */
 .btn-send { position: relative; }

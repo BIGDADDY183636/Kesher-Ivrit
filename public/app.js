@@ -2021,12 +2021,79 @@ function newLesson() {
 }
 
 // ─── MESSAGE HANDLING ─────────────────────────────────────
-var _isSending = false;
+var _isSending   = false;
+var _lastBody    = null;  // last request body — stored for one-tap retry
+
+// ── Response cache — last 5 successful Morah responses (in-memory) ────────────
+var _respCache   = [];
+var _CACHE_MAX   = 5;
+
+function _cacheResp(rawContent) {
+  _respCache.unshift(rawContent);
+  if (_respCache.length > _CACHE_MAX) _respCache.pop();
+}
+
+function _cachedFallback() {
+  return _respCache.length ? _respCache[Math.floor(Math.random() * _respCache.length)] : null;
+}
+
+// ── Fetch with client-side retry + 15-second AbortController timeout ──────────
+// Returns parsed JSON data or throws.  Non-retryable errors (no_api_key,
+// rate_limit) are re-thrown immediately.
+async function _fetchWithRetry(body, maxAttempts, onAttempt) {
+  var headers = { 'Content-Type': 'application/json' };
+  var apiKey = getApiKey();
+  if (apiKey) headers['x-api-key'] = apiKey;
+
+  var lastErr = null;
+  for (var attempt = 1; attempt <= maxAttempts; attempt++) {
+    if (attempt > 1 && onAttempt) onAttempt(attempt, maxAttempts);
+    var controller = new AbortController();
+    var tid = null;
+    try {
+      tid = setTimeout(function() { controller.abort(); }, 15000);
+      var response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: headers,
+        body: JSON.stringify(body),
+        signal: controller.signal
+      });
+      clearTimeout(tid);
+
+      if (!response.ok) {
+        var errData = await response.json().catch(function() { return {}; });
+        if (errData.error === 'NO_API_KEY') throw new Error('no_api_key');
+        if (response.status === 429)        throw new Error('rate_limit');
+        throw new Error('server_error');
+      }
+
+      return await response.json();
+
+    } catch (err) {
+      clearTimeout(tid);
+      lastErr = err;
+      if (err.message === 'no_api_key' || err.message === 'rate_limit') throw err;
+      if (attempt < maxAttempts) {
+        // Pause before next attempt: 1.2 s, 2.4 s
+        await new Promise(function(r) { setTimeout(r, 1200 * attempt); });
+      }
+    }
+  }
+  throw lastErr;
+}
+
+// ── One-tap retry — re-sends the last failed request ─────────────────────────
+function retryLastMessage() {
+  // Remove all error messages from the UI
+  var chatEl = document.getElementById('chat-messages');
+  chatEl.querySelectorAll('.error-message').forEach(function(e) { e.remove(); });
+  if (_lastBody) sendToMorah(state.messages);
+}
 
 async function sendMessage() {
   if (_isSending) return;
-  const input = document.getElementById('user-input');
-  const text = input.value.trim();
+  var input = document.getElementById('user-input');
+  var text = input.value.trim();
   if (!text) return;
 
   input.value = '';
@@ -2053,54 +2120,47 @@ async function sendToMorah(messages) {
   if (_isSending) return;
   _isSending = true;
 
-  const sendBtn = document.getElementById('btn-send');
-  const typingIndicator = document.getElementById('typing-indicator');
+  var sendBtn         = document.getElementById('btn-send');
+  var typingIndicator = document.getElementById('typing-indicator');
 
   sendBtn.disabled = true;
   sendBtn.classList.add('is-loading');
   typingIndicator.style.display = 'flex';
   setMorahStatus('Morah is thinking…');
 
-  try {
-    const headers = { 'Content-Type': 'application/json' };
-    const apiKey = getApiKey();
-    if (apiKey) headers['x-api-key'] = apiKey;
+  // After 8 s with no response, update status so user knows we haven't frozen
+  var slowTimer = setTimeout(function() {
+    if (_isSending) setMorahStatus('Still thinking — Morah is crafting a great answer…');
+  }, 8000);
 
-    const response = await fetch('/api/chat', {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({
-        messages,
-        userProfile: { ...state.userProfile, currentTopic: state.currentTopic, session: state.session },
-        myClass: myClass || null
-      })
+  // Build request body once; keep it for one-tap retry
+  _lastBody = {
+    messages:    messages,
+    userProfile: Object.assign({}, state.userProfile, { currentTopic: state.currentTopic, session: state.session }),
+    myClass:     myClass || null
+  };
+
+  try {
+    var data = await _fetchWithRetry(_lastBody, 3, function(attempt) {
+      setMorahStatus('Reconnecting to Morah (' + attempt + ' of 3)…');
     });
 
-    if (!response.ok) {
-      const err = await response.json().catch(() => ({}));
-      if (err.error === 'NO_API_KEY') {
-        document.getElementById('modal-apikey').style.display = 'flex';
-        throw new Error('no_api_key');
-      }
-      if (response.status === 429) throw new Error('rate_limit');
-      if (response.status >= 500) throw new Error('server_error');
-      throw new Error(err.error || 'unknown');
+    clearTimeout(slowTimer);
+
+    var rawContent = data.content;
+
+    // Cache for offline fallback
+    _cacheResp(rawContent);
+
+    // Extract metadata
+    var wordsData = extractWordsLearned(rawContent);
+    var skipMatches = rawContent.matchAll(/\[SKIP:\s*([^\]]+)\]/gi);
+    for (var sm of skipMatches) {
+      var topic = sm[1].trim();
+      if (topic && !state.session.skipList.includes(topic)) state.session.skipList.push(topic);
     }
 
-    const data = await response.json();
-    const rawContent = data.content;
-
-    const wordsData = extractWordsLearned(rawContent);
-
-    const skipMatches = rawContent.matchAll(/\[SKIP:\s*([^\]]+)\]/gi);
-    for (const match of skipMatches) {
-      const topic = match[1].trim();
-      if (topic && !state.session.skipList.includes(topic)) {
-        state.session.skipList.push(topic);
-      }
-    }
-
-    const cleanContent = rawContent
+    var cleanContent = rawContent
       .replace(/📚 WORDS LEARNED:.*$/s, '')
       .replace(/\[SKIP:[^\]]*\]/gi, '')
       .trim();
@@ -2109,19 +2169,40 @@ async function sendToMorah(messages) {
     saveProgress();
 
     appendMessage('morah', cleanContent, wordsData);
-
-    if (wordsData.length > 0) {
-      addWordsToProgress(wordsData);
-    }
+    if (wordsData.length > 0) addWordsToProgress(wordsData);
 
     updateStreak();
     setMorahStatus('Ready to teach! 🇮🇱');
 
   } catch (error) {
-    console.error('Chat error:', error);
-    appendErrorMessage(error.message);
-    setMorahStatus('Ready when you are! 🇮🇱');
+    clearTimeout(slowTimer);
+    console.error('[Chat] Failed after retries:', error.message);
+
+    if (error.message === 'no_api_key') {
+      document.getElementById('modal-apikey').style.display = 'flex';
+      appendErrorMessage('no_api_key');
+    } else if (error.message === 'rate_limit') {
+      appendErrorMessage('rate_limit');
+    } else {
+      // Try cached fallback before showing error
+      var fallback = _cachedFallback();
+      if (fallback) {
+        // Show a cached response so the lesson can continue
+        var cleanFallback = fallback
+          .replace(/📚 WORDS LEARNED:.*$/s, '')
+          .replace(/\[SKIP:[^\]]*\]/gi, '')
+          .trim();
+        appendMessage('morah', cleanFallback, []);
+        showToast('📶 Using a saved response — connection hiccup detected', 4500);
+        setMorahStatus('Ready to teach! 🇮🇱');
+      } else {
+        appendErrorMessage(error.name === 'AbortError' ? 'timeout' : 'server_error');
+        setMorahStatus('Tap retry to reconnect 🔄');
+      }
+    }
+
   } finally {
+    clearTimeout(slowTimer);
     _isSending = false;
     sendBtn.disabled = false;
     sendBtn.classList.remove('is-loading');
@@ -2405,27 +2486,36 @@ function _streamBlocks(bubble, htmlContent, onDone) {
 }
 
 function appendErrorMessage(errCode) {
-  const msgs = {
-    no_api_key:   { emoji: '🔑', title: 'No API key set', body: 'Tap the ⚙️ settings icon above to add your key.' },
-    rate_limit:   { emoji: '⏳', title: 'Morah needs a moment!', body: 'Too many messages at once — wait a few seconds and try again.' },
-    server_error: { emoji: '🛠️', title: 'Server hiccup', body: 'Something went wrong on our end. Try sending again in a moment.' },
+  var MSGS = {
+    no_api_key:   { emoji: '🔑', title: 'API key needed',             body: 'Tap the ⚙️ icon above to add your Anthropic key.',           retry: false },
+    rate_limit:   { emoji: '⏳', title: 'Too many messages!',          body: 'Take a breath for a few seconds, then tap Retry.',            retry: true  },
+    timeout:      { emoji: '⏱️', title: 'Morah is taking too long',    body: 'The response timed out. Tap Retry — she\'ll be right back!',  retry: true  },
+    server_error: { emoji: '🛠️', title: 'Server hiccup',               body: 'Something glitched on our end. Already retried 3×. Tap Retry when ready.', retry: true },
   };
-  const offline = !navigator.onLine;
-  let m = msgs[errCode] || (offline
-    ? { emoji: '📶', title: 'No internet connection', body: 'Check your connection and try again.' }
-    : { emoji: '😅', title: 'Something went wrong', body: 'Try sending your message again.' });
+  var offline = !navigator.onLine;
+  var m = MSGS[errCode] || (offline
+    ? { emoji: '📶', title: 'No internet connection', body: 'Check your Wi-Fi or data, then tap Retry.', retry: true }
+    : { emoji: '😅', title: 'Morah had a hiccup',     body: 'Something didn\'t connect. Tap Retry — this usually fixes it!', retry: true });
 
-  const container = document.getElementById('chat-messages');
-  const el = document.createElement('div');
-  el.className = 'message morah';
-  el.innerHTML = `
-    <div class="msg-avatar">${m.emoji}</div>
-    <div style="flex:1">
-      <div class="msg-bubble error-bubble">
-        <strong>${m.title}</strong><br/>${m.body}
-      </div>
-      <div class="msg-footer"><span class="msg-time">${new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'})}</span></div>
-    </div>`;
+  var container = document.getElementById('chat-messages');
+  var el = document.createElement('div');
+  el.className = 'message morah error-message';
+
+  var retryBtn = m.retry
+    ? '<button class="reconnect-btn" onclick="retryLastMessage()">🔄 Retry</button>'
+    : '';
+
+  var time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  el.innerHTML =
+    '<div class="msg-avatar">' + m.emoji + '</div>' +
+    '<div style="flex:1;min-width:0;">' +
+      '<div class="msg-bubble error-bubble">' +
+        '<div class="error-title">' + escapeHtml(m.title) + '</div>' +
+        '<div class="error-body">'  + escapeHtml(m.body)  + '</div>' +
+        retryBtn +
+      '</div>' +
+      '<div class="msg-footer"><span class="msg-time">' + time + '</span></div>' +
+    '</div>';
   container.appendChild(el);
   autoScroll();
 }
