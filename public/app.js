@@ -866,22 +866,16 @@ function submitRegistration() {
     document.getElementById('reg-lastinitial').focus();
     return;
   }
-  if (!school) {
-    errEl.textContent = 'Please enter your school name.';
-    errEl.style.display = 'block';
-    document.getElementById('reg-school').focus();
-    return;
-  }
-
   errEl.style.display = 'none';
-  currentUser = { firstName, lastInitial, school, joinedAt: Date.now() };
+  var schoolFinal = school || 'Independent Learner';
+  currentUser = { firstName, lastInitial, school: schoolFinal, joinedAt: Date.now() };
   saveUser();
   updateUserBadges();
   showScreen('screen-home');
   renderWordOfDay();
   checkReturningUser();
   checkApiKey();
-  _registerWithDb(firstName, lastInitial, school);
+  _registerWithDb(firstName, lastInitial, schoolFinal);
 }
 
 function updateUserBadges() {

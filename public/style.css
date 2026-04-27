@@ -2190,6 +2190,9 @@ body {
 .fb-correct { background: #E6F9EF; color: #1a6b3c; border: 1px solid #A8E6C3; }
 .fb-wrong   { background: #FFF0F0; color: #8B1A1A; border: 1px solid #F5C0C0; }
 .fb-icon { font-size: 1.2rem; flex-shrink: 0; }
+[data-theme="dark"] .fb-correct { background: rgba(46,139,87,0.15) !important; color: #6DFFA0 !important; border-color: rgba(46,139,87,0.3) !important; }
+[data-theme="dark"] .fb-wrong   { background: rgba(192,57,43,0.15) !important; color: #FF9090 !important; border-color: rgba(192,57,43,0.3) !important; }
+[data-theme="dark"] .fb-self-corrected { background: rgba(5,150,105,0.12) !important; border-color: rgba(5,150,105,0.2) !important; color: #6DFFA0 !important; }
 
 /* ═══ CONFETTI ═══ */
 .confetti-piece {
