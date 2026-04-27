@@ -2242,7 +2242,10 @@ function parseMorahResponse(raw) {
 }
 
 // ─── RENDERING ───────────────────────────────────────────
-// instant=true skips streaming animation — used for historical messages on reload
+// Morah's response is split into two visually separate sections:
+//   1. teach-bubble  — pure information, no interaction
+//   2. challenge-bubble — interactive widget only, contrasting background
+// instant=true skips streaming animation (used for history replay on reload)
 function appendMessage(role, content, wordBadges, instant) {
   wordBadges = wordBadges || [];
   instant    = instant    || false;
@@ -2259,16 +2262,43 @@ function appendMessage(role, content, wordBadges, instant) {
     var cId       = challenge ? ++challengeCounter : null;
     if (cId) challengeStore[cId] = { challenge: challenge, answered: false };
 
-    var bubble = document.createElement('div');
-    bubble.className = 'msg-bubble';
+    // ── Section 1: Teach bubble (blue, pure information) ──────────────────
+    var teachBubble = document.createElement('div');
+    teachBubble.className = 'msg-bubble teach-bubble';
 
+    // ── Section 2: Divider + Challenge bubble (amber, interactive only) ────
+    var divider         = null;
+    var challengeBubble = null;
+    if (cId) {
+      divider = document.createElement('div');
+      divider.className = 'practice-divider';
+      divider.innerHTML =
+        '<span class="practice-divider-line"></span>' +
+        '<span class="practice-divider-label">✏️ Your turn!</span>' +
+        '<span class="practice-divider-line"></span>';
+      if (!instant) divider.style.display = 'none';
+
+      challengeBubble = document.createElement('div');
+      challengeBubble.className = 'msg-bubble challenge-bubble';
+      if (!instant) challengeBubble.style.display = 'none';
+
+      var cDiv = document.createElement('div');
+      cDiv.className = 'challenge-widget';
+      cDiv.id = 'challenge-' + cId;
+      challengeBubble.appendChild(cDiv);
+    }
+
+    // ── Footer ────────────────────────────────────────────────────────────
     var footer = document.createElement('div');
     footer.className = 'msg-footer';
     footer.innerHTML = '<span class="msg-time">' + time + '</span>';
 
+    // ── Assemble ──────────────────────────────────────────────────────────
     var inner = document.createElement('div');
-    inner.style.cssText = 'flex:1;min-width:0;';
-    inner.appendChild(bubble);
+    inner.className = 'msg-inner-col';
+    inner.appendChild(teachBubble);
+    if (divider)         inner.appendChild(divider);
+    if (challengeBubble) inner.appendChild(challengeBubble);
     inner.appendChild(footer);
 
     var avatar = document.createElement('div');
@@ -2279,7 +2309,9 @@ function appendMessage(role, content, wordBadges, instant) {
     el.appendChild(inner);
     container.appendChild(el);
 
+    // ── Reveal extras after teach content finishes ────────────────────────
     function _attachExtras() {
+      // Word badges go at the bottom of the teach bubble
       if (wordBadges.length > 0) {
         var badgeWrap = document.createElement('div');
         badgeWrap.className = 'word-badges';
@@ -2293,24 +2325,23 @@ function appendMessage(role, content, wordBadges, instant) {
             '<span class="word-badge-eng">'    + escapeHtml(w.english)         + '</span>';
           badgeWrap.appendChild(b);
         });
-        bubble.appendChild(badgeWrap);
+        teachBubble.appendChild(badgeWrap);
       }
+      // Reveal the challenge section and populate the widget
       if (cId) {
-        var cDiv = document.createElement('div');
-        cDiv.className = 'challenge-widget';
-        cDiv.id = 'challenge-' + cId;
-        bubble.appendChild(cDiv);
+        if (divider)         divider.style.removeProperty('display');
+        if (challengeBubble) challengeBubble.style.removeProperty('display');
         renderChallenge(cId);
       }
       autoScroll();
     }
 
     if (instant) {
-      bubble.innerHTML = formatMessage(teach);
+      teachBubble.innerHTML = formatMessage(teach);
       _attachExtras();
     } else {
       autoScroll();
-      _streamBlocks(bubble, formatMessage(teach), _attachExtras);
+      _streamBlocks(teachBubble, formatMessage(teach), _attachExtras);
     }
 
   } else {

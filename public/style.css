@@ -1895,6 +1895,73 @@ body {
   .message { max-width: 95%; }
 }
 
+/* ═══ TEACH / CHALLENGE TWO-SECTION LAYOUT ═══════════════════════════════ */
+
+/* Inner column — holds teach bubble, divider, challenge bubble, footer */
+.msg-inner-col {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Teach bubble: inherits all .msg-bubble + .message.morah .msg-bubble styles */
+/* No extra overrides needed — it is the standard Morah blue bubble */
+
+/* ── Practice divider ─────────────────────────────────────────────────── */
+.practice-divider {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 10px 2px 6px;
+}
+.practice-divider-line {
+  flex: 1;
+  height: 1px;
+  background: rgba(230, 126, 34, 0.2);
+}
+.practice-divider-label {
+  font-size: 0.67rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: #B45309;
+  background: rgba(251, 191, 36, 0.10);
+  border: 1.5px solid rgba(251, 191, 36, 0.35);
+  border-radius: 20px;
+  padding: 3px 12px;
+  white-space: nowrap;
+}
+
+/* ── Challenge bubble: warm amber, clearly separate from teach content ── */
+.challenge-bubble {
+  background: linear-gradient(160deg, #FFFBF0 0%, #FFF6DC 100%);
+  border: 1.5px solid rgba(251, 191, 36, 0.35);
+  box-shadow:
+    0 2px 12px rgba(251, 191, 36, 0.10),
+    inset 0 1px 0 rgba(255, 255, 255, 0.9);
+  border-radius: 18px;
+  border-top-left-radius: 6px;
+  animation: challengeBubbleIn 0.28s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes challengeBubbleIn {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+  to   { opacity: 1; transform: none; }
+}
+
+/* Challenge widget inside challenge-bubble: no old dashed separator */
+.challenge-bubble .challenge-widget {
+  margin-top: 0;
+  padding-top: 0;
+  border-top: none;
+}
+
+/* Tap-hebrew word display adapts to amber background */
+.challenge-bubble .tap-hebrew {
+  background: rgba(251, 191, 36, 0.12);
+  color: #92400E;
+}
+
 /* ═══ CHALLENGE WIDGETS ═══ */
 .challenge-widget {
   margin-top: 14px;
