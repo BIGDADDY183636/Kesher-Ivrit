@@ -1506,43 +1506,65 @@ function parseMorahResponse(raw) {
 // ─── RENDERING ───────────────────────────────────────────
 function appendMessage(role, content, wordBadges = []) {
   const container = document.getElementById('chat-messages');
-  const el = document.createElement('div');
-  el.className = `message ${role}`;
-  const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  const el        = document.createElement('div');
+  el.className    = `message ${role}`;
+  const time      = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   if (role === 'morah') {
     const { teach, challenge } = parseMorahResponse(content);
-
-
-    let badgesHtml = '';
-    if (wordBadges.length > 0) {
-      badgesHtml = `<div class="word-badges">` +
-        wordBadges.map((w, i) => `
-          <div class="word-badge" style="animation-delay:${i * 0.04}s">
-            <span class="word-badge-heb">${escapeHtml(w.hebrew)}</span>
-            <span class="word-badge-trans">${escapeHtml(w.transliteration)}</span>
-            <span class="word-badge-eng">${escapeHtml(w.english)}</span>
-          </div>`).join('') + `</div>`;
-    }
-
     const cId = challenge ? ++challengeCounter : null;
     if (cId) challengeStore[cId] = { challenge, answered: false };
 
-    el.innerHTML = `
-      <div class="msg-avatar">👩‍🏫</div>
-      <div style="flex:1;min-width:0;">
-        <div class="msg-bubble">
-          ${formatMessage(teach)}
-          ${badgesHtml}
-          ${cId ? `<div class="challenge-widget" id="challenge-${cId}"></div>` : ''}
-        </div>
+    // Build shell immediately so the bubble appears with its enter animation
+    const bubble = document.createElement('div');
+    bubble.className = 'msg-bubble';
 
-        <div class="msg-footer"><span class="msg-time">${time}</span></div>
-      </div>`;
+    const footer = document.createElement('div');
+    footer.className = 'msg-footer';
+    footer.innerHTML = `<span class="msg-time">${time}</span>`;
 
+    const inner = document.createElement('div');
+    inner.style.cssText = 'flex:1;min-width:0;';
+    inner.appendChild(bubble);
+    inner.appendChild(footer);
+
+    const avatar = document.createElement('div');
+    avatar.className = 'msg-avatar';
+    avatar.textContent = '👩‍🏫';
+
+    el.appendChild(avatar);
+    el.appendChild(inner);
     container.appendChild(el);
-    if (cId) renderChallenge(cId);
     autoScroll();
+
+    // Stream content blocks into the bubble progressively
+    _streamBlocks(bubble, formatMessage(teach), function() {
+      // Append word-learned badges after content finishes
+      if (wordBadges.length > 0) {
+        const badgeWrap = document.createElement('div');
+        badgeWrap.className = 'word-badges';
+        wordBadges.forEach(function(w, i) {
+          const b = document.createElement('div');
+          b.className = 'word-badge msg-block-in';
+          b.style.cssText = `animation-delay:${i * 0.07}s;--bd:0.4s`;
+          b.innerHTML =
+            `<span class="word-badge-heb">${escapeHtml(w.hebrew)}</span>` +
+            `<span class="word-badge-trans">${escapeHtml(w.transliteration)}</span>` +
+            `<span class="word-badge-eng">${escapeHtml(w.english)}</span>`;
+          badgeWrap.appendChild(b);
+        });
+        bubble.appendChild(badgeWrap);
+      }
+      // Render challenge widget
+      if (cId) {
+        const cDiv = document.createElement('div');
+        cDiv.className = 'challenge-widget';
+        cDiv.id = `challenge-${cId}`;
+        bubble.appendChild(cDiv);
+        renderChallenge(cId);
+      }
+      autoScroll();
+    });
 
   } else {
     el.innerHTML = `
@@ -1553,8 +1575,61 @@ function appendMessage(role, content, wordBadges = []) {
       </div>`;
     container.appendChild(el);
     autoScroll();
-    return null;
   }
+}
+
+// ── Progressive block streaming — reveals message content piece by piece ──────
+function _streamBlocks(bubble, htmlContent, onDone) {
+  // Parse into block elements
+  const temp = document.createElement('div');
+  temp.innerHTML = htmlContent;
+  const blocks = Array.from(temp.children);
+
+  if (!blocks.length) {
+    // Plain text with no block structure — show immediately
+    bubble.innerHTML = htmlContent;
+    if (onDone) setTimeout(onDone, 50);
+    return;
+  }
+
+  var delay = 30;
+
+  blocks.forEach(function(origBlock, idx) {
+    var isTable  = origBlock.classList.contains('msg-table-wrap');
+    var isPara   = origBlock.tagName === 'P';
+    var isList   = origBlock.tagName === 'UL' || origBlock.tagName === 'OL';
+    var isLast   = idx === blocks.length - 1;
+
+    // Compute reveal duration scaled to word count for paragraphs
+    var words    = origBlock.textContent.trim().split(/\s+/).length;
+    var dur      = isPara ? Math.max(0.25, Math.min(words * 0.04, 0.8))
+                 : isTable ? 0.5
+                 : 0.35;
+
+    setTimeout(function() {
+      var block = origBlock.cloneNode(true);
+      block.classList.add('msg-block-in');
+      block.style.setProperty('--bd', dur + 's');
+      bubble.appendChild(block);
+
+      // Table: stagger each row's slide-in
+      if (isTable) {
+        block.querySelectorAll('tr').forEach(function(row, ri) {
+          row.classList.add('tbl-row-in');
+          row.style.animationDelay = (ri * 0.08 + 0.1) + 's';
+        });
+      }
+
+      autoScroll();
+      if (isLast) setTimeout(onDone || function(){}, dur * 1000 + 80);
+    }, delay);
+
+    // Stagger between blocks (longer for bigger content)
+    if (isTable)        delay += 300;
+    else if (isList)    delay += 180;
+    else if (isPara)    delay += Math.max(120, Math.min(words * 28, 380));
+    else                delay += 100;
+  });
 }
 
 function appendErrorMessage(errCode) {
