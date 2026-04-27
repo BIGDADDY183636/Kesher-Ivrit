@@ -223,12 +223,20 @@ You are the student's go-to person for anything Jewish. Make them feel like they
     mixed: 'mixed approach combining modern and classical Hebrew'
   };
 
-  const levelFull = levelMap[userProfile.level] || 'a beginner';
-  const goal = goalMap[userProfile.goal] || 'learn Hebrew';
-  const style = styleMap[userProfile.learningStyle] || 'a visual learner';
-  const background = backgroundMap[userProfile.background] || 'someone interested in Judaism';
-  const curriculum = curriculumMap[userProfile.curriculum] || 'a mixed approach';
-  const timeAvail = userProfile.timeAvailable || '10-15 minutes';
+  // Helper: resolve single value or array against a map
+  function resolveField(val, map, fallback) {
+    if (!val) return fallback;
+    const arr = Array.isArray(val) ? val : [val];
+    const resolved = arr.map(v => map[v]).filter(Boolean);
+    return resolved.length ? resolved.join(', and ') : fallback;
+  }
+
+  const levelFull   = levelMap[userProfile.level] || 'a beginner';
+  const goal        = resolveField(userProfile.goal,          goalMap,        'learn Hebrew');
+  const style       = resolveField(userProfile.learningStyle, styleMap,       'a visual learner');
+  const background  = resolveField(userProfile.background,    backgroundMap,  'someone interested in Judaism');
+  const curriculum  = curriculumMap[userProfile.curriculum] || 'a mixed approach';
+  const timeAvail   = userProfile.timeAvailable || '10-15 minutes';
 
   return `You are Morah (מורה), warm and brilliant Hebrew teacher at Kesher Ivrit. Your vibe: cool older Israeli sister — casual, funny, real, proudly Zionist. Never stiff.
 

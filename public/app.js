@@ -102,9 +102,11 @@ const QUIZ_QUESTIONS = [
   {
     id: 'goal',
     icon: '🎯',
-    title: 'What\'s your main goal?',
-    subtitle: 'This shapes your entire curriculum',
+    title: 'What are your goals?',
+    subtitle: 'Choose everything that applies — Morah will blend them',
     type: 'choice',
+    multi: true,
+    maxSelect: 3,
     options: [
       { value: 'prayer',       icon: '🕍', text: 'Prayer & Synagogue',    sub: 'Understand the Siddur and davening' },
       { value: 'bible',        icon: '📜', text: 'Torah & Tanakh',         sub: 'Read the Bible in the original Hebrew' },
@@ -133,8 +135,10 @@ const QUIZ_QUESTIONS = [
     id: 'learningStyle',
     icon: '🧠',
     title: 'How do you learn best?',
-    subtitle: 'Morah will adapt the lessons to your style',
+    subtitle: 'Pick every style that sounds like you',
     type: 'choice',
+    multi: true,
+    maxSelect: 3,
     options: [
       { value: 'visual',      icon: '👁️', text: 'Visual',     sub: 'I love seeing words, charts, and colors' },
       { value: 'stories',     icon: '📚', text: 'Stories',    sub: 'I absorb information through narratives' },
@@ -147,8 +151,10 @@ const QUIZ_QUESTIONS = [
     id: 'background',
     icon: '🕎',
     title: 'What\'s your Jewish background?',
-    subtitle: 'Helps Morah make cultural connections',
+    subtitle: 'Select all that describe you — many people are more than one',
     type: 'choice',
+    multi: true,
+    maxSelect: 3,
     options: [
       { value: 'orthodox',    icon: '🕌', text: 'Orthodox',         sub: 'Torah observant, yeshiva/day school background' },
       { value: 'conservative', icon: '🕍', text: 'Conservative',   sub: 'Masorti, traditional-but-not-Orthodox' },
@@ -616,8 +622,9 @@ function _ptLevelFromScore(score) {
 var _pt = { idx: 0, score: 0, answered: false, detectedLevel: null };
 
 function _showPT() {
-  var goal   = (state.quizAnswers && state.quizAnswers.goal) || 'conversation';
-  var setKey = _ptSelectSet(goal);
+  var rawGoal = (state.quizAnswers && state.quizAnswers.goal) || 'conversation';
+  var goal    = Array.isArray(rawGoal) ? rawGoal[0] : rawGoal;
+  var setKey  = _ptSelectSet(goal);
   var meta   = PT_SET_META[setKey];
   _pt = { idx: 0, score: 0, answered: false, detectedLevel: null,
           questions: PT_QUESTION_SETS[setKey], setKey: setKey, meta: meta };
@@ -1276,6 +1283,11 @@ function renderQuizStep() {
     <div class="quiz-q-text">${q.title}</div>
     <div class="quiz-q-sub">${q.subtitle}</div>`;
 
+  if (q.multi) {
+    const n = q.maxSelect || 3;
+    html += `<div class="quiz-multi-hint">Pick up to ${n}</div>`;
+  }
+
   if (q.type === 'text') {
     const val = state.quizAnswers[q.id] || '';
     html += `<input type="text" class="quiz-name-input" id="quiz-text-input"
@@ -1284,13 +1296,21 @@ function renderQuizStep() {
   } else if (q.type === 'choice') {
     html += `<div class="quiz-options">`;
     for (const opt of q.options) {
-      const selected = state.quizAnswers[q.id] === opt.value ? 'selected' : '';
-      html += `<div class="quiz-option ${selected}" onclick="selectOption('${q.id}','${opt.value}',this)">
+      var isSelected;
+      if (q.multi) {
+        var arr = state.quizAnswers[q.id];
+        isSelected = Array.isArray(arr) && arr.indexOf(opt.value) !== -1;
+      } else {
+        isSelected = state.quizAnswers[q.id] === opt.value;
+      }
+      const selClass = isSelected ? 'selected' : '';
+      html += `<div class="quiz-option ${selClass}" onclick="selectOption('${q.id}','${opt.value}',this)">
         <span class="quiz-option-icon">${opt.icon}</span>
-        <div>
+        <div class="quiz-option-body">
           <div class="quiz-option-text">${opt.text}</div>
           <div class="quiz-option-sub">${opt.sub}</div>
         </div>
+        <span class="quiz-check">✓</span>
       </div>`;
     }
     html += `</div>`;
@@ -1305,9 +1325,31 @@ function renderQuizStep() {
 }
 
 function selectOption(questionId, value, el) {
-  state.quizAnswers[questionId] = value;
-  el.closest('.quiz-options').querySelectorAll('.quiz-option').forEach(o => o.classList.remove('selected'));
-  el.classList.add('selected');
+  const q = QUIZ_QUESTIONS.find(function(x) { return x.id === questionId; });
+  if (q && q.multi) {
+    var arr = state.quizAnswers[questionId];
+    if (!Array.isArray(arr)) arr = [];
+    var idx = arr.indexOf(value);
+    if (idx !== -1) {
+      // Deselect
+      arr.splice(idx, 1);
+      el.classList.remove('selected');
+    } else {
+      var max = q.maxSelect || 3;
+      if (arr.length >= max) {
+        showToast('Pick up to ' + max + ' — tap a selection to deselect it first');
+        return;
+      }
+      arr.push(value);
+      el.classList.add('selected');
+    }
+    state.quizAnswers[questionId] = arr;
+  } else {
+    // Single-select
+    state.quizAnswers[questionId] = value;
+    el.closest('.quiz-options').querySelectorAll('.quiz-option').forEach(function(o) { o.classList.remove('selected'); });
+    el.classList.add('selected');
+  }
 }
 
 function quizNext() {
@@ -1319,7 +1361,9 @@ function quizNext() {
     if (!val) { showToast('Please enter your name!'); return; }
     state.quizAnswers[q.id] = val;
   } else if (q.type === 'choice') {
-    if (!state.quizAnswers[q.id]) { showToast('Please pick an option!'); return; }
+    var ans = state.quizAnswers[q.id];
+    var hasAnswer = q.multi ? (Array.isArray(ans) && ans.length > 0) : !!ans;
+    if (!hasAnswer) { showToast('Please pick at least one option!'); return; }
   }
 
   // After goal question: launch placement test before level
