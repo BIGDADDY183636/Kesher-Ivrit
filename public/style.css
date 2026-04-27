@@ -5230,8 +5230,15 @@ button, input, textarea, select { font-family: var(--font-eng); }
 .pt-header-title {
   font-size: 0.9rem;
   font-weight: 800;
-  color: rgba(255,255,255,0.8);
+  color: rgba(255,255,255,0.95);
   letter-spacing: 0.04em;
+}
+.pt-header-sub {
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.03em;
+  margin-top: -2px;
 }
 
 /* Tier difficulty badge */
