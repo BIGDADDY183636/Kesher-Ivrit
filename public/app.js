@@ -4869,7 +4869,7 @@ function hideUnscrambleGame() {
 // ═══════════════════════════════════════════════════════════════════════════
 
 var mi = {
-  pool: [], words: [], hebOrder: [], engOrder: [],
+  pool: [], words: [], cards: [],   // cards = flat shuffled list of {type,wordIdx,rot,sizeClass}
   matched: {}, selectedHeb: -1,
   round: 1, score: 0, totalAwarded: 0,
   startTime: 0, elapsed: 0,
@@ -4914,11 +4914,10 @@ function _miStartRound() {
   mi.matched   = {}; mi.selectedHeb = -1; mi.wrongCount = 0;
   mi.startTime = Date.now(); mi.elapsed = 0;
 
-  // Pick words and shuffle each column independently
+  // Pick words, build a flat shuffled card list (Hebrew + English mixed together)
   var pool = shuffle(mi.pool.slice());
-  mi.words    = pool.slice(0, mi.pairs);
-  mi.hebOrder = shuffle(mi.words.map(function(_, i) { return i; }));
-  mi.engOrder = shuffle(mi.words.map(function(_, i) { return i; }));
+  mi.words = pool.slice(0, mi.pairs);
+  mi.cards = _miBuildCards(mi.words);
 
   // Header
   var rb = document.getElementById('mi-round-badge');
@@ -4973,67 +4972,92 @@ function _miUpdateScore() {
   if (el) el.textContent = mi.score + ' pts';
 }
 
-function _miRender() {
-  var hebCol = document.getElementById('mi-col-heb');
-  var engCol = document.getElementById('mi-col-eng');
-  if (!hebCol || !engCol) return;
+// ── Card size class based on text length ─────────────────────────────────
+function _miSizeClass(text) {
+  var n = (text || '').length;
+  if (n <= 5)  return 'mi-sz-s';   // short  — big font
+  if (n <= 12) return 'mi-sz-m';   // medium — normal
+  return 'mi-sz-l';                 // long   — smaller font, wraps
+}
 
-  function cardHtml(wordIdx, side) {
-    var w = mi.words[wordIdx];
-    var matched  = !!mi.matched[wordIdx];
-    var selected = side === 'heb' && mi.selectedHeb === wordIdx;
-    var cls = 'mi-card mi-card-' + side +
-      (matched  ? ' mi-matched'  : '') +
-      (selected ? ' mi-selected' : '');
-    var click = matched ? '' :
-      (side === 'heb' ? 'onclick="miSelHeb(' + wordIdx + ')"' : 'onclick="miSelEng(' + wordIdx + ')"');
-    var label = side === 'heb'
-      ? '<span class="mi-heb">' + escapeHtml(w.hebrew) + '</span>'
-      : '<span>' + escapeHtml(w.english) + '</span>';
-    return '<button class="' + cls + '" ' + click + ' data-idx="' + wordIdx + '">' +
-      label + (matched ? '<span class="mi-check">✓</span>' : '') + '</button>';
+// ── Build the flat mixed card list with stable random rotations per round ─
+function _miBuildCards(words) {
+  var cards = [];
+  words.forEach(function(w, idx) {
+    var rotH = +(Math.random() * 6 - 3).toFixed(1);  // -3 to +3 deg
+    var rotE = +(Math.random() * 6 - 3).toFixed(1);
+    cards.push({ type: 'heb', wordIdx: idx, rot: rotH, sz: _miSizeClass(w.hebrew) });
+    cards.push({ type: 'eng', wordIdx: idx, rot: rotE, sz: _miSizeClass(w.english) });
+  });
+  return shuffle(cards);
+}
+
+// ── Render all cards into the single mixed grid ───────────────────────────
+function _miRender() {
+  var grid = document.getElementById('mi-grid');
+  if (!grid) return;
+
+  // Update hint text based on selection state
+  var hintEl = document.getElementById('mi-hint');
+  if (hintEl) {
+    hintEl.textContent = mi.selectedHeb === -1
+      ? 'Tap a Hebrew word, then tap its English match'
+      : 'Now tap the English meaning — or tap another Hebrew word';
   }
 
-  hebCol.innerHTML = mi.hebOrder.map(function(i) { return cardHtml(i, 'heb'); }).join('');
-  engCol.innerHTML = mi.engOrder.map(function(i) { return cardHtml(i, 'eng'); }).join('');
+  grid.innerHTML = mi.cards.map(function(card) {
+    var w        = mi.words[card.wordIdx];
+    var matched  = !!mi.matched[card.wordIdx];
+    var selected = card.type === 'heb' && mi.selectedHeb === card.wordIdx;
+    var cls = 'mi-card mi-card-' + card.type + ' ' + card.sz +
+      (matched  ? ' mi-matched'  : '') +
+      (selected ? ' mi-selected' : '');
+
+    // Stable visual transform: rotation is fixed per-round (stored in card obj)
+    // Matched cards lose the rotation to snap cleanly into place
+    var rot = matched ? 0 : card.rot;
+    var style = 'transform:rotate(' + rot + 'deg);';
+
+    var click = matched ? '' :
+      'onclick="' + (card.type === 'heb' ? 'miSelHeb' : 'miSelEng') + '(' + card.wordIdx + ')"';
+
+    var inner = card.type === 'heb'
+      ? '<span class="mi-heb">' + escapeHtml(w.hebrew) + '</span>'
+      : '<span class="mi-eng-text">' + escapeHtml(w.english) + '</span>';
+
+    return '<button class="' + cls + '" ' + click +
+      ' data-idx="' + card.wordIdx + '" data-type="' + card.type + '"' +
+      ' style="' + style + '">' +
+      inner + (matched ? '<span class="mi-check">✓</span>' : '') +
+      '</button>';
+  }).join('');
 }
 
 function miSelHeb(wordIdx) {
   if (mi.matched[wordIdx]) return;
-  mi.selectedHeb = (mi.selectedHeb === wordIdx) ? -1 : wordIdx; // toggle
+  mi.selectedHeb = (mi.selectedHeb === wordIdx) ? -1 : wordIdx;
   _miRender();
 }
 
 function miSelEng(wordIdx) {
   if (mi.matched[wordIdx]) return;
   if (mi.selectedHeb === -1) { showToast('Tap a Hebrew word first! 🇮🇱'); return; }
-
   var hIdx = mi.selectedHeb;
-  if (hIdx === wordIdx) {
-    _miCorrect(hIdx);
-  } else {
-    _miWrong(hIdx, wordIdx);
-  }
+  if (hIdx === wordIdx) { _miCorrect(hIdx); } else { _miWrong(hIdx, wordIdx); }
 }
 
 function _miCorrect(idx) {
   mi.matched[idx] = true;
   mi.selectedHeb  = -1;
-
   var pts = 10 * mi.round;
   mi.score += pts;
   _miUpdateScore();
-
-  // Flash green on both columns
   _miFlash(idx, 'heb', 'mi-flash-correct');
   _miFlash(idx, 'eng', 'mi-flash-correct');
   showPointsPop(pts);
-
   setTimeout(function() {
     _miRender();
-    if (Object.keys(mi.matched).length >= mi.pairs) {
-      setTimeout(_miRoundComplete, 420);
-    }
+    if (Object.keys(mi.matched).length >= mi.pairs) setTimeout(_miRoundComplete, 420);
   }, 520);
 }
 
@@ -5041,20 +5065,16 @@ function _miWrong(hIdx, eIdx) {
   mi.wrongCount++;
   mi.score = Math.max(0, mi.score - 2);
   _miUpdateScore();
-
   _miFlash(hIdx, 'heb', 'mi-flash-wrong');
   _miFlash(eIdx, 'eng', 'mi-flash-wrong');
-
-  setTimeout(function() {
-    mi.selectedHeb = -1;
-    _miRender();
-  }, 700);
+  setTimeout(function() { mi.selectedHeb = -1; _miRender(); }, 700);
 }
 
-function _miFlash(wordIdx, side, cls) {
-  var col = document.getElementById('mi-col-' + side);
-  if (!col) return;
-  var card = col.querySelector('[data-idx="' + wordIdx + '"]');
+function _miFlash(wordIdx, type, cls) {
+  var grid = document.getElementById('mi-grid');
+  if (!grid) return;
+  // Find the card with matching wordIdx AND type in the flat grid
+  var card = grid.querySelector('[data-idx="' + wordIdx + '"][data-type="' + type + '"]');
   if (!card) return;
   card.classList.add(cls);
   setTimeout(function() { card.classList.remove(cls); }, 650);
