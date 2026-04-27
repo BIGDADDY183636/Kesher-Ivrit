@@ -6487,3 +6487,72 @@ html, body,
   transition: left 0.3s cubic-bezier(0.34,1.56,0.64,1);
 }
 .dm-toggle-pill.dm-on .dm-toggle-knob { left: 21px; }
+
+/* ── Ask Anything mode banner ─────────────────────────────── */
+.qa-mode-banner {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, rgba(79,142,247,0.1), rgba(0,51,153,0.06));
+  border: 1.5px solid rgba(79,142,247,0.28);
+  border-radius: 12px;
+  margin-bottom: 10px;
+  animation: fadeUp 0.25s ease;
+}
+.qa-mode-icon { font-size: 1.15rem; flex-shrink: 0; }
+.qa-mode-text {
+  flex: 1;
+  font-size: 0.81rem;
+  font-weight: 600;
+  color: var(--blue-mid);
+  line-height: 1.35;
+}
+.qa-mode-text strong { color: var(--blue-deep); font-weight: 800; }
+.qa-mode-exit {
+  flex-shrink: 0;
+  background: none;
+  border: 1.5px solid rgba(79,142,247,0.35);
+  color: var(--blue-mid);
+  border-radius: 20px;
+  padding: 4px 12px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-eng);
+  transition: all 0.18s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.qa-mode-exit:hover { background: rgba(79,142,247,0.1); border-color: var(--blue-mid); }
+
+/* ── Ask Anything quick button — visually distinct ───────── */
+.quick-btn-qa {
+  background: linear-gradient(135deg, rgba(79,142,247,0.14), rgba(0,51,153,0.08)) !important;
+  border-color: rgba(79,142,247,0.35) !important;
+  color: #003399 !important;
+  font-weight: 800 !important;
+}
+.quick-btn-qa:hover {
+  background: #003399 !important;
+  border-color: #003399 !important;
+  color: #fff !important;
+}
+
+/* Dark mode overrides for QA banner */
+[data-theme="dark"] .qa-mode-banner {
+  background: linear-gradient(135deg, rgba(79,142,247,0.12), rgba(0,51,153,0.08)) !important;
+  border-color: rgba(79,142,247,0.22) !important;
+}
+[data-theme="dark"] .qa-mode-text { color: #7EB3FF !important; }
+[data-theme="dark"] .qa-mode-text strong { color: #7EB3FF !important; }
+[data-theme="dark"] .qa-mode-exit { border-color: rgba(79,142,247,0.3) !important; color: #7EB3FF !important; }
+[data-theme="dark"] .quick-btn-qa {
+  background: rgba(79,142,247,0.14) !important;
+  border-color: rgba(79,142,247,0.3) !important;
+  color: #7EB3FF !important;
+}
+[data-theme="dark"] .quick-btn-qa:hover {
+  background: #003399 !important;
+  color: #fff !important;
+}

@@ -23,6 +23,28 @@ function toggleDarkMode() {
   if (typeof _mobTab !== 'undefined' && _mobTab === 'me') renderMobileProfile();
 }
 
+// ─── ASK ANYTHING MODE ───────────────────────────────────
+var _qaMode = false;
+
+function enterQAMode() {
+  _qaMode = true;
+  var banner = document.getElementById('qa-mode-banner');
+  if (banner) banner.style.display = 'flex';
+  var input = document.getElementById('user-input');
+  if (input) {
+    input.placeholder = 'Ask anything about Hebrew, Torah, Israel, or Jewish history…';
+    input.focus();
+  }
+}
+
+function exitQAMode() {
+  _qaMode = false;
+  var banner = document.getElementById('qa-mode-banner');
+  if (banner) banner.style.display = 'none';
+  var input = document.getElementById('user-input');
+  if (input) input.placeholder = 'Type or speak in Hebrew or English… (Enter to send)';
+}
+
 // ─── STATE ───────────────────────────────────────────────
 const TOPICS = [
   { id: 'Greetings',             label: 'Greetings' },
@@ -988,7 +1010,7 @@ function _updateMyClassBadge() {
 // ═══════════════════════════════════════════════════════════
 const OB_KEY    = 'kesher_intro_done';
 var   _obIdx    = 0;
-const _obTotal  = 5;
+const _obTotal  = 6;
 
 function _obShow() {
   var el = document.getElementById('ob-overlay');
@@ -2174,7 +2196,7 @@ async function sendToMorah(messages) {
   // Build request body once; keep it for one-tap retry
   _lastBody = {
     messages:    messages,
-    userProfile: Object.assign({}, state.userProfile, { currentTopic: state.currentTopic, session: state.session }),
+    userProfile: Object.assign({}, state.userProfile, { currentTopic: state.currentTopic, session: state.session, qaMode: _qaMode }),
     myClass:     myClass || null
   };
 
