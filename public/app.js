@@ -255,23 +255,23 @@ biblical: [
     opts: ['A past tense verb', 'An active participle (one who does X)', 'A command form', 'A future verb'], ans: 1,
     fun: '🏗️ מ- on a root makes a participle! מְדַבֵּר = "speaking / one who speaks" (from ד-ב-ר, speech root)'
   },
-  { n:8,  emoji:'📿', tier:'Advanced',
+  { n:8,  emoji:'⏪', tier:'Advanced',
+    q: 'Which is the correct past tense (qal perfect) form for "he wrote" in Biblical Hebrew?',
+    heb: null,
+    opts: ['יִכְתֹּב', 'כָּתַב', 'כּוֹתֵב', 'לִכְתֹּב'], ans: 1,
+    fun: '⏪ כָּתַב (katav) = "he wrote" — the qal perfect (past tense). יִכְתֹּב = he will write (future/imperfect), כּוֹתֵב = writing (present). Same root כ-ת-ב, three forms!'
+  },
+  { n:9,  emoji:'📿', tier:'Expert',
     q: 'The וָו הַהִיפּוּך (vav-consecutive) in Biblical Hebrew flips a verb how?',
     heb: null,
     opts: ['Turns present to future', 'Turns an imperfect (future form) into past narrative', 'Makes verbs negative', 'Creates the command form'], ans: 1,
-    fun: '📿 וַיֹּאמֶר = "and he said" (past). The וַ- prefix on an imperfect form flips it to past narrative — the backbone of Biblical storytelling!'
+    fun: '📿 וַיֹּאמֶר = "and he said" (past). The וַ- prefix on an imperfect form flips it to past narrative — the backbone of all Biblical storytelling!'
   },
-  { n:9,  emoji:'🎓', tier:'Expert',
-    q: 'In Biblical Hebrew, the perfect tense (קָטַל pattern) primarily describes:',
+  { n:10, emoji:'🏛️', tier:'Expert',
+    q: 'Which is the correct construct state (סְמִיכוּת) for "house of God" in Biblical Hebrew?',
     heb: null,
-    opts: ['Future / intended actions', 'Ongoing present actions', 'Completed / viewed-as-complete actions', 'Commands and wishes'], ans: 2,
-    fun: '🎓 The perfect aspect = action seen as complete. The imperfect (יִקְטֹל) = ongoing/future. Together they tell all of Biblical narrative!'
-  },
-  { n:10, emoji:'🔬', tier:'Expert',
-    q: 'In the phrase אֱלֹהִים בָּרָא אֶת הַשָּׁמַיִם, which word indicates הַשָּׁמַיִם is the direct object?',
-    heb: 'אֱלֹהִים בָּרָא אֶת הַשָּׁמַיִם',
-    opts: ['אֱלֹהִים (God)', 'בָּרָא (created)', 'אֵת (direct object marker)', 'הַ (the definite article)'], ans: 2,
-    fun: '🔬 אֵת before הַשָּׁמַיִם marks it as the definite direct object. Without אֵת, Biblical Hebrew would be ambiguous!'
+    opts: ['בַּיִת שֶׁל אֱלֹהִים', 'בֵּית אֱלֹהִים', 'הַבַּיִת אֱלֹהִים', 'אֱלֹהִים בַּיִת'], ans: 1,
+    fun: '🏛️ בֵּית אֱלֹהִים! In the construct (סְמִיכוּת), בַּיִת (house) becomes בֵּית — vowels shift, the definite article drops. This pattern gives us בֵּית הַמִּקְדָּשׁ = the Temple ("House of the Holy")!'
   }
 ],
 
@@ -283,11 +283,11 @@ modern: [
     opts: ['לֹא', 'אוּלַי', 'כֵּן', 'גַּם'], ans: 2,
     fun: '✅ כֵּן (ken) = yes. לֹא (lo) = no. גַּם (gam) = also. Nail these three and you\'re already communicating!'
   },
-  { n:2,  emoji:'😎', tier:'Beginner',
-    q: 'What does the Israeli slang word סַבָּבָה (sababa) mean?',
-    heb: null,
-    opts: ['Grandmother', 'Terrible / awful', 'Cool / great / no problem', 'Hurry up'], ans: 2,
-    fun: '😎 סַבָּבָה comes from Arabic — Israelis use it constantly to mean "great, fine, cool, no worries!"'
+  { n:2,  emoji:'🙏', tier:'Beginner',
+    q: 'What does תּוֹדָה (toda) mean?',
+    heb: 'תּוֹדָה',
+    opts: ['Please', 'Good morning', 'Thank you', 'Goodbye'], ans: 2,
+    fun: '✨ תּוֹדָה (toda) = thank you! Add רַבָּה (raba) to say תּוֹדָה רַבָּה — "thank you very much" — the most appreciated phrase you can learn!'
   },
   { n:3,  emoji:'🚽', tier:'Elementary',
     q: 'How do you ask "Where is the bathroom?" in Hebrew?',
@@ -295,35 +295,35 @@ modern: [
     opts: ['מַה הַשֵּׁם שֶׁלְּךָ?', 'כַּמָּה עוֹלֶה?', 'אֵיפֹה הַשֵּׁרוּתִים?', 'מָתַי הָאוֹטוֹבּוּס?'], ans: 2,
     fun: '🚽 אֵיפֹה (eifoh) = where + שֵּׁרוּתִים (sherootim) = facilities/bathroom. Literally "services" — Israel\'s polite word!'
   },
-  { n:4,  emoji:'🏃', tier:'Elementary',
-    q: 'What does יַאַלָּה (yallah) mean in Israeli Hebrew?',
-    heb: null,
-    opts: ['Goodbye forever', 'Thank you very much', 'I\'m not sure', 'Let\'s go! / Come on!'], ans: 3,
-    fun: '🏃 יַאַלָּה comes from Arabic يَلَّا — one of the most-used words in Israel! You\'ll hear it everywhere.'
-  },
-  { n:5,  emoji:'🍽️', tier:'Intermediate',
-    q: 'Which verb means "to eat" in Hebrew?',
-    heb: null,
-    opts: ['לִשְׁתּוֹת', 'לִישֹׁן', 'לָרוּץ', 'לֶאֱכוֹל'], ans: 3,
-    fun: '🍽️ לֶאֱכוֹל (le\'ekhol) = to eat. לִשְׁתּוֹת = drink, לִישֹׁן = sleep, לָרוּץ = run. Four verbs = infinite conversations!'
-  },
-  { n:6,  emoji:'😋', tier:'Intermediate',
-    q: 'How do you say "I am hungry" in Hebrew?',
-    heb: null,
-    opts: ['אֲנִי עָיֵף', 'אֲנִי צָמֵא', 'אֲנִי רָעֵב', 'אֲנִי קַר'], ans: 2,
-    fun: '😋 אֲנִי רָעֵב (ani ra\'ev) = hungry. צָמֵא = thirsty, עָיֵף = tired. Body state vocabulary is survival Hebrew!'
-  },
-  { n:7,  emoji:'🛍️', tier:'Advanced',
-    q: 'How do you ask "How much does this cost?" in an Israeli market?',
+  { n:4,  emoji:'🛍️', tier:'Elementary',
+    q: 'At an Israeli market, how do you ask "How much does this cost?"',
     heb: null,
     opts: ['מַה שִּׁמְךָ?', 'כַּמָּה זֶה עוֹלֶה?', 'אֵיפֹה אַתָּה גָּר?', 'מָתַי אַתָּה בָּא?'], ans: 1,
-    fun: '🛍️ כַּמָּה (kama) = how much + עוֹלֶה (ole) = costs. Essential for the שׁוּק (shuk / market)!'
+    fun: '🛍️ כַּמָּה (kama) = how much + עוֹלֶה (ole) = costs. Essential for every Israeli שׁוּק (shuk / market)!'
   },
-  { n:8,  emoji:'💪', tier:'Advanced',
-    q: 'If someone says יְשַׁר כֹּחַ (yishar koach) to you, what are they saying?',
+  { n:5,  emoji:'🗣️', tier:'Intermediate',
+    q: 'How do you say "I am speaking Hebrew" (present tense) in Hebrew?',
     heb: null,
-    opts: ['Please be quiet', 'I\'m sorry / my condolences', 'Happy holiday!', 'Well done! / Great job!'], ans: 3,
-    fun: '💪 יְשַׁר כֹּחַ = "may your strength be straight" — Hebrew for well done, congrats, great work!'
+    opts: ['אֲנִי דִּבַּרְתִּי עִבְרִית', 'אֲנִי מְדַבֵּר עִבְרִית', 'אֲנִי אֲדַבֵּר עִבְרִית', 'אֲנִי לְדַבֵּר עִבְרִית'], ans: 1,
+    fun: '🗣️ אֲנִי מְדַבֵּר עִבְרִית! מְדַבֵּר = present tense "speaking." Hebrew present tense works like a participle — it describes what you\'re doing right now!'
+  },
+  { n:6,  emoji:'📖', tier:'Intermediate',
+    q: 'Which sentence correctly means "The girl reads a book" (present tense)?',
+    heb: null,
+    opts: ['הַיַּלְדָּה קָרְאָה סֵפֶר', 'הַיַּלְדָּה קוֹרֵאת סֵפֶר', 'הַיַּלְדָּה תִּקְרָא סֵפֶר', 'הַיַּלְדָּה לִקְרֹא סֵפֶר'], ans: 1,
+    fun: '📖 קוֹרֵאת = feminine present tense of "to read." קָרְאָה = she read (past), תִּקְרָא = she will read (future). Same root ק-ר-א, three tenses!'
+  },
+  { n:7,  emoji:'⏪', tier:'Advanced',
+    q: 'You ate at a restaurant last night. How do you say "I ate" in Hebrew (past tense)?',
+    heb: null,
+    opts: ['אֲנִי אוֹכֵל', 'אֲנִי אֹכַל', 'אֲנִי אָכַלְתִּי', 'אֲנִי לֶאֱכוֹל'], ans: 2,
+    fun: '⏪ אָכַלְתִּי (akhalti) = I ate — past tense! Hebrew past adds suffixes to the verb root. The suffix ‎תִּי- marks first person: "I (did it)."'
+  },
+  { n:8,  emoji:'🔮', tier:'Advanced',
+    q: '"אֲנִי אֵצֵא מָחָר" — what does this sentence mean?',
+    heb: 'אֲנִי אֵצֵא מָחָר',
+    opts: ['I went out yesterday', 'I am going out now', 'I will go out tomorrow', 'I want to go out'], ans: 2,
+    fun: '🔮 אֵצֵא (etze) = I will go out — future tense! The prefix א- marks 1st person future. Root י-צ-א also gives us יְצִיאַת מִצְרַיִם — the Exodus!'
   },
   { n:9,  emoji:'😬', tier:'Expert',
     q: 'What does עַל הַפָּנִים (al ha-panim) mean in Israeli slang?',
@@ -405,17 +405,17 @@ barmitzvah: [
 
 // ── FLUENCY: aliyah goal — hardest mixed test ────────────
 fluency: [
-  { n:1,  emoji:'☕', tier:'Beginner',
-    q: 'You\'re at a Tel Aviv café. How do you order "One coffee please"?',
-    heb: null,
-    opts: ['שָׁלוֹם לָכֶם כֻּלָּם', 'אֲנִי רוֹצֶה שָׁלוֹם', 'קָפֶה אֶחָד בְּבַקָּשָׁה', 'כֵּן תּוֹדָה לְךָ'], ans: 2,
-    fun: '☕ קָפֶה אֶחָד בְּבַקָּשָׁה! בְּבַקָּשָׁה = please. Master this and you\'ll survive every Israeli café!'
+  { n:1,  emoji:'❌', tier:'Beginner',
+    q: 'What does לֹא (lo) mean in Hebrew?',
+    heb: 'לֹא',
+    opts: ['Yes', 'Please', 'No', 'Hello'], ans: 2,
+    fun: '❌ לֹא (lo) = no! Together with כֵּן (ken = yes), these two tiny words will get you surprisingly far in Israel!'
   },
-  { n:2,  emoji:'⏰', tier:'Beginner',
-    q: 'What does עַכְשָׁו (achshav) mean?',
-    heb: null,
-    opts: ['Tomorrow', 'Yesterday', 'Later', 'Now'], ans: 3,
-    fun: '⏰ עַכְשָׁו = now! Also: מָחָר (tomorrow), אֶתְמוֹל (yesterday), אַחַר כָּךְ (later). Time words = survival!'
+  { n:2,  emoji:'🕊️', tier:'Beginner',
+    q: 'The word שָׁלוֹם has THREE uses in Hebrew. Which answer is correct?',
+    heb: 'שָׁלוֹם',
+    opts: ['Only means "peace"', 'Hello, goodbye, AND peace', 'Means hello and thank you', 'Only used in prayer'], ans: 1,
+    fun: '🕊️ שָׁלוֹם = peace, hello, AND goodbye — one beautiful word! It\'s the most versatile word in the Hebrew language.'
   },
   { n:3,  emoji:'🚌', tier:'Elementary',
     q: 'You need the central bus station (תַּחֲנָה מֶרְכָּזִית). How do you ask directions?',
@@ -423,23 +423,23 @@ fluency: [
     opts: ['מַה הַשֵּׁם שֶׁלְּךָ?', 'אֵיפֹה הַתַּחֲנָה הַמֶּרְכָּזִית?', 'כַּמָּה עוֹלֶה הַכַּרְטִיס?', 'מָתַי הָאוֹטוֹבּוּס בָּא?'], ans: 1,
     fun: '🚌 אֵיפֹה = where. מֶרְכָּזִית (merkazit) = central (from מֶרְכָּז = center). This question will save you on your first day!'
   },
-  { n:4,  emoji:'🏠', tier:'Elementary',
-    q: 'Your landlord asks about your מַצָּב מִשְׁפַּחְתִּי. What is he asking?',
+  { n:4,  emoji:'💧', tier:'Elementary',
+    q: 'How do you say "I want water, please" in Hebrew?',
     heb: null,
-    opts: ['Your job title and monthly salary', 'Your Israeli identity number', 'Your family / marital status', 'Your reference letters from previous landlords'], ans: 2,
-    fun: '🏠 מַצָּב = status/situation, מִשְׁפַּחְתִּי = familial/family. Bureaucratic Hebrew you WILL encounter when renting!'
+    opts: ['אֲנִי לֹא רוֹצֶה מַיִם', 'אֲנִי רָצִיתִי מַיִם', 'אֲנִי רוֹצֶה מַיִם בְּבַקָּשָׁה', 'אֲנִי אֶרְצֶה מַיִם'], ans: 2,
+    fun: '💧 אֲנִי רוֹצֶה (ani rotze) = I want — the most useful tourist phrase! רוֹצֶה (masc.) / רוֹצָה (fem.) — change the ending to match your gender!'
   },
-  { n:5,  emoji:'👋', tier:'Intermediate',
-    q: 'What does לְהִתְרָאוֹת (lehitraot) mean?',
+  { n:5,  emoji:'🏥', tier:'Intermediate',
+    q: 'What does "אֲנִי עוֹבֵד בְּבֵית חוֹלִים" mean?',
+    heb: 'אֲנִי עוֹבֵד בְּבֵית חוֹלִים',
+    opts: ['I want to work in a hospital', 'I worked in a hospital', 'I work in a hospital', 'I will work in a hospital'], ans: 2,
+    fun: '👨‍⚕️ עוֹבֵד = present tense "working" (masculine). Hebrew present tense describes a current state or habit. בֵּית חוֹלִים = "house of the sick" = hospital!'
+  },
+  { n:6,  emoji:'📚', tier:'Intermediate',
+    q: 'Which sentence correctly says "We study Hebrew every day"?',
     heb: null,
-    opts: ['Nice to meet you for the first time', 'I don\'t understand Hebrew', 'Welcome! Please come in!', 'See you later / Goodbye'], ans: 3,
-    fun: '👋 לְהִתְרָאוֹת = "until we see each other again" — the standard Hebrew goodbye! From ר-א-ה = to see!'
-  },
-  { n:6,  emoji:'🏗️', tier:'Intermediate',
-    q: 'What binyan (verb pattern) is לְהִתְנַהֵג (to behave)?',
-    heb: 'לְהִתְנַהֵג',
-    opts: ["Pa'al (קַל)", "Pi'el (פִּיעֵל)", "Hitpa'el (הִתְפַּעֵל)", "Hif'il (הִפְעִיל)"], ans: 2,
-    fun: "🏗️ Hitpa'el (הִתְפַּעֵל) = the reflexive binyan — you act upon yourself. לְהִתְנַהֵג = to conduct oneself!"
+    opts: ['אֲנַחְנוּ לָמַדְנוּ עִבְרִית', 'אֲנַחְנוּ לוֹמְדִים עִבְרִית כָּל יוֹם', 'אֲנַחְנוּ נִלְמַד עִבְרִית', 'אֲנַחְנוּ לֶלְמוֹד עִבְרִית'], ans: 1,
+    fun: '📚 לוֹמְדִים (lom\'dim) = present tense "studying" (plural). לָמַדְנוּ = we studied (past), נִלְמַד = we\'ll study (future). Same root ל-מ-ד, three tenses!'
   },
   { n:7,  emoji:'🏢', tier:'Advanced',
     q: 'You hear: "הַמִּשְׂרָד סָגוּר בֵּין שְׁלוֹשׁ לְחָמֵשׁ". What does this mean for your plans?',
@@ -447,11 +447,11 @@ fluency: [
     opts: ['The office opens at 3pm', 'Come back after 5pm', 'The office is closed between 3 and 5', 'The office closes only at 5pm'], ans: 2,
     fun: '🏢 סָגוּר = closed. בֵּין... לְ... = between... and... Israeli bureaucracy loves the midday break!'
   },
-  { n:8,  emoji:'👥', tier:'Advanced',
-    q: 'Correct present tense: "The employees (עוֹבְדִים) are working" —',
+  { n:8,  emoji:'🏠', tier:'Advanced',
+    q: 'How do you say "I lived in Tel Aviv for two years" (past tense) in Hebrew?',
     heb: null,
-    opts: ['הָעוֹבְדִים עוֹבֶדֶת', 'הָעוֹבְדִים עוֹבֵד', 'הָעוֹבְדִים עוֹבְדוֹת', 'הָעוֹבְדִים עוֹבְדִים'], ans: 3,
-    fun: '👥 Masculine plural noun → masculine plural verb! עוֹבְדִים matches עוֹבְדִים. Gender+number agreement is non-negotiable!'
+    opts: ['אֲנִי גָּר בְּתֵל אָבִיב שְׁנָתַיִם', 'אֲנִי גָּרְתִּי בְּתֵל אָבִיב שְׁנָתַיִם', 'אֲנִי אָגוּר בְּתֵל אָבִיב שְׁנָתַיִם', 'אֲנִי לָגוּר בְּתֵל אָבִיב שְׁנָתַיִם'], ans: 1,
+    fun: '🏠 גָּרְתִּי (garti) = I lived — past tense! The suffix תִּי- marks "I" in past tense. גָּר = present, אָגוּר = future — same root ג-ו-ר, three forms!'
   },
   { n:9,  emoji:'📋', tier:'Expert',
     q: 'In Israeli bureaucracy, "לֹא יִהְיֶה בְּסֵדֶר" means:',
@@ -500,10 +500,10 @@ heritage: [
     fun: '⚖️ צְדָקָה comes from צֶדֶק (justice). In Judaism, charity is a JUSTICE obligation — not optional generosity!'
   },
   { n:6,  emoji:'🥂', tier:'Intermediate',
-    q: 'What does "לְחַיִּים!" literally mean — and when is it said?',
-    heb: null,
-    opts: ['To God! — only in synagogue during Kiddush', 'To love! — said at Jewish weddings', 'To Israel! — a Zionist toast at Jewish events', 'To life! — the classic Jewish toast over drinks'], ans: 3,
-    fun: '🥂 לְחַיִּים = "to life!" חַיִּים is the plural of חַי (living). The ultimate Jewish toast — embracing life itself!'
+    q: 'חַיִּים (chayyim) means "life." Why is the Hebrew word for life always in the PLURAL form?',
+    heb: 'לְחַיִּים',
+    opts: ['Because Jews celebrate two new years (Rosh Hashanah and Nisan)', 'The singular form doesn\'t exist — life is inherently plural in Hebrew', 'Because life has two parts: body and soul', 'It only became plural after the sages edited the Torah'], ans: 1,
+    fun: '🔤 חַיִּים has no singular — like מַיִם (water) and שָׁמַיִם (sky), it\'s "pluralia tantum" — always plural. So every לְחַיִּים toast uses a grammatical mystery!'
   },
   { n:7,  emoji:'⭐', tier:'Advanced',
     q: 'What does מַזָּל טוֹב literally mean in Hebrew?',
