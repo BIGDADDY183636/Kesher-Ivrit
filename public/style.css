@@ -5221,16 +5221,39 @@ button, input, textarea, select { font-family: var(--font-eng); }
 }
 .pt-header-top {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
   margin-bottom: 12px;
+  gap: 8px;
 }
+.pt-header-left { display: flex; flex-direction: column; gap: 5px; }
 .pt-header-title {
   font-size: 0.9rem;
   font-weight: 800;
   color: rgba(255,255,255,0.8);
   letter-spacing: 0.04em;
 }
+
+/* Tier difficulty badge */
+.pt-tier {
+  display: inline-block;
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  border-radius: 50px;
+  padding: 3px 10px;
+  transition: all 0.3s cubic-bezier(0.34,1.56,0.64,1);
+  animation: ptTierIn 0.4s cubic-bezier(0.34,1.56,0.64,1) both;
+}
+@keyframes ptTierIn {
+  from { opacity:0; transform: scale(0.7) translateX(-8px); }
+  to   { opacity:1; transform: none; }
+}
+.pt-tier-beginner     { background: rgba(0,200,83,0.2);  color: #6DFFA0; border: 1px solid rgba(0,200,83,0.35); }
+.pt-tier-intermediate { background: rgba(79,142,247,0.2); color: #9DC8FF; border: 1px solid rgba(79,142,247,0.35); }
+.pt-tier-advanced     { background: rgba(255,165,0,0.2);  color: #FFD080; border: 1px solid rgba(255,165,0,0.35); }
+.pt-tier-expert       { background: rgba(200,0,200,0.2);  color: #FF90FF; border: 1px solid rgba(200,0,200,0.35); }
 .pt-header-right {
   display: flex;
   align-items: center;
@@ -5421,14 +5444,51 @@ button, input, textarea, select { font-family: var(--font-eng); }
   color: #9DFFCC;
 }
 .pt-ff-wrong {
-  background: rgba(79,142,247,0.15);
-  border: 1px solid rgba(79,142,247,0.3);
-  color: #B3D4FF;
+  background: rgba(255,61,0,0.12);
+  border: 1px solid rgba(255,61,0,0.25);
+  color: #FFB3A0;
+}
+.pt-ff-dontknow {
+  background: rgba(255,215,0,0.12);
+  border: 1px solid rgba(255,215,0,0.28);
+  color: #FFE88A;
+}
+.pt-ff-dontknow strong {
+  display: block;
+  color: #FFD700;
+  font-size: 0.92rem;
+  margin-bottom: 5px;
 }
 @keyframes ptFunIn {
   from { opacity:0; transform: translateY(8px); }
   to   { opacity:1; transform: none; }
 }
+
+/* ── "I don't know" ghost button ────────────────────────── */
+.pt-dontknow-btn {
+  width: 100%;
+  background: transparent;
+  border: 1.5px solid rgba(255,255,255,0.18);
+  border-radius: 14px;
+  padding: 10px 18px;
+  font-family: var(--font-eng);
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: rgba(255,255,255,0.45);
+  cursor: pointer;
+  transition: all 0.18s;
+  margin-top: 4px;
+  letter-spacing: 0.01em;
+  -webkit-tap-highlight-color: transparent;
+  animation: ptOptIn 0.35s 0.35s cubic-bezier(0.22,1,0.36,1) both;
+}
+.pt-dontknow-btn:hover:not(:disabled) {
+  border-color: rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.7);
+  background: rgba(255,255,255,0.06);
+}
+.pt-dontknow-btn:active:not(:disabled) { transform: scale(0.97); }
+.pt-dontknow-btn:disabled { opacity: 0.3; cursor: default; }
 
 /* ════════════════════════════════════════════════════════════
    RESULTS SCREEN

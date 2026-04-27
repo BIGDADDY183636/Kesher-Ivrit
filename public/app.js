@@ -206,108 +206,109 @@ function renderWordOfDay() {
 }
 
 // ─── HEBREW PLACEMENT TEST ────────────────────────────────
+// Q1-2: Beginner | Q3-5: Intermediate | Q6-8: Advanced | Q9-10: Expert
 const PT_QUESTIONS = [
+  // ── BEGINNER ────────────────────────────────────────────
   {
-    n: 1, emoji: '🔤',
-    q: 'Which letter is the first in the Hebrew alphabet?',
+    n: 1, emoji: '🔤', tier: 'Beginner',
+    q: 'Which of these is the Hebrew letter Aleph?',
     heb: null,
-    opts: ['א', 'ב', 'ג', 'ד'],
-    ans: 0,
-    fun: '✨ א (Aleph) starts the aleph-bet — just like A starts the English alphabet!'
+    opts: ['ג', 'ד', 'א', 'ב'],
+    ans: 2,
+    fun: '✨ א (Aleph) is letter #1. The Hebrew alphabet is called the אָלֶף-בֵּית — after its first two letters!'
   },
   {
-    n: 2, emoji: '👋',
+    n: 2, emoji: '🕊️', tier: 'Beginner',
     q: 'What does this word mean?',
     heb: 'שָׁלוֹם',
-    opts: ['Hello / Peace', 'Thank you', 'Goodbye', 'Yes'],
-    ans: 0,
-    fun: '🕊️ שָׁלוֹם (Shalom) means peace, hello, AND goodbye. One word for everything!'
-  },
-  {
-    n: 3, emoji: '🔢',
-    q: 'What number is this?',
-    heb: 'שָׁלֹשׁ',
-    opts: ['Two', 'Three', 'Four', 'Five'],
-    ans: 1,
-    fun: '🎯 שָׁלֹשׁ (shalosh) = 3. Israel has three Regalim — pilgrimage festivals!'
-  },
-  {
-    n: 4, emoji: '🌍',
-    q: 'What does אֶרֶץ יִשְׂרָאֵל mean?',
-    heb: null,
-    opts: ['State of Israel', 'Land of Israel', 'People of Israel', 'City of Israel'],
-    ans: 1,
-    fun: '🇮🇱 אֶרֶץ (eretz) = land. The Land of Israel — the most famous two Hebrew words!'
-  },
-  {
-    n: 5, emoji: '🏠',
-    q: 'Which Hebrew word means "house"?',
-    heb: null,
-    opts: ['כֶּלֶב', 'בַּיִת', 'שֶׁמֶשׁ', 'יָם'],
-    ans: 1,
-    fun: '🏠 בַּיִת (bayit) = house. You see it in בֵּית כְּנֶסֶת — synagogue!'
-  },
-  {
-    n: 6, emoji: '👫',
-    q: 'What is the plural of יֶלֶד (boy)?',
-    heb: null,
-    opts: ['יְלָדָה', 'יְלֵד', 'יְלָדִים', 'יְלָדוֹת'],
-    ans: 2,
-    fun: '✅ יְלָדִים (yeladim)! Masculine plural adds ים- (im). Feminine plural adds וֹת- (ot).'
-  },
-  {
-    n: 7, emoji: '🗣️',
-    q: 'How do you say "She speaks" in Hebrew?',
-    heb: null,
-    opts: ['הוּא מְדַבֵּר', 'אֲנִי מְדַבֵּר', 'הִיא מְדַבֶּרֶת', 'הֵם מְדַבְּרִים'],
-    ans: 2,
-    fun: '👩 הִיא מְדַבֶּרֶת (hi medaberet). Feminine present tense adds ת- at the end!'
-  },
-  {
-    n: 8, emoji: '⏪',
-    q: 'How do you say "I went" in Hebrew? (past tense)',
-    heb: null,
-    opts: ['אֲנִי הוֹלֵךְ', 'אֲנִי אֵלֵךְ', 'אֲנִי לָלֶכֶת', 'אֲנִי הָלַכְתִּי'],
+    opts: ['War', 'Food', 'Thank you', 'Peace / Hello / Goodbye'],
     ans: 3,
-    fun: '⏪ הָלַכְתִּי (halakhti) = I went. The תִּי- ending marks past tense first person!'
+    fun: '🕊️ שָׁלוֹם (Shalom) means peace, hello, AND goodbye — one beautiful word for everything!'
+  },
+  // ── INTERMEDIATE ─────────────────────────────────────────
+  {
+    n: 3, emoji: '🗣️', tier: 'Intermediate',
+    q: 'How do you say "she speaks" in Hebrew?',
+    heb: null,
+    opts: ['הוּא מְדַבֵּר', 'אַתָּה מְדַבֵּר', 'הִיא מְדַבֶּרֶת', 'הֵם מְדַבְּרִים'],
+    ans: 2,
+    fun: '✅ הִיא מְדַבֶּרֶת (hi medabéret). Feminine present tense adds the suffix ת- (et)!'
   },
   {
-    n: 9, emoji: '🏗️',
-    q: 'What verb pattern (בִּנְיָן) is the word מִתְלַמֵּד?',
-    heb: 'מִתְלַמֵּד',
+    n: 4, emoji: '📖', tier: 'Intermediate',
+    q: 'סֵפֶר (book) is masculine. Which means "a big book"?',
+    heb: null,
+    opts: ['סֵפֶר גְּדוֹלָה', 'סֵפֶר גָּדוֹל', 'סְפָרִים גָּדוֹל', 'סֵפֶר גְּדוֹלוֹת'],
+    ans: 1,
+    fun: '📖 Adjectives must match the noun in gender! Masculine noun → masculine adjective גָּדוֹל.'
+  },
+  {
+    n: 5, emoji: '📅', tier: 'Intermediate',
+    q: 'What is the plural of שָׁבוּעַ (week)?',
+    heb: null,
+    opts: ['שָׁבוּעוֹת', 'שָׁבְעִים', 'שְׁבוּעִים', 'שָׁבוּעִים'],
+    ans: 3,
+    fun: '📅 שָׁבוּעִים! This root also gives us the holiday שָׁבוּעוֹת (Shavuot) — celebrated 7 weeks after Pesach!'
+  },
+  // ── ADVANCED ─────────────────────────────────────────────
+  {
+    n: 6, emoji: '🏗️', tier: 'Advanced',
+    q: 'What binyan (verb pattern) is לְהַכִּיר (to recognize)?',
+    heb: 'לְהַכִּיר',
     opts: ["פָּעַל Pa'al", "פִּיעֵל Pi'el", "הִפְעִיל Hif'il", "הִתְפַּעֵל Hitpa'el"],
-    ans: 3,
-    fun: "🏗️ הִתְפַּעֵל verbs start with מִתְ in present tense. מִתְלַמֵּד = 'studying'!"
+    ans: 2,
+    fun: "🏗️ Hif'il (הִפְעִיל) causes an action. לְהַכִּיר = to cause-to-know = to recognize / introduce!"
   },
   {
-    n: 10, emoji: '📚',
-    q: 'What is the construct state (סְמִיכוּת) of בַּיִת (house)?',
+    n: 7, emoji: '⏪', tier: 'Advanced',
+    q: 'How do you say "she went" in Hebrew? (past tense)',
     heb: null,
-    opts: ['בַּיִת שֶׁל', 'הַבַּיִת', 'בֵּית', 'בָּתִּים'],
+    opts: ['הִיא הוֹלֶכֶת', 'הִיא תֵּלֵךְ', 'הִיא הָלְכָה', 'הִיא לָלֶכֶת'],
     ans: 2,
-    fun: '🎓 בֵּית (beit) is the construct. As in בֵּית כְּנֶסֶת (synagogue = house of assembly)!'
+    fun: '⏪ הָלְכָה (halkhah) — past tense feminine 3rd person. The ה- suffix marks feminine past!'
+  },
+  {
+    n: 8, emoji: '📜', tier: 'Advanced',
+    q: 'Which is the correct construct state (סְמִיכוּת) for "the Torah portion"?',
+    heb: null,
+    opts: ['הַפָּרָשָׁה שֶׁל שָׁבוּעַ', 'פָּרָשַׁת הַשָּׁבוּעַ', 'פָּרָשָׁה הַשָּׁבוּעַ', 'שָׁבוּעַ פָּרָשָׁה'],
+    ans: 1,
+    fun: '📜 פָּרָשַׁת הַשָּׁבוּעַ! In construct, פָּרָשָׁה loses its ה and gains ַת — a classic סְמִיכוּת pattern.'
+  },
+  // ── EXPERT ───────────────────────────────────────────────
+  {
+    n: 9, emoji: '🔮', tier: 'Expert',
+    q: 'What is "she will go" in Hebrew? (future tense)',
+    heb: null,
+    opts: ['הִיא הָלְכָה', 'הִיא הוֹלֶכֶת', 'הִיא תֵּלֵךְ', 'תֵּלַכְנָה'],
+    ans: 2,
+    fun: '🔮 הִיא תֵּלֵךְ (hi telékh) — future tense. The prefix ת- marks 3rd person feminine singular future!'
+  },
+  {
+    n: 10, emoji: '📿', tier: 'Expert',
+    q: 'In Genesis 1:3: וַיֹּאמֶר אֱלֹהִים יְהִי אוֹר — what does וַיֹּאמֶר mean?',
+    heb: 'וַיֹּאמֶר אֱלֹהִים',
+    opts: ['God will say', 'God is saying', 'God had said', 'And God said'],
+    ans: 3,
+    fun: '📿 וַיֹּאמֶר uses the וָו הַהִיפּוּךְ (vav-consecutive) — it flips an imperfect verb into past narrative!'
   }
 ];
 
+// Recalibrated: Advanced now requires 8-10 correct
 const PT_LEVELS = {
-  0:  { val: 'complete_beginner', label: 'Complete Beginner', heb: 'מַתְחִיל',     emoji: '🌱', msg: "Welcome to Hebrew! You're starting from the very first letter — the best place to begin. Morah will guide you every step of the way." },
-  2:  { val: 'complete_beginner', label: 'Complete Beginner', heb: 'מַתְחִיל',     emoji: '🌱', msg: "Welcome to Hebrew! You're starting from the very first letter — the best place to begin. Morah will guide you every step of the way." },
-  3:  { val: 'some_exposure',     label: 'Some Exposure',     heb: 'חֲשִׂיפָה בְּסִיסִית', emoji: '🌿', msg: "You've been around Hebrew before! You know the basics. Morah will build on what you already know and fill the gaps." },
-  4:  { val: 'some_exposure',     label: 'Some Exposure',     heb: 'חֲשִׂיפָה בְּסִיסִית', emoji: '🌿', msg: "You've been around Hebrew before! You know the basics. Morah will build on what you already know and fill the gaps." },
-  5:  { val: 'basic',             label: 'Basic',             heb: 'בְּסִיסִי',      emoji: '🌳', msg: "Nice! You have a solid foundation. You can read and know some words. Morah will push you to the next level!" },
-  6:  { val: 'basic',             label: 'Basic',             heb: 'בְּסִיסִי',      emoji: '🌳', msg: "Nice! You have a solid foundation. You can read and know some words. Morah will push you to the next level!" },
-  7:  { val: 'intermediate',      label: 'Intermediate',      heb: 'בֵּינוֹנִי',     emoji: '⭐', msg: "Impressive! Your Hebrew is already quite strong. Morah will challenge you with complex grammar, idioms, and real conversations." },
-  8:  { val: 'intermediate',      label: 'Intermediate',      heb: 'בֵּינוֹנִי',     emoji: '⭐', msg: "Impressive! Your Hebrew is already quite strong. Morah will challenge you with complex grammar, idioms, and real conversations." },
-  9:  { val: 'advanced',          label: 'Advanced',          heb: 'מִתְקַדֵּם',     emoji: '🔥', msg: "Wow — you're at an advanced level! Near-fluency is within your reach. Morah will take your Hebrew to the highest level." },
-  10: { val: 'advanced',          label: 'Advanced',          heb: 'מִתְקַדֵּם',     emoji: '🔥', msg: "Wow — you're at an advanced level! Near-fluency is within your reach. Morah will take your Hebrew to the highest level." }
+  cb:    { val: 'complete_beginner', label: 'Complete Beginner', heb: 'מַתְחִיל',    emoji: '🌱', msg: "No worries — everyone starts at Aleph! You're in the best place to begin. Morah will guide you letter by letter from day one." },
+  se:    { val: 'some_exposure',     label: 'Some Exposure',     heb: 'חֲשִׂיפָה',   emoji: '🌿', msg: "You've seen Hebrew before! You know the basics but have room to grow. Morah will build on what you already know and fill the gaps." },
+  basic: { val: 'basic',             label: 'Basic',             heb: 'בְּסִיסִי',   emoji: '🌳', msg: "Solid foundation! You know your letters and some words. Morah will take you from basic reading to real Hebrew sentences." },
+  inter: { val: 'intermediate',      label: 'Intermediate',      heb: 'בֵּינוֹנִי',  emoji: '⭐', msg: "Excellent! Your Hebrew grammar is strong. Morah will challenge you with binyanim, complex sentences, and real Israeli conversations." },
+  adv:   { val: 'advanced',          label: 'Advanced',          heb: 'מִתְקַדֵּם',  emoji: '🔥', msg: "Impressive! You're clearly at an advanced level — including biblical grammar. Morah will push you toward near-fluency and authentic Hebrew." }
 };
 
 function _ptLevelFromScore(score) {
-  if (score <= 2) return PT_LEVELS[2];
-  if (score <= 4) return PT_LEVELS[4];
-  if (score <= 6) return PT_LEVELS[6];
-  if (score <= 8) return PT_LEVELS[8];
-  return PT_LEVELS[10];
+  if (score <= 1) return PT_LEVELS.cb;
+  if (score <= 3) return PT_LEVELS.se;
+  if (score <= 5) return PT_LEVELS.basic;
+  if (score <= 7) return PT_LEVELS.inter;
+  return PT_LEVELS.adv;  // 8-10
 }
 
 var _pt = { idx: 0, score: 0, answered: false, detectedLevel: null };
@@ -335,7 +336,14 @@ function _ptRender() {
   document.getElementById('pt-progress-fill').style.width = (_pt.idx / PT_QUESTIONS.length * 100) + '%';
   document.getElementById('pt-q-num').textContent = _pt.idx + 1 + ' / ' + PT_QUESTIONS.length;
 
-  // Question card
+  // Tier badge
+  var tierEl = document.getElementById('pt-tier');
+  if (tierEl) {
+    tierEl.textContent = q.tier || '';
+    tierEl.className = 'pt-tier pt-tier-' + (q.tier || '').toLowerCase().replace(/\s/g, '-');
+  }
+
+  // Question card spring-in
   var card = document.getElementById('pt-question-card');
   card.className = 'pt-card pt-card-in';
   setTimeout(function() { card.classList.remove('pt-card-in'); }, 500);
@@ -347,21 +355,31 @@ function _ptRender() {
   if (q.heb) { hebEl.textContent = q.heb; hebEl.style.display = 'block'; }
   else        { hebEl.style.display = 'none'; }
 
-  // Options
+  // Answer option buttons
   var optsEl = document.getElementById('pt-options');
   optsEl.innerHTML = '';
   q.opts.forEach(function(opt, i) {
     var btn = document.createElement('button');
     btn.className = 'pt-opt-btn';
     btn.innerHTML = '<span class="pt-opt-text">' + escapeHtml(opt) + '</span>';
-    btn.onclick = function() { _ptAnswer(i, btn); };
+    btn.setAttribute('data-idx', i);
+    btn.onclick = function() { _ptAnswer(i); };
     optsEl.appendChild(btn);
   });
 
-  document.getElementById('pt-fun-fact').style.display = 'none';
+  // "I don't know" ghost button
+  var dk = document.createElement('button');
+  dk.className = 'pt-dontknow-btn';
+  dk.textContent = "I don't know";
+  dk.onclick = ptDontKnow;
+  optsEl.appendChild(dk);
+
+  var ff = document.getElementById('pt-fun-fact');
+  ff.style.display = 'none';
+  ff.innerHTML = '';
 }
 
-function _ptAnswer(chosen, btn) {
+function _ptAnswer(chosen) {
   if (_pt.answered) return;
   _pt.answered = true;
 
@@ -369,25 +387,47 @@ function _ptAnswer(chosen, btn) {
   var ok = chosen === q.ans;
   if (ok) _pt.score++;
 
-  // Visual feedback on all buttons
-  var btns = document.querySelectorAll('.pt-opt-btn');
-  btns.forEach(function(b, i) {
-    b.disabled = true;
-    if (i === q.ans)   b.classList.add('pt-opt-correct');
-    if (i === chosen && !ok) b.classList.add('pt-opt-wrong');
+  // Disable all buttons and mark correct / wrong
+  document.querySelectorAll('.pt-opt-btn, .pt-dontknow-btn').forEach(function(b) { b.disabled = true; });
+  document.querySelectorAll('.pt-opt-btn').forEach(function(b, i) {
+    if (i === q.ans)               b.classList.add('pt-opt-correct');
+    if (i === chosen && !ok)       b.classList.add('pt-opt-wrong');
   });
 
-  // Show fun fact
+  // Fun fact
   var ff = document.getElementById('pt-fun-fact');
-  ff.textContent = q.fun;
+  ff.innerHTML = escapeHtml(q.fun);
   ff.style.display = 'block';
-  ff.className = 'pt-fun-fact' + (ok ? ' pt-ff-correct' : ' pt-ff-wrong');
+  ff.className = 'pt-fun-fact ' + (ok ? 'pt-ff-correct' : 'pt-ff-wrong');
 
-  // Score display
+  // Score badge
   document.getElementById('pt-score').textContent = '✓ ' + _pt.score;
 
-  // Auto-advance
   setTimeout(_ptNext, 1600);
+}
+
+function ptDontKnow() {
+  if (_pt.answered) return;
+  _pt.answered = true;
+  // score does NOT increment
+
+  var q = PT_QUESTIONS[_pt.idx];
+
+  // Disable everything; reveal correct answer
+  document.querySelectorAll('.pt-opt-btn, .pt-dontknow-btn').forEach(function(b) { b.disabled = true; });
+  document.querySelectorAll('.pt-opt-btn').forEach(function(b, i) {
+    if (i === q.ans) b.classList.add('pt-opt-correct');
+  });
+
+  // Show answer + explanation in fun fact
+  var ff = document.getElementById('pt-fun-fact');
+  ff.innerHTML =
+    '<strong>💡 Answer: ' + escapeHtml(q.opts[q.ans]) + '</strong><br>' +
+    escapeHtml(q.fun);
+  ff.style.display = 'block';
+  ff.className = 'pt-fun-fact pt-ff-dontknow';
+
+  setTimeout(_ptNext, 2400); // slightly longer so they can read the answer
 }
 
 function _ptNext() {
