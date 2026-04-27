@@ -1243,11 +1243,26 @@ function selectTopic(topicId) {
   startLesson();
 }
 
+function _countUp(el, target) {
+  if (!el) return;
+  var from = parseInt(el.textContent) || 0;
+  if (from === target) return;
+  el.classList.add('counting');
+  setTimeout(function() { el.classList.remove('counting'); }, 400);
+  var steps = Math.min(Math.abs(target - from), 24);
+  var step  = 0;
+  var timer = setInterval(function() {
+    step++;
+    el.textContent = Math.round(from + (target - from) * (step / steps));
+    if (step >= steps) { el.textContent = target; clearInterval(timer); }
+  }, 22);
+}
+
 function updateStats() {
-  document.getElementById('streak-count').textContent = state.progress.streak;
-  document.getElementById('words-count').textContent = state.progress.wordsLearned.length;
-  document.getElementById('points-count').textContent = state.progress.points;
-  document.getElementById('lessons-count').textContent = state.progress.lessonsCompleted;
+  _countUp(document.getElementById('streak-count'),  state.progress.streak);
+  _countUp(document.getElementById('words-count'),   state.progress.wordsLearned.length);
+  _countUp(document.getElementById('points-count'),  state.progress.points);
+  _countUp(document.getElementById('lessons-count'), state.progress.lessonsCompleted);
 }
 
 function renderWordsList() {
