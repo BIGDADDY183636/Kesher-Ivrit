@@ -1872,23 +1872,118 @@ function showCorrectBurst(pts) {
   setTimeout(function() { el.remove(); }, 1200);
 }
 
+// ─── Rich message formatter ───────────────────────────────
+// Handles: tables, Hebrew pills, gold bold, headings, lists
 function formatMessage(text) {
-  // Strip [TEACH]/[CHALLENGE]/WORDS LEARNED blocks — show only clean text
   let clean = text
     .replace(/\[TEACH\]/g, '').replace(/\[\/TEACH\]/g, '')
     .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
     .replace(/📚 WORDS LEARNED:.*/s, '')
     .trim();
 
-  let html = escapeHtml(clean);
-  html = html.replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>');
-  html = html.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
-  html = html.replace(/—\s*&quot;([^&]+)&quot;/g, '— <code>$1</code>');
-  html = html.replace(/—\s*"([^"]+)"/g, '— <code>$1</code>');
-  html = html.replace(/\n\n/g, '</p><p>');
-  html = html.replace(/\n/g, '<br/>');
-  html = `<p>${html}</p>`.replace(/<p><\/p>/g, '');
-  return html;
+  const lines = clean.split('\n');
+  let html = '';
+  let i = 0;
+
+  while (i < lines.length) {
+    const line = lines[i];
+
+    // ── Pipe table (gender tables, vocab tables) ──────────
+    if (line.trim().startsWith('|')) {
+      const tblLines = [];
+      while (i < lines.length && lines[i].trim().startsWith('|')) {
+        tblLines.push(lines[i].trim());
+        i++;
+      }
+      html += _buildMsgTable(tblLines);
+      continue;
+    }
+
+    // ── Markdown heading (# ## ###) ──────────────────────
+    const hm = line.match(/^#{1,3}\s+(.+)/);
+    if (hm) {
+      html += `<div class="msg-heading">${_msgInline(hm[1])}</div>`;
+      i++; continue;
+    }
+
+    // ── Bullet list ───────────────────────────────────────
+    if (/^[-*•]\s/.test(line)) {
+      let li = '<ul class="msg-list">';
+      while (i < lines.length && /^[-*•]\s/.test(lines[i])) {
+        li += `<li>${_msgInline(lines[i].replace(/^[-*•]\s/, ''))}</li>`;
+        i++;
+      }
+      html += li + '</ul>';
+      continue;
+    }
+
+    // ── Numbered list ─────────────────────────────────────
+    if (/^\d+[.)]\s/.test(line)) {
+      let li = '<ol class="msg-list">';
+      while (i < lines.length && /^\d+[.)]\s/.test(lines[i])) {
+        li += `<li>${_msgInline(lines[i].replace(/^\d+[.)]\s/, ''))}</li>`;
+        i++;
+      }
+      html += li + '</ol>';
+      continue;
+    }
+
+    // ── Blank line ────────────────────────────────────────
+    if (line.trim() === '') { i++; continue; }
+
+    // ── Normal paragraph (accumulate until break) ─────────
+    let para = '';
+    while (i < lines.length) {
+      const l = lines[i];
+      if (l.trim() === '' || l.trim().startsWith('|') ||
+          /^#{1,3}\s/.test(l) || /^[-*•]\s/.test(l) || /^\d+[.)]\s/.test(l)) break;
+      para += (para ? ' ' : '') + l;
+      i++;
+    }
+    if (para.trim()) html += `<p>${_msgInline(para)}</p>`;
+  }
+
+  return html || '<p></p>';
+}
+
+// Inline formatter: bold → heb-pill or gold-bold, italic, code
+function _msgInline(raw) {
+  let h = escapeHtml(raw);
+  // **text** → Hebrew pill if starts with Hebrew char, else gold bold
+  h = h.replace(/\*\*([^*]+)\*\*/g, function(_, inner) {
+    return /^[֐-׿]/.test(inner.trim())
+      ? `<span class="heb-pill" dir="rtl">${inner}</span>`
+      : `<strong class="msg-bold">${inner}</strong>`;
+  });
+  // *text* → italic
+  h = h.replace(/\*([^*\n]+)\*/g, '<em class="msg-em">$1</em>');
+  // `code`
+  h = h.replace(/`([^`]+)`/g, '<code class="msg-code">$1</code>');
+  // em-dash quoted examples
+  h = h.replace(/—\s*(?:&quot;|")([^"&]+)(?:&quot;|")/g, '— <code class="msg-code">$1</code>');
+  return h;
+}
+
+// Build a styled HTML table from pipe-separated lines
+function _buildMsgTable(lines) {
+  // Drop separator rows like |---|---|
+  const rows = lines.filter(l => !/^\|[\s|:\-]+\|?$/.test(l));
+  if (!rows.length) return '';
+  let out = '<div class="msg-table-wrap"><table class="msg-table"><tbody>';
+  rows.forEach((row, idx) => {
+    const cells = row.split('|').slice(1, -1);
+    const isHdr = idx === 0;
+    const tag   = isHdr ? 'th' : 'td';
+    const rc    = !isHdr && idx % 2 === 0 ? ' class="msg-row-even"' : '';
+    out += `<tr${rc}>`;
+    cells.forEach(cell => {
+      const c = cell.trim();
+      const isHeb = /[֐-׿]/.test(c);
+      out += `<${tag}>${isHeb ? `<span class="tbl-heb" dir="rtl">${escapeHtml(c)}</span>` : _msgInline(c)}</${tag}>`;
+    });
+    out += '</tr>';
+  });
+  return out + '</tbody></table></div>';
 }
 
 // ─── UI HELPERS ───────────────────────────────────────────
