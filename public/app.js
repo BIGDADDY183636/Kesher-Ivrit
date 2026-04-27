@@ -3309,9 +3309,9 @@ const sr = {
 
 function getSRBuiltInPool() {
   var level = (state.userProfile && state.userProfile.level) || 'complete_beginner';
-  if (level === 'advanced') return SR_POOL_ADVANCED;
-  if (level === 'intermediate') return SR_POOL_INTERMEDIATE;
-  return SR_POOL_BEGINNER; // complete_beginner, some_exposure, basic
+  if (level === 'advanced')                          return SR_POOL_ADVANCED;
+  if (level === 'intermediate' || level === 'basic') return SR_POOL_INTERMEDIATE;
+  return SR_POOL_BEGINNER; // complete_beginner, some_exposure
 }
 
 function buildSRPool() {
@@ -4489,16 +4489,19 @@ function _usScramble(letters) {
 }
 
 function _usGetLevel() {
-  var pts = state.progress.points;
-  if (pts >= 400) return 3;
-  if (pts >= 100) return 2;
-  return 1;
+  // Use onboarding level, not points — so word difficulty matches what was chosen at setup
+  var lvl = (state.userProfile && state.userProfile.level) || 'complete_beginner';
+  if (lvl === 'advanced')                          return 3;
+  if (lvl === 'intermediate' || lvl === 'basic')   return 2;
+  return 1; // complete_beginner, some_exposure
 }
 
 function _usBuildRound() {
-  var level = _usGetLevel();
+  var level    = _usGetLevel();
+  // Never show level-1 (beginner) words to intermediate or advanced students
+  var minLevel = level >= 2 ? 2 : 1;
 
-  // Pull from student's learned words
+  // Pull from student's learned words — always include these regardless of level
   var learned = (state.progress.wordsLearned || [])
     .filter(function(w) { return w.hebrew && w.english && _usNorm(w.hebrew).length >= 3; })
     .map(function(w) {
@@ -4506,8 +4509,8 @@ function _usBuildRound() {
       return { base: b, display: w.hebrew, english: w.english, level: b.length <= 4 ? 1 : b.length <= 5 ? 2 : 3 };
     });
 
-  // Pool from curated list up to current level
-  var pool = US_WORDS.filter(function(w) { return w.level <= level; });
+  // Pool from curated list — respect both min and max level
+  var pool = US_WORDS.filter(function(w) { return w.level >= minLevel && w.level <= level; });
 
   // Merge, deduplicate by normalised base
   var seen = {}, combined = [];

@@ -1590,6 +1590,8 @@ body {
   font-weight: 900;
   color: #fff;
   direction: rtl;
+  unicode-bidi: embed;
+  direction: rtl;
   line-height: 1.1;
   margin-bottom: 10px;
   text-shadow: 0 2px 20px rgba(255,255,255,0.2);
@@ -3275,10 +3277,11 @@ body {
   text-align: center; line-height: 1.2;
 }
 
-/* ── Answer row ── */
+/* ── Answer row — RTL so Hebrew reads right-to-left ── */
 .us-answer-row {
   display: flex; gap: 6px; justify-content: center; flex-wrap: wrap;
   min-height: 68px; align-items: center;
+  direction: rtl;
 }
 .us-slot {
   border-radius: 10px; display: flex; align-items: center; justify-content: center;
@@ -3327,10 +3330,11 @@ body {
 }
 .us-clear-btn:active { background: #ede9fe; }
 
-/* ── Scrambled letter tiles ── */
+/* ── Scrambled letter tiles — RTL so tiles sit in natural Hebrew order ── */
 .us-letters-wrap { width: 100%; max-width: 380px; }
 .us-letters {
   display: flex; gap: 7px; justify-content: center; flex-wrap: wrap;
+  direction: rtl;
 }
 .us-tile {
   border-radius: 12px; background: #fff;
