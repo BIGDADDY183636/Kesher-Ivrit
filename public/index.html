@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kesher Ivrit v3.2 | קשר עברית</title>
+  <title>Kesher Ivrit v3.3 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=102" />
+  <link rel="stylesheet" href="style.css?v=103" />
 </head>
 <body>
 
@@ -119,6 +119,10 @@
 
       <button class="btn-start" onclick="startOnboarding()">
         Start Learning — <span class="hebrew-inline">בּוֹא נִלְמַד!</span>
+      </button>
+
+      <button class="btn-myclass-home" onclick="showMyClass()">
+        📚 My Class <span class="btn-myclass-sub">Connect to your teacher's curriculum</span>
       </button>
 
       <div id="returning-user-section" style="display:none;">
@@ -235,8 +239,11 @@
         <div class="morah-info">
           <div class="morah-avatar">👩‍🏫</div>
           <div>
-            <div class="morah-name">Morah <span class="heb-small">מורה</span> <span class="build-tag">v3.2</span></div>
+            <div class="morah-name">Morah <span class="heb-small">מורה</span> <span class="build-tag">v3.3</span></div>
             <div class="morah-status" id="morah-status">Ready to teach! 🇮🇱</div>
+            <button id="myclass-badge" class="myclass-badge" style="display:none;" onclick="showMyClass()">
+              📚 <span id="myclass-badge-text">Chapter 3</span>
+            </button>
           </div>
         </div>
         <div class="chat-header-actions">
@@ -620,6 +627,86 @@
 
 <div id="toast" class="toast"></div>
 
+<!-- ═══════════════════════════════════════════
+     MY CLASS OVERLAY
+═══════════════════════════════════════════ -->
+<div id="myclass-overlay" class="mc-overlay mc-hidden" onclick="mcOverlayClick(event)">
+  <div class="mc-sheet" id="mc-sheet">
+
+    <!-- Header -->
+    <div class="mc-header">
+      <div class="mc-header-icon">📚</div>
+      <div class="mc-header-text">
+        <div class="mc-header-title">My Class</div>
+        <div class="mc-header-sub">Tell Morah exactly what your teacher assigned — she'll focus 100% on it</div>
+      </div>
+      <button class="mc-close-btn" onclick="hideMyClass()">✕</button>
+    </div>
+
+    <!-- Form -->
+    <div class="mc-body">
+
+      <div class="mc-info-banner">
+        ✨ Once saved, Morah will teach <strong>exactly</strong> what your teacher assigned — your textbook, your chapter, your vocabulary words.
+      </div>
+
+      <div class="mc-row">
+        <div class="mc-field">
+          <label class="mc-label">School Name</label>
+          <input id="mc-school" class="mc-input" type="text" placeholder="e.g. Beit Rabban Day School" maxlength="80" />
+        </div>
+        <div class="mc-field mc-field-sm">
+          <label class="mc-label">Grade / Year</label>
+          <input id="mc-grade" class="mc-input" type="text" placeholder="e.g. 7th Grade" maxlength="30" />
+        </div>
+      </div>
+
+      <div class="mc-row">
+        <div class="mc-field">
+          <label class="mc-label">Hebrew Textbook</label>
+          <input id="mc-textbook" class="mc-input" type="text" placeholder="e.g. Tal Am, Shalom Uvracha, Aleph Isn't Tough…" maxlength="80" list="mc-textbook-list" />
+          <datalist id="mc-textbook-list">
+            <option value="Tal Am" />
+            <option value="Shalom Uvracha" />
+            <option value="Aleph Isn't Tough" />
+            <option value="Siddur / Prayer Book" />
+            <option value="Shira Chadasha" />
+            <option value="Hayom" />
+            <option value="Breira" />
+          </datalist>
+        </div>
+        <div class="mc-field mc-field-sm">
+          <label class="mc-label">Current Chapter / Unit</label>
+          <input id="mc-chapter" class="mc-input" type="text" placeholder="e.g. Chapter 5 — Past Tense" maxlength="60" />
+        </div>
+      </div>
+
+      <div class="mc-field">
+        <label class="mc-label">What are we learning this week?</label>
+        <textarea id="mc-weekly" class="mc-textarea" rows="2" placeholder="e.g. Past tense (עבר) conjugations, feminine plural adjectives, reading comprehension from unit 5…"></textarea>
+      </div>
+
+      <div class="mc-field">
+        <label class="mc-label">Assigned Vocabulary Words <span class="mc-label-hint">paste your list — Morah will use these exact words</span></label>
+        <textarea id="mc-vocab" class="mc-textarea mc-textarea-heb" rows="3" placeholder="e.g.&#10;לָלֶכֶת — to go&#10;לָשֶׁבֶת — to sit&#10;לָקוּם — to get up&#10;מִשְׁפָּחָה — family"></textarea>
+      </div>
+
+      <div class="mc-field">
+        <label class="mc-label">Assigned Grammar Rules <span class="mc-label-hint">optional</span></label>
+        <textarea id="mc-grammar" class="mc-textarea" rows="2" placeholder="e.g. Past tense binyan pa'al — all 7 conjugations, masculine/feminine agreement with adjectives…"></textarea>
+      </div>
+
+      <div class="mc-actions">
+        <button class="mc-save-btn" onclick="saveMyClass()">
+          Save My Class Profile ✓
+        </button>
+        <button class="mc-clear-btn" onclick="clearMyClass()">Clear</button>
+      </div>
+
+    </div><!-- /mc-body -->
+  </div><!-- /mc-sheet -->
+</div>
+
 <!-- CURRICULUM MAP PANEL -->
 <div id="curriculum-panel" class="curriculum-panel" style="display:none;">
   <div class="curriculum-header">
@@ -638,7 +725,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=102"></script>
+<script src="app.js?v=103"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">

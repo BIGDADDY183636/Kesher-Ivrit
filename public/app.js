@@ -320,8 +320,102 @@ function updateUserBadges() {
 }
 
 // ─── INIT ─────────────────────────────────────────────────
+// ═══════════════════════════════════════════════════════════
+//  MY CLASS — connect student's teacher curriculum to Morah
+// ═══════════════════════════════════════════════════════════
+const MC_KEY = 'kesher_myclass';
+var myClass  = null;
+
+function loadMyClass() {
+  try { myClass = JSON.parse(localStorage.getItem(MC_KEY)) || null; }
+  catch(e) { myClass = null; }
+  _updateMyClassBadge();
+}
+
+function saveMyClass() {
+  var data = {
+    school:          (document.getElementById('mc-school').value   || '').trim(),
+    grade:           (document.getElementById('mc-grade').value    || '').trim(),
+    textbook:        (document.getElementById('mc-textbook').value || '').trim(),
+    chapter:         (document.getElementById('mc-chapter').value  || '').trim(),
+    weeklyFocus:     (document.getElementById('mc-weekly').value   || '').trim(),
+    assignedVocab:   (document.getElementById('mc-vocab').value    || '').trim(),
+    assignedGrammar: (document.getElementById('mc-grammar').value  || '').trim(),
+  };
+  if (!data.school && !data.textbook && !data.chapter && !data.weeklyFocus && !data.assignedVocab) {
+    showToast('Please fill in at least one field.');
+    return;
+  }
+  myClass = data;
+  localStorage.setItem(MC_KEY, JSON.stringify(myClass));
+  _updateMyClassBadge();
+  hideMyClass();
+  showToast('📚 My Class saved! Morah will now focus on your assignment.');
+}
+
+function clearMyClass() {
+  myClass = null;
+  localStorage.removeItem(MC_KEY);
+  _updateMyClassBadge();
+  ['mc-school','mc-grade','mc-textbook','mc-chapter','mc-weekly','mc-vocab','mc-grammar']
+    .forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; });
+  showToast('Class profile cleared.');
+}
+
+function showMyClass() {
+  var overlay = document.getElementById('myclass-overlay');
+  if (!overlay) return;
+  // Pre-fill form
+  if (myClass) {
+    var fields = {
+      'mc-school': myClass.school, 'mc-grade': myClass.grade,
+      'mc-textbook': myClass.textbook, 'mc-chapter': myClass.chapter,
+      'mc-weekly': myClass.weeklyFocus, 'mc-vocab': myClass.assignedVocab,
+      'mc-grammar': myClass.assignedGrammar
+    };
+    Object.keys(fields).forEach(function(id) {
+      var el = document.getElementById(id);
+      if (el) el.value = fields[id] || '';
+    });
+  } else if (currentUser && currentUser.school) {
+    var sf = document.getElementById('mc-school');
+    if (sf) sf.value = currentUser.school;
+  }
+  overlay.classList.remove('mc-hidden');
+  overlay.classList.add('mc-visible');
+  setTimeout(function() {
+    var first = document.getElementById('mc-school');
+    if (first) first.focus();
+  }, 300);
+}
+
+function hideMyClass() {
+  var overlay = document.getElementById('myclass-overlay');
+  if (!overlay) return;
+  overlay.classList.remove('mc-visible');
+  overlay.classList.add('mc-hidden');
+}
+
+function mcOverlayClick(e) {
+  if (e.target === document.getElementById('myclass-overlay')) hideMyClass();
+}
+
+function _updateMyClassBadge() {
+  var badge = document.getElementById('myclass-badge');
+  var text  = document.getElementById('myclass-badge-text');
+  if (!badge) return;
+  var label = myClass && (myClass.chapter || myClass.textbook || myClass.weeklyFocus);
+  if (label) {
+    text.textContent = myClass.chapter || myClass.textbook || 'Assignment set';
+    badge.style.display = 'inline-flex';
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   loadUser();
+  loadMyClass();
   loadProgress();
   renderWordOfDay();
 
@@ -1336,7 +1430,11 @@ async function sendToMorah(messages) {
     const response = await fetch('/api/chat', {
       method: 'POST',
       headers,
-      body: JSON.stringify({ messages, userProfile: { ...state.userProfile, currentTopic: state.currentTopic, session: state.session } })
+      body: JSON.stringify({
+        messages,
+        userProfile: { ...state.userProfile, currentTopic: state.currentTopic, session: state.session },
+        myClass: myClass || null
+      })
     });
 
     if (!response.ok) {

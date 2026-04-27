@@ -138,7 +138,7 @@ app.post('/api/scores', async (req, res) => {
   }
 });
 
-function buildSystemPrompt(userProfile) {
+function buildSystemPrompt(userProfile, myClass) {
   const levelMap = {
     complete_beginner: 'a complete beginner who knows zero Hebrew',
     some_exposure: 'someone with minimal exposure who knows the aleph-bet but little else',
@@ -635,6 +635,31 @@ Military slang (permeates civilian life):
 Example opening: "בּוֹא נְדַבֵּר עַל הִתְפַּעֵל. מָתַי מִשְׁתַּמְּשִׁים בּוֹ בִּמְקוֹם נִפְעַל? תֶּן לִי דֻּגְמָה עִם אוֹתוֹ שׁוֹרֶשׁ בִּשְׁנֵי בִּנְיָנִים שׁוֹנִים — וְהַסְבֵּר מָה מִשְׁתַּנֶּה בַּמַּשְׁמָעוּת."`
 }
 
+${myClass && (myClass.chapter || myClass.textbook || myClass.weeklyFocus || myClass.assignedVocab) ? `
+╔═══════════════════════════════════════════════════════════╗
+║  📚 MY CLASS ASSIGNMENT — ABSOLUTE TOP PRIORITY           ║
+║  Override everything below. Teach ONLY this material.     ║
+╚═══════════════════════════════════════════════════════════╝
+
+This student is in an actual Hebrew class and has shared their specific assignment.
+You MUST teach exactly what their teacher assigned. Do NOT drift to other material.
+${myClass.school    ? `School: ${myClass.school}` : ''}
+${myClass.grade     ? `Grade: ${myClass.grade}` : ''}
+${myClass.textbook  ? `Textbook: ${myClass.textbook}` : ''}
+${myClass.chapter   ? `Current Chapter/Unit: ${myClass.chapter}` : ''}
+${myClass.weeklyFocus ? `\nWhat we are learning this week:\n${myClass.weeklyFocus}` : ''}
+${myClass.assignedVocab ? `\nAssigned Vocabulary Words (teach THESE exact words):\n${myClass.assignedVocab}` : ''}
+${myClass.assignedGrammar ? `\nAssigned Grammar Rules (focus on THESE):\n${myClass.assignedGrammar}` : ''}
+
+MORAH INSTRUCTIONS FOR MY CLASS MODE:
+1. Your very first message MUST acknowledge the assignment ("Great, let's work on ${myClass.chapter || myClass.weeklyFocus || 'your assignment'}!")
+2. Every lesson, every vocab word, every challenge MUST come directly from the assigned material above
+3. If the student asks about something not in the assignment, gently redirect: "Let's stay focused on what your teacher assigned — we can explore that another time!"
+4. If assigned vocab words are listed, use THOSE exact words in every example sentence
+5. If a grammar rule is listed, make that the core of every [CHALLENGE]
+6. Help the student master this material so thoroughly they will ace any test or class exercise
+` : ''}
+
 TOPIC & LEVEL INTEGRATION:
 The student's selected topic is "${userProfile.currentTopic || 'General Hebrew'}".
 Level restrictions above take absolute priority. If the topic conflicts with the level (e.g. an intermediate student selects "Greetings"), redirect warmly: "You know greetings perfectly — let us use them in a complex past-tense sentence instead." Then teach the level-appropriate content using related vocabulary where possible.
@@ -772,7 +797,7 @@ Start with a half-line greeting to ${name}, then teach the first word.`;
 }
 
 app.post('/api/chat', async (req, res) => {
-  const { messages, userProfile } = req.body;
+  const { messages, userProfile, myClass } = req.body;
   const apiKey = process.env.ANTHROPIC_API_KEY || req.headers['x-api-key'];
 
   if (!apiKey) {
@@ -787,7 +812,7 @@ app.post('/api/chat', async (req, res) => {
     const response = await client.messages.create({
       model: 'claude-sonnet-4-6',
       max_tokens: 300,
-      system: buildSystemPrompt(userProfile),
+      system: buildSystemPrompt(userProfile, myClass || null),
       messages: messages.map(m => ({ role: m.role, content: m.content }))
     });
 
