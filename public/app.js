@@ -208,7 +208,7 @@ function renderWordOfDay() {
 
 // ─── HEBREW PLACEMENT TEST ────────────────────────────────
 // ── Goal-adaptive question sets ──────────────────────────
-// Each set: Q1-2 Beginner · Q3-5 Intermediate · Q6-8 Advanced · Q9-10 Expert
+// Each set: Q1-2 Beginner · Q3-4 Elementary · Q5-6 Intermediate · Q7-8 Advanced · Q9-10 Expert
 const PT_QUESTION_SETS = {
 
 // ── BIBLICAL: prayer + bible goals ──────────────────────
@@ -225,13 +225,13 @@ biblical: [
     opts: ['And God said', 'In the beginning', 'Let there be light', 'In the garden'], ans: 1,
     fun: '🌟 בְּרֵאשִׁית (bereishit) opens the entire Torah: "In the beginning God created..." Six words that started everything!'
   },
-  { n:3,  emoji:'🔤', tier:'Intermediate',
+  { n:3,  emoji:'🔤', tier:'Elementary',
     q: 'Which vowel mark (נִקּוּד) makes the long "AH" sound?',
     heb: null,
     opts: ['חִירִיק (chirik) — "ee"', 'קָמַץ (kamatz) — "ah"', 'סֶגּוֹל (segol) — "eh"', 'שׁוּרוּק (shuruk) — "oo"'], ans: 1,
     fun: '📚 קָמַץ (ָ) = the "ah" vowel. It looks like a small T under the letter. You see it constantly in Torah!'
   },
-  { n:4,  emoji:'🙏', tier:'Intermediate',
+  { n:4,  emoji:'🙏', tier:'Elementary',
     q: 'What does שְׁמַע יִשְׂרָאֵל mean?',
     heb: 'שְׁמַע יִשְׂרָאֵל',
     opts: ['Blessed is Israel', 'Holy, Holy, Holy', 'Hear O Israel', 'Remember Israel'], ans: 2,
@@ -243,7 +243,7 @@ biblical: [
     opts: ['ת-ל-מ (study)', 'ב-ר-כ (bless)', 'י-ר-ה (to direct/teach)', 'ק-ד-שׁ (holy)'], ans: 2,
     fun: '🌳 תּוֹרָה comes from י-ר-ה = to shoot, direct, teach. Torah literally means "The Teaching" or "The Instruction"!'
   },
-  { n:6,  emoji:'⚡', tier:'Advanced',
+  { n:6,  emoji:'⚡', tier:'Intermediate',
     q: 'What grammatical function does אֵת serve before a noun?',
     heb: null,
     opts: ['It means "and"', 'It means "from"', 'It marks the definite direct object', 'It means "with"'], ans: 2,
@@ -289,13 +289,13 @@ modern: [
     opts: ['Grandmother', 'Terrible / awful', 'Cool / great / no problem', 'Hurry up'], ans: 2,
     fun: '😎 סַבָּבָה comes from Arabic — Israelis use it constantly to mean "great, fine, cool, no worries!"'
   },
-  { n:3,  emoji:'🚽', tier:'Intermediate',
+  { n:3,  emoji:'🚽', tier:'Elementary',
     q: 'How do you ask "Where is the bathroom?" in Hebrew?',
     heb: null,
     opts: ['מַה הַשֵּׁם שֶׁלְּךָ?', 'כַּמָּה עוֹלֶה?', 'אֵיפֹה הַשֵּׁרוּתִים?', 'מָתַי הָאוֹטוֹבּוּס?'], ans: 2,
     fun: '🚽 אֵיפֹה (eifoh) = where + שֵּׁרוּתִים (sherootim) = facilities/bathroom. Literally "services" — Israel\'s polite word!'
   },
-  { n:4,  emoji:'🏃', tier:'Intermediate',
+  { n:4,  emoji:'🏃', tier:'Elementary',
     q: 'What does יַאַלָּה (yallah) mean in Israeli Hebrew?',
     heb: null,
     opts: ['Goodbye forever', 'Thank you very much', 'I\'m not sure', 'Let\'s go! / Come on!'], ans: 3,
@@ -307,7 +307,7 @@ modern: [
     opts: ['לִשְׁתּוֹת', 'לִישֹׁן', 'לָרוּץ', 'לֶאֱכוֹל'], ans: 3,
     fun: '🍽️ לֶאֱכוֹל (le\'ekhol) = to eat. לִשְׁתּוֹת = drink, לִישֹׁן = sleep, לָרוּץ = run. Four verbs = infinite conversations!'
   },
-  { n:6,  emoji:'😋', tier:'Advanced',
+  { n:6,  emoji:'😋', tier:'Intermediate',
     q: 'How do you say "I am hungry" in Hebrew?',
     heb: null,
     opts: ['אֲנִי עָיֵף', 'אֲנִי צָמֵא', 'אֲנִי רָעֵב', 'אֲנִי קַר'], ans: 2,
@@ -353,13 +353,13 @@ barmitzvah: [
     opts: ['Reading the whole Torah aloud', 'Moving to Israel for Torah study', 'Being called up to bless the Torah reading', 'The Torah scroll itself'], ans: 2,
     fun: '⬆️ עֲלִיָּה = "going up." Being called to the bimah for a Torah blessing is literally "going up" — a great honor!'
   },
-  { n:3,  emoji:'📜', tier:'Intermediate',
+  { n:3,  emoji:'📜', tier:'Elementary',
     q: 'What is the הַפְטָרָה (Haftarah)?',
     heb: null,
     opts: ['The Kiddush blessing over wine', 'The Torah scroll\'s velvet cover', 'A selection from the Prophets read after the Torah portion', 'The final prayer of every service'], ans: 2,
     fun: '📜 הַפְטָרָה comes from "to conclude" (פ-ט-ר). It\'s the prophetic reading that completes the Torah service!'
   },
-  { n:4,  emoji:'🎵', tier:'Intermediate',
+  { n:4,  emoji:'🎵', tier:'Elementary',
     q: 'What do the cantillation marks (טַעֲמֵי הַמִּקְרָא / trope) do?',
     heb: null,
     opts: ['Only mark the vowels', 'Show which words to emphasize silently', 'Indicate the musical melody AND serve as punctuation', 'Mark only the most important words to read'], ans: 2,
@@ -371,7 +371,7 @@ barmitzvah: [
     opts: ['The Torah is being put back in the ark', 'The rabbi\'s sermon is beginning', 'A call for the congregation to bless God together', 'The service has ended'], ans: 2,
     fun: '🔊 בָּרְכוּ = "Bless!" A call-and-response where the prayer leader calls out and everyone responds together. Beautiful!'
   },
-  { n:6,  emoji:'✡️', tier:'Advanced',
+  { n:6,  emoji:'✡️', tier:'Intermediate',
     q: '"אֲשֶׁר בָּחַר בָּנוּ מִכָּל הָעַמִּים" (in the Torah blessing) means:',
     heb: null,
     opts: ['Who created us from all the nations', 'Who saved us from all the nations', 'Who commands us above all nations', 'Who chose us from all the nations'], ans: 3,
@@ -417,13 +417,13 @@ fluency: [
     opts: ['Tomorrow', 'Yesterday', 'Later', 'Now'], ans: 3,
     fun: '⏰ עַכְשָׁו = now! Also: מָחָר (tomorrow), אֶתְמוֹל (yesterday), אַחַר כָּךְ (later). Time words = survival!'
   },
-  { n:3,  emoji:'🚌', tier:'Intermediate',
+  { n:3,  emoji:'🚌', tier:'Elementary',
     q: 'You need the central bus station (תַּחֲנָה מֶרְכָּזִית). How do you ask directions?',
     heb: null,
     opts: ['מַה הַשֵּׁם שֶׁלְּךָ?', 'אֵיפֹה הַתַּחֲנָה הַמֶּרְכָּזִית?', 'כַּמָּה עוֹלֶה הַכַּרְטִיס?', 'מָתַי הָאוֹטוֹבּוּס בָּא?'], ans: 1,
     fun: '🚌 אֵיפֹה = where. מֶרְכָּזִית (merkazit) = central (from מֶרְכָּז = center). This question will save you on your first day!'
   },
-  { n:4,  emoji:'🏠', tier:'Intermediate',
+  { n:4,  emoji:'🏠', tier:'Elementary',
     q: 'Your landlord asks about your מַצָּב מִשְׁפַּחְתִּי. What is he asking?',
     heb: null,
     opts: ['Your job title and monthly salary', 'Your Israeli identity number', 'Your family / marital status', 'Your reference letters from previous landlords'], ans: 2,
@@ -435,7 +435,7 @@ fluency: [
     opts: ['Nice to meet you for the first time', 'I don\'t understand Hebrew', 'Welcome! Please come in!', 'See you later / Goodbye'], ans: 3,
     fun: '👋 לְהִתְרָאוֹת = "until we see each other again" — the standard Hebrew goodbye! From ר-א-ה = to see!'
   },
-  { n:6,  emoji:'🏗️', tier:'Advanced',
+  { n:6,  emoji:'🏗️', tier:'Intermediate',
     q: 'What binyan (verb pattern) is לְהִתְנַהֵג (to behave)?',
     heb: 'לְהִתְנַהֵג',
     opts: ["Pa'al (קַל)", "Pi'el (פִּיעֵל)", "Hitpa'el (הִתְפַּעֵל)", "Hif'il (הִפְעִיל)"], ans: 2,
@@ -481,25 +481,25 @@ heritage: [
     opts: ['פֶּסַח', 'שָׁבוּעוֹת', 'יוֹם כִּפּוּר', 'רֹאשׁ הַשָּׁנָה'], ans: 3,
     fun: '🍎 רֹאשׁ הַשָּׁנָה literally means "Head of the Year" — the beginning of the Jewish calendar! 🍯 Apples and honey!'
   },
-  { n:3,  emoji:'🌍', tier:'Intermediate',
+  { n:3,  emoji:'🌍', tier:'Elementary',
     q: 'What does תִּקּוּן עוֹלָם (tikkun olam) mean?',
     heb: null,
     opts: ['World creation by God', 'World Torah study', 'Praying for world peace', 'Repairing / healing the world'], ans: 3,
     fun: '🌍 תִּקּוּן = repair/fix (from ת-ק-נ). עוֹלָם = world. Tikkun olam = the Jewish calling to make the world better!'
   },
-  { n:4,  emoji:'⚖️', tier:'Intermediate',
-    q: 'What does the word צְדָקָה (tzedakah) literally mean in Hebrew?',
-    heb: null,
-    opts: ['Generous personal giving from the heart', 'Prayer for others\' wellbeing', 'Blessing from God', 'Righteousness / justice (giving because it\'s right)'], ans: 3,
-    fun: '⚖️ צְדָקָה comes from צֶדֶק (justice). In Judaism, charity is a JUSTICE obligation — not optional generosity!'
-  },
-  { n:5,  emoji:'💨', tier:'Intermediate',
+  { n:4,  emoji:'💨', tier:'Elementary',
     q: 'What is the meaning of נְשָׁמָה (neshamah)?',
     heb: null,
     opts: ['Body (physical form)', 'Heart (center of emotion)', 'Mind / intellect', 'Soul / spirit'], ans: 3,
     fun: '💨 נְשָׁמָה = soul, related to נְשִׁימָה (breathing)! The soul breathes life into us — same ancient root!'
   },
-  { n:6,  emoji:'🥂', tier:'Advanced',
+  { n:5,  emoji:'⚖️', tier:'Intermediate',
+    q: 'What does the word צְדָקָה (tzedakah) literally mean in Hebrew?',
+    heb: null,
+    opts: ['Generous personal giving from the heart', 'Prayer for others\' wellbeing', 'Blessing from God', 'Righteousness / justice (giving because it\'s right)'], ans: 3,
+    fun: '⚖️ צְדָקָה comes from צֶדֶק (justice). In Judaism, charity is a JUSTICE obligation — not optional generosity!'
+  },
+  { n:6,  emoji:'🥂', tier:'Intermediate',
     q: 'What does "לְחַיִּים!" literally mean — and when is it said?',
     heb: null,
     opts: ['To God! — only in synagogue during Kiddush', 'To love! — said at Jewish weddings', 'To Israel! — a Zionist toast at Jewish events', 'To life! — the classic Jewish toast over drinks'], ans: 3,
@@ -553,13 +553,14 @@ function _ptSelectSet(goal) {
 
 const PT_QUESTIONS = []; // unused — runtime reads _pt.questions (goal-adaptive set)
 
-// Recalibrated: Advanced now requires 8-10 correct
+// Scoring: 2 questions per tier × 5 tiers
+// 0-1 = CB · 2-3 = Some Exposure · 4-5 = Basic · 6-7 = Intermediate · 8-10 = Advanced
 const PT_LEVELS = {
-  cb:    { val: 'complete_beginner', label: 'Complete Beginner', heb: 'מַתְחִיל',    emoji: '🌱', msg: "No worries — everyone starts at Aleph! You're in the best place to begin. Morah will guide you letter by letter from day one." },
-  se:    { val: 'some_exposure',     label: 'Some Exposure',     heb: 'חֲשִׂיפָה',   emoji: '🌿', msg: "You've seen Hebrew before! You know the basics but have room to grow. Morah will build on what you already know and fill the gaps." },
-  basic: { val: 'basic',             label: 'Basic',             heb: 'בְּסִיסִי',   emoji: '🌳', msg: "Solid foundation! You know your letters and some words. Morah will take you from basic reading to real Hebrew sentences." },
-  inter: { val: 'intermediate',      label: 'Intermediate',      heb: 'בֵּינוֹנִי',  emoji: '⭐', msg: "Excellent! Your Hebrew grammar is strong. Morah will challenge you with binyanim, complex sentences, and real Israeli conversations." },
-  adv:   { val: 'advanced',          label: 'Advanced',          heb: 'מִתְקַדֵּם',  emoji: '🔥', msg: "Impressive! You're clearly at an advanced level — including biblical grammar. Morah will push you toward near-fluency and authentic Hebrew." }
+  cb:    { val: 'complete_beginner', label: 'Complete Beginner', heb: 'מַתְחִיל',    emoji: '🌱', msg: "No worries — everyone starts at Aleph! You're in exactly the right place. Morah will guide you letter by letter, word by word, from day one." },
+  se:    { val: 'some_exposure',     label: 'Some Exposure',     heb: 'חֲשִׂיפָה',   emoji: '🌿', msg: "You know the basics — the alphabet and common words. Morah will build on what you have and get you reading and speaking confidently." },
+  basic: { val: 'basic',             label: 'Basic',             heb: 'בְּסִיסִי',   emoji: '🌳', msg: "Great start! You handle everyday words and phrases. Morah will take you into present tense, family vocabulary, and real conversations." },
+  inter: { val: 'intermediate',      label: 'Intermediate',      heb: 'בֵּינוֹנִי',  emoji: '⭐', msg: "Solid Hebrew! You've got past tense, future tense, and binyanim basics down. Morah will challenge you with complex verb patterns and advanced grammar." },
+  adv:   { val: 'advanced',          label: 'Advanced',          heb: 'מִתְקַדֵּם',  emoji: '🔥', msg: "Impressive! You command complex binyanim, construct state, and advanced grammar. Morah will push you into Biblical texts and near-native fluency." }
 };
 
 function _ptLevelFromScore(score) {

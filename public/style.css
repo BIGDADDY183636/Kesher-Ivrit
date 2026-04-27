@@ -5257,7 +5257,8 @@ button, input, textarea, select { font-family: var(--font-eng); }
   from { opacity:0; transform: scale(0.7) translateX(-8px); }
   to   { opacity:1; transform: none; }
 }
-.pt-tier-beginner     { background: rgba(0,200,83,0.2);  color: #6DFFA0; border: 1px solid rgba(0,200,83,0.35); }
+.pt-tier-beginner     { background: rgba(0,200,83,0.2);   color: #6DFFA0; border: 1px solid rgba(0,200,83,0.35); }
+.pt-tier-elementary   { background: rgba(0,200,180,0.2);  color: #6DFFF0; border: 1px solid rgba(0,200,180,0.35); }
 .pt-tier-intermediate { background: rgba(79,142,247,0.2); color: #9DC8FF; border: 1px solid rgba(79,142,247,0.35); }
 .pt-tier-advanced     { background: rgba(255,165,0,0.2);  color: #FFD080; border: 1px solid rgba(255,165,0,0.35); }
 .pt-tier-expert       { background: rgba(200,0,200,0.2);  color: #FF90FF; border: 1px solid rgba(200,0,200,0.35); }
