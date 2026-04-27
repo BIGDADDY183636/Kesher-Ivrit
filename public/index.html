@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kesher Ivrit v4.9 | קשר עברית</title>
+  <title>Kesher Ivrit v5.0 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=123" />
+  <link rel="stylesheet" href="style.css?v=124" />
 </head>
 <body>
 
@@ -391,7 +391,7 @@
         <div class="morah-info">
           <div class="morah-avatar">👩‍🏫</div>
           <div>
-            <div class="morah-name">Morah <span class="heb-small">מורה</span> <span class="build-tag">v4.9</span></div>
+            <div class="morah-name">Morah <span class="heb-small">מורה</span> <span class="build-tag">v5.0</span></div>
             <div class="morah-status" id="morah-status">Ready to teach! 🇮🇱</div>
             <button id="myclass-badge" class="myclass-badge" style="display:none;" onclick="showMyClass()">
               📚 <span id="myclass-badge-text">Chapter 3</span>
@@ -515,6 +515,44 @@
           <div class="gp-play">Play Now!</div>
         </div>
       </button>
+      <button class="gp-card gp-matchit" onclick="showMIGame()">
+        <div class="gp-card-accent"></div>
+        <div class="gp-card-body">
+          <div class="gp-icon">🔗</div>
+          <div class="gp-name">Match It</div>
+          <div class="gp-desc">Match Hebrew words to their English meanings — race the clock!</div>
+          <div class="gp-play">Play Now!</div>
+        </div>
+      </button>
+    </div>
+  </div>
+
+  <!-- ═══ MATCH IT OVERLAY ═══ -->
+  <div id="matchit-overlay" class="mi-overlay mi-gone">
+    <div class="mi-screen">
+      <div class="mi-header">
+        <div class="mi-header-left">
+          <div class="mi-title">🔗 Match It</div>
+          <div class="mi-subtitle">Hebrew ↔ English</div>
+        </div>
+        <div class="mi-header-right">
+          <div class="mi-round-badge" id="mi-round-badge">Round 1</div>
+          <div class="mi-score-badge" id="mi-score-badge">0 pts</div>
+          <button class="mi-close-btn" onclick="hideMIGame()">✕</button>
+        </div>
+      </div>
+      <div class="mi-timer-wrap" id="mi-timer-wrap" style="display:none;">
+        <div class="mi-timer-bar-bg"><div class="mi-timer-bar" id="mi-timer-bar"></div></div>
+        <div class="mi-timer-num" id="mi-timer-num">90</div>
+      </div>
+      <div class="mi-body" id="mi-body">
+        <div class="mi-hint">Tap a Hebrew word, then its English match</div>
+        <div class="mi-columns">
+          <div class="mi-col mi-col-heb" id="mi-col-heb"></div>
+          <div class="mi-col mi-col-eng" id="mi-col-eng"></div>
+        </div>
+      </div>
+      <div class="mi-results" id="mi-results" style="display:none;"></div>
     </div>
   </div>
 
@@ -960,7 +998,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=123"></script>
+<script src="app.js?v=124"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">

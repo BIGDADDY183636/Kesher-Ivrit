@@ -4865,6 +4865,272 @@ function hideUnscrambleGame() {
 // ▲▲▲  END HEBREW UNSCRAMBLE  ▲▲▲
 
 // ═══════════════════════════════════════════════════════════════════════════
+//  MATCH IT GAME
+// ═══════════════════════════════════════════════════════════════════════════
+
+var mi = {
+  pool: [], words: [], hebOrder: [], engOrder: [],
+  matched: {}, selectedHeb: -1,
+  round: 1, score: 0, totalAwarded: 0,
+  startTime: 0, elapsed: 0,
+  timerInterval: null, timeLeft: 0, timeLimit: 0,
+  pairs: 6, wrongCount: 0
+};
+
+// Round config: { pairs, timeLimit (seconds, 0=none) }
+var MI_ROUNDS = [
+  { pairs: 6,  timeLimit: 0  },
+  { pairs: 8,  timeLimit: 90 },
+  { pairs: 10, timeLimit: 60 },
+  { pairs: 10, timeLimit: 45 }
+];
+
+function showMIGame() {
+  var el = document.getElementById('matchit-overlay');
+  if (!el) return;
+  if (mi.pool.length < 4) mi.pool = buildSRPool();
+  if (mi.pool.length < 4) {
+    showToast('Learn a few words first — then match them! 📖', 3500);
+    return;
+  }
+  mi.round = 1; mi.score = 0; mi.totalAwarded = 0;
+  el.classList.remove('mi-gone'); el.classList.add('mi-visible');
+  _miStartRound();
+}
+
+function hideMIGame() {
+  var el = document.getElementById('matchit-overlay');
+  if (el) { el.classList.remove('mi-visible'); el.classList.add('mi-gone'); }
+  _miClearTimer();
+}
+
+function _miCfg() { return MI_ROUNDS[Math.min(mi.round - 1, MI_ROUNDS.length - 1)]; }
+
+function _miStartRound() {
+  var cfg = _miCfg();
+  mi.pairs     = Math.min(cfg.pairs, mi.pool.length);
+  mi.timeLimit = cfg.timeLimit;
+  mi.timeLeft  = cfg.timeLimit;
+  mi.matched   = {}; mi.selectedHeb = -1; mi.wrongCount = 0;
+  mi.startTime = Date.now(); mi.elapsed = 0;
+
+  // Pick words and shuffle each column independently
+  var pool = shuffle(mi.pool.slice());
+  mi.words    = pool.slice(0, mi.pairs);
+  mi.hebOrder = shuffle(mi.words.map(function(_, i) { return i; }));
+  mi.engOrder = shuffle(mi.words.map(function(_, i) { return i; }));
+
+  // Header
+  var rb = document.getElementById('mi-round-badge');
+  if (rb) rb.textContent = 'Round ' + mi.round;
+  _miUpdateScore();
+
+  // Timer bar
+  _miClearTimer();
+  var tw = document.getElementById('mi-timer-wrap');
+  if (tw) {
+    if (mi.timeLimit > 0) {
+      tw.style.display = 'flex';
+      _miUpdateTimerBar();
+      mi.timerInterval = setInterval(_miTick, 1000);
+    } else {
+      tw.style.display = 'none';
+    }
+  }
+
+  // Show board, hide results
+  var body = document.getElementById('mi-body');
+  var res  = document.getElementById('mi-results');
+  if (body) body.style.display = '';
+  if (res)  res.style.display  = 'none';
+
+  _miRender();
+}
+
+function _miClearTimer() {
+  if (mi.timerInterval) { clearInterval(mi.timerInterval); mi.timerInterval = null; }
+}
+
+function _miTick() {
+  mi.timeLeft = Math.max(0, mi.timeLeft - 1);
+  _miUpdateTimerBar();
+  if (mi.timeLeft <= 0) { _miClearTimer(); _miShowResults(true); }
+}
+
+function _miUpdateTimerBar() {
+  var numEl = document.getElementById('mi-timer-num');
+  var barEl = document.getElementById('mi-timer-bar');
+  if (numEl) numEl.textContent = mi.timeLeft;
+  if (barEl) {
+    var pct = mi.timeLimit > 0 ? (mi.timeLeft / mi.timeLimit) * 100 : 100;
+    barEl.style.width = pct + '%';
+    barEl.className = 'mi-timer-bar' + (pct <= 20 ? ' mi-danger' : pct <= 40 ? ' mi-warning' : '');
+  }
+}
+
+function _miUpdateScore() {
+  var el = document.getElementById('mi-score-badge');
+  if (el) el.textContent = mi.score + ' pts';
+}
+
+function _miRender() {
+  var hebCol = document.getElementById('mi-col-heb');
+  var engCol = document.getElementById('mi-col-eng');
+  if (!hebCol || !engCol) return;
+
+  function cardHtml(wordIdx, side) {
+    var w = mi.words[wordIdx];
+    var matched  = !!mi.matched[wordIdx];
+    var selected = side === 'heb' && mi.selectedHeb === wordIdx;
+    var cls = 'mi-card mi-card-' + side +
+      (matched  ? ' mi-matched'  : '') +
+      (selected ? ' mi-selected' : '');
+    var click = matched ? '' :
+      (side === 'heb' ? 'onclick="miSelHeb(' + wordIdx + ')"' : 'onclick="miSelEng(' + wordIdx + ')"');
+    var label = side === 'heb'
+      ? '<span class="mi-heb">' + escapeHtml(w.hebrew) + '</span>'
+      : '<span>' + escapeHtml(w.english) + '</span>';
+    return '<button class="' + cls + '" ' + click + ' data-idx="' + wordIdx + '">' +
+      label + (matched ? '<span class="mi-check">✓</span>' : '') + '</button>';
+  }
+
+  hebCol.innerHTML = mi.hebOrder.map(function(i) { return cardHtml(i, 'heb'); }).join('');
+  engCol.innerHTML = mi.engOrder.map(function(i) { return cardHtml(i, 'eng'); }).join('');
+}
+
+function miSelHeb(wordIdx) {
+  if (mi.matched[wordIdx]) return;
+  mi.selectedHeb = (mi.selectedHeb === wordIdx) ? -1 : wordIdx; // toggle
+  _miRender();
+}
+
+function miSelEng(wordIdx) {
+  if (mi.matched[wordIdx]) return;
+  if (mi.selectedHeb === -1) { showToast('Tap a Hebrew word first! 🇮🇱'); return; }
+
+  var hIdx = mi.selectedHeb;
+  if (hIdx === wordIdx) {
+    _miCorrect(hIdx);
+  } else {
+    _miWrong(hIdx, wordIdx);
+  }
+}
+
+function _miCorrect(idx) {
+  mi.matched[idx] = true;
+  mi.selectedHeb  = -1;
+
+  var pts = 10 * mi.round;
+  mi.score += pts;
+  _miUpdateScore();
+
+  // Flash green on both columns
+  _miFlash(idx, 'heb', 'mi-flash-correct');
+  _miFlash(idx, 'eng', 'mi-flash-correct');
+  showPointsPop(pts);
+
+  setTimeout(function() {
+    _miRender();
+    if (Object.keys(mi.matched).length >= mi.pairs) {
+      setTimeout(_miRoundComplete, 420);
+    }
+  }, 520);
+}
+
+function _miWrong(hIdx, eIdx) {
+  mi.wrongCount++;
+  mi.score = Math.max(0, mi.score - 2);
+  _miUpdateScore();
+
+  _miFlash(hIdx, 'heb', 'mi-flash-wrong');
+  _miFlash(eIdx, 'eng', 'mi-flash-wrong');
+
+  setTimeout(function() {
+    mi.selectedHeb = -1;
+    _miRender();
+  }, 700);
+}
+
+function _miFlash(wordIdx, side, cls) {
+  var col = document.getElementById('mi-col-' + side);
+  if (!col) return;
+  var card = col.querySelector('[data-idx="' + wordIdx + '"]');
+  if (!card) return;
+  card.classList.add(cls);
+  setTimeout(function() { card.classList.remove(cls); }, 650);
+}
+
+function _miRoundComplete() {
+  _miClearTimer();
+  mi.elapsed = Math.round((Date.now() - mi.startTime) / 1000);
+
+  // Time bonus: up to 50% extra based on time remaining
+  var timeBonus = 0;
+  if (mi.timeLimit > 0 && mi.timeLeft > 0) {
+    timeBonus = Math.round((mi.timeLeft / mi.timeLimit) * mi.pairs * 4);
+    mi.score += timeBonus;
+  }
+
+  // Award points to progress
+  var toAward = mi.score - mi.totalAwarded;
+  if (toAward > 0) {
+    state.progress.points += toAward;
+    mi.totalAwarded = mi.score;
+    updateStats(); saveProgress();
+    showPointsPop(toAward);
+  }
+
+  triggerCelebration();
+  _miShowResults(false, timeBonus);
+}
+
+function _miShowResults(timedOut, timeBonus) {
+  _miClearTimer();
+  var body = document.getElementById('mi-body');
+  var res  = document.getElementById('mi-results');
+  if (body) body.style.display = 'none';
+  if (!res) return;
+
+  var matched = Object.keys(mi.matched).length;
+  var timeStr  = mi.elapsed > 0
+    ? (mi.elapsed < 60 ? mi.elapsed + 's' : Math.floor(mi.elapsed / 60) + 'm ' + (mi.elapsed % 60) + 's')
+    : '—';
+  var emoji, msg;
+  if (timedOut) {
+    emoji = '⏰';
+    msg = matched >= mi.pairs ? 'Beat the clock!' : matched + '/' + mi.pairs + ' matched — so close!';
+  } else if (mi.wrongCount === 0) {
+    emoji = '🔥'; msg = 'Perfect round! Zero mistakes — sababa!';
+  } else {
+    emoji = '⭐'; msg = 'All matched!' + (mi.wrongCount > 0 ? ' ' + mi.wrongCount + ' wrong turn' + (mi.wrongCount > 1 ? 's' : '') + '.' : '');
+  }
+
+  // Next round availability
+  var nextCfg = MI_ROUNDS[Math.min(mi.round, MI_ROUNDS.length - 1)];
+  var canNext  = !timedOut && mi.pool.length >= nextCfg.pairs;
+
+  res.style.display = 'flex';
+  res.innerHTML =
+    '<div class="mi-res-emoji">' + emoji + '</div>' +
+    '<div class="mi-res-msg">' + msg + '</div>' +
+    '<div class="mi-res-stats">' +
+      '<div class="mi-res-stat"><div class="mi-res-val">' + matched + '/' + mi.pairs + '</div><div class="mi-res-lbl">Matched</div></div>' +
+      '<div class="mi-res-stat"><div class="mi-res-val">' + mi.score + '</div><div class="mi-res-lbl">Points</div></div>' +
+      '<div class="mi-res-stat"><div class="mi-res-val">' + timeStr + '</div><div class="mi-res-lbl">Time</div></div>' +
+      (timeBonus > 0 ? '<div class="mi-res-stat"><div class="mi-res-val">+' + timeBonus + '</div><div class="mi-res-lbl">Speed bonus</div></div>' : '') +
+    '</div>' +
+    (canNext ?
+      '<button class="mi-next-btn" onclick="_miNextRound()">Round ' + (mi.round + 1) + ' →</button>'
+      : '') +
+    '<button class="mi-again-btn" onclick="_miStartRound()">↩ Play Again</button>' +
+    '<button class="mi-done-btn" onclick="hideMIGame()">Done</button>';
+}
+
+function _miNextRound() { mi.round++; _miStartRound(); }
+
+// ▲▲▲  END MATCH IT  ▲▲▲
+
+// ═══════════════════════════════════════════════════════════════════════════
 //  CELEBRATION ANIMATION — Magen David + Blue/White/Gold confetti
 // ═══════════════════════════════════════════════════════════════════════════
 function triggerCelebration(cx, cy) {
