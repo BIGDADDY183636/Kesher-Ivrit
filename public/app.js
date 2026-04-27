@@ -2021,7 +2021,10 @@ function newLesson() {
 }
 
 // ─── MESSAGE HANDLING ─────────────────────────────────────
+var _isSending = false;
+
 async function sendMessage() {
+  if (_isSending) return;
   const input = document.getElementById('user-input');
   const text = input.value.trim();
   if (!text) return;
@@ -2047,6 +2050,9 @@ function handleInputKey(e) {
 }
 
 async function sendToMorah(messages) {
+  if (_isSending) return;
+  _isSending = true;
+
   const sendBtn = document.getElementById('btn-send');
   const typingIndicator = document.getElementById('typing-indicator');
 
@@ -2116,6 +2122,7 @@ async function sendToMorah(messages) {
     appendErrorMessage(error.message);
     setMorahStatus('Ready when you are! 🇮🇱');
   } finally {
+    _isSending = false;
     sendBtn.disabled = false;
     sendBtn.classList.remove('is-loading');
     typingIndicator.style.display = 'none';
@@ -2235,75 +2242,85 @@ function parseMorahResponse(raw) {
 }
 
 // ─── RENDERING ───────────────────────────────────────────
-function appendMessage(role, content, wordBadges = []) {
-  const container = document.getElementById('chat-messages');
-  const el        = document.createElement('div');
-  el.className    = `message ${role}`;
-  const time      = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+// instant=true skips streaming animation — used for historical messages on reload
+function appendMessage(role, content, wordBadges, instant) {
+  wordBadges = wordBadges || [];
+  instant    = instant    || false;
+
+  var container = document.getElementById('chat-messages');
+  var el        = document.createElement('div');
+  el.className  = 'message ' + role;
+  var time      = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
 
   if (role === 'morah') {
-    const { teach, challenge } = parseMorahResponse(content);
-    const cId = challenge ? ++challengeCounter : null;
-    if (cId) challengeStore[cId] = { challenge, answered: false };
+    var parsed    = parseMorahResponse(content);
+    var teach     = parsed.teach;
+    var challenge = parsed.challenge;
+    var cId       = challenge ? ++challengeCounter : null;
+    if (cId) challengeStore[cId] = { challenge: challenge, answered: false };
 
-    // Build shell immediately so the bubble appears with its enter animation
-    const bubble = document.createElement('div');
+    var bubble = document.createElement('div');
     bubble.className = 'msg-bubble';
 
-    const footer = document.createElement('div');
+    var footer = document.createElement('div');
     footer.className = 'msg-footer';
-    footer.innerHTML = `<span class="msg-time">${time}</span>`;
+    footer.innerHTML = '<span class="msg-time">' + time + '</span>';
 
-    const inner = document.createElement('div');
+    var inner = document.createElement('div');
     inner.style.cssText = 'flex:1;min-width:0;';
     inner.appendChild(bubble);
     inner.appendChild(footer);
 
-    const avatar = document.createElement('div');
+    var avatar = document.createElement('div');
     avatar.className = 'msg-avatar';
     avatar.textContent = '👩‍🏫';
 
     el.appendChild(avatar);
     el.appendChild(inner);
     container.appendChild(el);
-    autoScroll();
 
-    // Stream content blocks into the bubble progressively
-    _streamBlocks(bubble, formatMessage(teach), function() {
-      // Append word-learned badges after content finishes
+    function _attachExtras() {
       if (wordBadges.length > 0) {
-        const badgeWrap = document.createElement('div');
+        var badgeWrap = document.createElement('div');
         badgeWrap.className = 'word-badges';
         wordBadges.forEach(function(w, i) {
-          const b = document.createElement('div');
-          b.className = 'word-badge msg-block-in';
-          b.style.cssText = `animation-delay:${i * 0.07}s;--bd:0.4s`;
+          var b = document.createElement('div');
+          b.className = 'word-badge';
+          if (!instant) { b.classList.add('msg-block-in'); b.style.cssText = 'animation-delay:' + (i * 0.07) + 's;--bd:0.35s'; }
           b.innerHTML =
-            `<span class="word-badge-heb">${escapeHtml(w.hebrew)}</span>` +
-            `<span class="word-badge-trans">${escapeHtml(w.transliteration)}</span>` +
-            `<span class="word-badge-eng">${escapeHtml(w.english)}</span>`;
+            '<span class="word-badge-heb">'   + escapeHtml(w.hebrew)          + '</span>' +
+            '<span class="word-badge-trans">'  + escapeHtml(w.transliteration) + '</span>' +
+            '<span class="word-badge-eng">'    + escapeHtml(w.english)         + '</span>';
           badgeWrap.appendChild(b);
         });
         bubble.appendChild(badgeWrap);
       }
-      // Render challenge widget
       if (cId) {
-        const cDiv = document.createElement('div');
+        var cDiv = document.createElement('div');
         cDiv.className = 'challenge-widget';
-        cDiv.id = `challenge-${cId}`;
+        cDiv.id = 'challenge-' + cId;
         bubble.appendChild(cDiv);
         renderChallenge(cId);
       }
       autoScroll();
-    });
+    }
+
+    if (instant) {
+      bubble.innerHTML = formatMessage(teach);
+      _attachExtras();
+    } else {
+      autoScroll();
+      _streamBlocks(bubble, formatMessage(teach), _attachExtras);
+    }
 
   } else {
-    el.innerHTML = `
-      <div class="msg-avatar">${state.userProfile?.name?.[0] || '👤'}</div>
-      <div style="flex:1;min-width:0;">
-        <div class="msg-bubble">${formatMessage(content)}</div>
-        <div class="msg-footer"><span class="msg-time">${time}</span></div>
-      </div>`;
+    var userInitial = (state.userProfile && state.userProfile.name) ? state.userProfile.name[0] : '👤';
+    el.innerHTML =
+      '<div class="msg-avatar">' + escapeHtml(userInitial) + '</div>' +
+      '<div style="flex:1;min-width:0;">' +
+        '<div class="msg-bubble">' + formatMessage(content) + '</div>' +
+        '<div class="msg-footer"><span class="msg-time">' + time + '</span></div>' +
+      '</div>';
     container.appendChild(el);
     autoScroll();
   }
@@ -2311,56 +2328,49 @@ function appendMessage(role, content, wordBadges = []) {
 
 // ── Progressive block streaming — reveals message content piece by piece ──────
 function _streamBlocks(bubble, htmlContent, onDone) {
-  // Parse into block elements
-  const temp = document.createElement('div');
+  var temp = document.createElement('div');
   temp.innerHTML = htmlContent;
-  const blocks = Array.from(temp.children);
+  var blocks = Array.from(temp.children);
 
   if (!blocks.length) {
-    // Plain text with no block structure — show immediately
     bubble.innerHTML = htmlContent;
-    if (onDone) setTimeout(onDone, 50);
+    if (onDone) setTimeout(onDone, 30);
     return;
   }
 
-  var delay = 30;
+  var delay = 10;
 
-  blocks.forEach(function(origBlock, idx) {
-    var isTable  = origBlock.classList.contains('msg-table-wrap');
-    var isPara   = origBlock.tagName === 'P';
-    var isList   = origBlock.tagName === 'UL' || origBlock.tagName === 'OL';
-    var isLast   = idx === blocks.length - 1;
-
-    // Compute reveal duration scaled to word count for paragraphs
-    var words    = origBlock.textContent.trim().split(/\s+/).length;
-    var dur      = isPara ? Math.max(0.25, Math.min(words * 0.04, 0.8))
-                 : isTable ? 0.5
-                 : 0.35;
+  blocks.forEach(function(origBlock) {
+    var isTable = origBlock.classList.contains('msg-table-wrap');
+    var isPara  = origBlock.tagName === 'P';
+    var isList  = origBlock.tagName === 'UL' || origBlock.tagName === 'OL';
+    var words   = origBlock.textContent.trim().split(/\s+/).length;
+    var dur     = isPara  ? Math.max(0.2, Math.min(words * 0.03, 0.5))
+                : isTable ? 0.35 : 0.2;
 
     setTimeout(function() {
       var block = origBlock.cloneNode(true);
       block.classList.add('msg-block-in');
       block.style.setProperty('--bd', dur + 's');
       bubble.appendChild(block);
-
-      // Table: stagger each row's slide-in
       if (isTable) {
         block.querySelectorAll('tr').forEach(function(row, ri) {
           row.classList.add('tbl-row-in');
-          row.style.animationDelay = (ri * 0.08 + 0.1) + 's';
+          row.style.animationDelay = (ri * 0.06 + 0.05) + 's';
         });
       }
-
       autoScroll();
-      if (isLast) setTimeout(onDone || function(){}, dur * 1000 + 80);
     }, delay);
 
-    // Stagger between blocks (longer for bigger content)
-    if (isTable)        delay += 300;
-    else if (isList)    delay += 180;
-    else if (isPara)    delay += Math.max(120, Math.min(words * 28, 380));
-    else                delay += 100;
+    if (isTable)     delay += 200;
+    else if (isList) delay += 120;
+    else if (isPara) delay += Math.max(70, Math.min(words * 16, 180));
+    else             delay += 60;
   });
+
+  // onDone fires after last block is appended — NOT waiting for its animation.
+  // This guarantees challenge buttons always appear on time.
+  if (onDone) setTimeout(onDone, delay + 20);
 }
 
 function appendErrorMessage(errCode) {
@@ -2390,13 +2400,13 @@ function appendErrorMessage(errCode) {
 }
 
 function renderAllMessages() {
-  const container = document.getElementById('chat-messages');
+  var container = document.getElementById('chat-messages');
   container.innerHTML = '';
-  for (const msg of state.messages) {
-    const raw = msg.content;
-    const words = extractWordsLearned(raw);
-    appendMessage(msg.role, raw, []);
+  // instant=true: no streaming animation for history — prevents timer flood on reload
+  for (var i = 0; i < state.messages.length; i++) {
+    appendMessage(state.messages[i].role, state.messages[i].content, [], true);
   }
+  autoScroll();
 }
 
 // ─── CHALLENGE RENDERERS ──────────────────────────────────
@@ -2606,7 +2616,8 @@ function showChallengeFeedback(cId, correct, explanation) {
 
 // After every challenge answer, send a silent result message so Morah always responds
 function sendChallengeResult(correct, challenge, chosenLabel) {
-  let msg;
+  if (_isSending) return; // don't stack on top of an in-flight request
+  var msg;
   if (correct) {
     msg = '[RESULT: correct]';
     if (challenge.question) msg += ' Question: ' + challenge.question;
@@ -2651,21 +2662,21 @@ function awardChallengePoints(correct, pts) {
 }
 
 function triggerConfetti() {
-  const colors = ['#0038B8','#FFD700','#FFFFFF','#4A90D9','#2E8B57','#FF6B6B','#C0392B'];
-  for (let i = 0; i < 48; i++) {
-    const c = document.createElement('div');
+  var colors = ['#0038B8','#FFD700','#FFFFFF','#4A90D9','#2E8B57','#FF6B6B'];
+  for (var i = 0; i < 20; i++) {
+    var c = document.createElement('div');
     c.className = 'confetti-piece';
-    c.style.cssText = `
-      left:${Math.random()*100}vw;
-      background:${colors[Math.floor(Math.random()*colors.length)]};
-      width:${5+Math.random()*9}px;
-      height:${5+Math.random()*9}px;
-      animation-duration:${0.8+Math.random()*1}s;
-      animation-delay:${Math.random()*0.4}s;
-      border-radius:${Math.random()>0.4?'50%':'3px'};
-      transform:rotate(${Math.random()*360}deg);`;
+    c.style.cssText =
+      'left:' + (Math.random()*100) + 'vw;' +
+      'background:' + colors[Math.floor(Math.random()*colors.length)] + ';' +
+      'width:' + (5+Math.random()*7) + 'px;' +
+      'height:' + (5+Math.random()*7) + 'px;' +
+      'animation-duration:' + (0.7+Math.random()*0.8) + 's;' +
+      'animation-delay:' + (Math.random()*0.3) + 's;' +
+      'border-radius:' + (Math.random()>0.4?'50%':'3px') + ';' +
+      'transform:rotate(' + (Math.random()*360) + 'deg);';
     document.body.appendChild(c);
-    setTimeout(() => c.remove(), 2200);
+    setTimeout(function() { c.remove(); }, 2000);
   }
 }
 
