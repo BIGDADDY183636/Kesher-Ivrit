@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kesher Ivrit v3.4 | קשר עברית</title>
+  <title>Kesher Ivrit v3.5 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=104" />
+  <link rel="stylesheet" href="style.css?v=105" />
 </head>
 <body>
 
@@ -372,7 +372,7 @@
         <div class="morah-info">
           <div class="morah-avatar">👩‍🏫</div>
           <div>
-            <div class="morah-name">Morah <span class="heb-small">מורה</span> <span class="build-tag">v3.4</span></div>
+            <div class="morah-name">Morah <span class="heb-small">מורה</span> <span class="build-tag">v3.5</span></div>
             <div class="morah-status" id="morah-status">Ready to teach! 🇮🇱</div>
             <button id="myclass-badge" class="myclass-badge" style="display:none;" onclick="showMyClass()">
               📚 <span id="myclass-badge-text">Chapter 3</span>
@@ -758,6 +758,80 @@
   <div class="tt-pos" id="tt-pos"></div>
 </div>
 
+<!-- ═══════════════════════════════════════════
+     HEBREW PLACEMENT TEST OVERLAY
+═══════════════════════════════════════════ -->
+<div id="pt-overlay" class="pt-overlay" style="display:none;">
+
+  <!-- ── Quiz view ── -->
+  <div id="pt-quiz-view" class="pt-quiz-view">
+
+    <!-- Header -->
+    <div class="pt-header">
+      <div class="pt-header-top">
+        <div class="pt-header-title">🇮🇱 Hebrew Placement Test</div>
+        <div class="pt-header-right">
+          <span class="pt-score-badge" id="pt-score">✓ 0</span>
+          <span class="pt-q-num" id="pt-q-num">1 / 10</span>
+        </div>
+      </div>
+      <div class="pt-progress-track">
+        <div class="pt-progress-fill" id="pt-progress-fill"></div>
+      </div>
+    </div>
+
+    <!-- Question card -->
+    <div class="pt-body">
+      <div class="pt-card" id="pt-question-card">
+        <div class="pt-emoji" id="pt-emoji">🔤</div>
+        <div class="pt-q-text" id="pt-q-text">Question text here</div>
+        <div class="pt-heb" id="pt-heb" style="display:none;">שָׁלוֹם</div>
+        <div class="pt-options" id="pt-options"></div>
+        <div class="pt-fun-fact" id="pt-fun-fact" style="display:none;"></div>
+      </div>
+    </div>
+
+  </div><!-- /pt-quiz-view -->
+
+  <!-- ── Results view ── -->
+  <div id="pt-results-view" class="pt-results" style="display:none;">
+    <div class="pt-res-header">
+      <div class="pt-res-emoji" id="pt-res-emoji">⭐</div>
+      <div class="pt-res-title">Placement Complete!</div>
+      <div class="pt-res-sub">Based on your answers, here's your level:</div>
+    </div>
+
+    <div class="pt-res-level-card">
+      <div class="pt-res-level-emoji" id="pt-res-emoji-2"></div>
+      <div class="pt-res-level-name" id="pt-res-level">Intermediate</div>
+      <div class="pt-res-level-heb" id="pt-res-heb">בֵּינוֹנִי</div>
+    </div>
+
+    <div class="pt-res-score-wrap">
+      <div class="pt-res-score-row">
+        <span class="pt-res-score-label">Score</span>
+        <span class="pt-res-score-val" id="pt-res-score">7 / 10</span>
+        <span class="pt-res-pct-val" id="pt-res-pct">70%</span>
+      </div>
+      <div class="pt-res-bar-track">
+        <div class="pt-res-bar" id="pt-res-bar"></div>
+      </div>
+    </div>
+
+    <div class="pt-res-msg" id="pt-res-msg">Encouraging message here.</div>
+
+    <div class="pt-res-actions">
+      <button class="pt-accept-btn" onclick="ptAccept()">
+        ✓ Accept — Let's Go!
+      </button>
+      <button class="pt-override-btn" onclick="ptOverride()">
+        I know better — let me choose
+      </button>
+    </div>
+  </div><!-- /pt-results-view -->
+
+</div><!-- /pt-overlay -->
+
 <div id="toast" class="toast"></div>
 
 <!-- ═══════════════════════════════════════════
@@ -858,7 +932,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=104"></script>
+<script src="app.js?v=105"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">

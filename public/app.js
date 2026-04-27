@@ -58,20 +58,6 @@ const QUIZ_QUESTIONS = [
     placeholder: 'Your name...'
   },
   {
-    id: 'level',
-    icon: '📊',
-    title: 'What\'s your Hebrew level?',
-    subtitle: 'Be honest — there\'s no wrong answer!',
-    type: 'choice',
-    options: [
-      { value: 'complete_beginner', icon: '🌱', text: 'Complete Beginner', sub: 'I don\'t know the alphabet yet' },
-      { value: 'some_exposure',     icon: '🌿', text: 'Some Exposure',     sub: 'I know the aleph-bet, a few words' },
-      { value: 'basic',             icon: '🌳', text: 'Basic',             sub: 'I can read and know simple phrases' },
-      { value: 'intermediate',      icon: '⭐', text: 'Intermediate',      sub: 'I can form sentences and hold simple conversations' },
-      { value: 'advanced',          icon: '🔥', text: 'Advanced',          sub: 'I want to reach near-fluency' }
-    ]
-  },
-  {
     id: 'goal',
     icon: '🎯',
     title: 'What\'s your main goal?',
@@ -84,6 +70,20 @@ const QUIZ_QUESTIONS = [
       { value: 'heritage',     icon: '🕎', text: 'Jewish Heritage',        sub: 'Connect with my Jewish roots and culture' },
       { value: 'aliyah',       icon: '✈️', text: 'Making Aliyah',          sub: 'Moving to Israel and need to survive' },
       { value: 'travel',       icon: '🏖️', text: 'Traveling to Israel',    sub: 'Get around and enjoy the country' }
+    ]
+  },
+  {
+    id: 'level',
+    icon: '📊',
+    title: 'Confirm your Hebrew level',
+    subtitle: 'We placed you based on your quiz — change it if we got it wrong!',
+    type: 'choice',
+    options: [
+      { value: 'complete_beginner', icon: '🌱', text: 'Complete Beginner', sub: 'I don\'t know the alphabet yet' },
+      { value: 'some_exposure',     icon: '🌿', text: 'Some Exposure',     sub: 'I know the aleph-bet, a few words' },
+      { value: 'basic',             icon: '🌳', text: 'Basic',             sub: 'I can read and know simple phrases' },
+      { value: 'intermediate',      icon: '⭐', text: 'Intermediate',      sub: 'I can form sentences and hold simple conversations' },
+      { value: 'advanced',          icon: '🔥', text: 'Advanced',          sub: 'I want to reach near-fluency' }
     ]
   },
   {
@@ -203,6 +203,248 @@ function renderWordOfDay() {
   document.getElementById('wotd-english').textContent = word.english;
   document.getElementById('wotd-example').textContent = word.example;
   card.style.display = 'block';
+}
+
+// ─── HEBREW PLACEMENT TEST ────────────────────────────────
+const PT_QUESTIONS = [
+  {
+    n: 1, emoji: '🔤',
+    q: 'Which letter is the first in the Hebrew alphabet?',
+    heb: null,
+    opts: ['א', 'ב', 'ג', 'ד'],
+    ans: 0,
+    fun: '✨ א (Aleph) starts the aleph-bet — just like A starts the English alphabet!'
+  },
+  {
+    n: 2, emoji: '👋',
+    q: 'What does this word mean?',
+    heb: 'שָׁלוֹם',
+    opts: ['Hello / Peace', 'Thank you', 'Goodbye', 'Yes'],
+    ans: 0,
+    fun: '🕊️ שָׁלוֹם (Shalom) means peace, hello, AND goodbye. One word for everything!'
+  },
+  {
+    n: 3, emoji: '🔢',
+    q: 'What number is this?',
+    heb: 'שָׁלֹשׁ',
+    opts: ['Two', 'Three', 'Four', 'Five'],
+    ans: 1,
+    fun: '🎯 שָׁלֹשׁ (shalosh) = 3. Israel has three Regalim — pilgrimage festivals!'
+  },
+  {
+    n: 4, emoji: '🌍',
+    q: 'What does אֶרֶץ יִשְׂרָאֵל mean?',
+    heb: null,
+    opts: ['State of Israel', 'Land of Israel', 'People of Israel', 'City of Israel'],
+    ans: 1,
+    fun: '🇮🇱 אֶרֶץ (eretz) = land. The Land of Israel — the most famous two Hebrew words!'
+  },
+  {
+    n: 5, emoji: '🏠',
+    q: 'Which Hebrew word means "house"?',
+    heb: null,
+    opts: ['כֶּלֶב', 'בַּיִת', 'שֶׁמֶשׁ', 'יָם'],
+    ans: 1,
+    fun: '🏠 בַּיִת (bayit) = house. You see it in בֵּית כְּנֶסֶת — synagogue!'
+  },
+  {
+    n: 6, emoji: '👫',
+    q: 'What is the plural of יֶלֶד (boy)?',
+    heb: null,
+    opts: ['יְלָדָה', 'יְלֵד', 'יְלָדִים', 'יְלָדוֹת'],
+    ans: 2,
+    fun: '✅ יְלָדִים (yeladim)! Masculine plural adds ים- (im). Feminine plural adds וֹת- (ot).'
+  },
+  {
+    n: 7, emoji: '🗣️',
+    q: 'How do you say "She speaks" in Hebrew?',
+    heb: null,
+    opts: ['הוּא מְדַבֵּר', 'אֲנִי מְדַבֵּר', 'הִיא מְדַבֶּרֶת', 'הֵם מְדַבְּרִים'],
+    ans: 2,
+    fun: '👩 הִיא מְדַבֶּרֶת (hi medaberet). Feminine present tense adds ת- at the end!'
+  },
+  {
+    n: 8, emoji: '⏪',
+    q: 'How do you say "I went" in Hebrew? (past tense)',
+    heb: null,
+    opts: ['אֲנִי הוֹלֵךְ', 'אֲנִי אֵלֵךְ', 'אֲנִי לָלֶכֶת', 'אֲנִי הָלַכְתִּי'],
+    ans: 3,
+    fun: '⏪ הָלַכְתִּי (halakhti) = I went. The תִּי- ending marks past tense first person!'
+  },
+  {
+    n: 9, emoji: '🏗️',
+    q: 'What verb pattern (בִּנְיָן) is the word מִתְלַמֵּד?',
+    heb: 'מִתְלַמֵּד',
+    opts: ["פָּעַל Pa'al", "פִּיעֵל Pi'el", "הִפְעִיל Hif'il", "הִתְפַּעֵל Hitpa'el"],
+    ans: 3,
+    fun: "🏗️ הִתְפַּעֵל verbs start with מִתְ in present tense. מִתְלַמֵּד = 'studying'!"
+  },
+  {
+    n: 10, emoji: '📚',
+    q: 'What is the construct state (סְמִיכוּת) of בַּיִת (house)?',
+    heb: null,
+    opts: ['בַּיִת שֶׁל', 'הַבַּיִת', 'בֵּית', 'בָּתִּים'],
+    ans: 2,
+    fun: '🎓 בֵּית (beit) is the construct. As in בֵּית כְּנֶסֶת (synagogue = house of assembly)!'
+  }
+];
+
+const PT_LEVELS = {
+  0:  { val: 'complete_beginner', label: 'Complete Beginner', heb: 'מַתְחִיל',     emoji: '🌱', msg: "Welcome to Hebrew! You're starting from the very first letter — the best place to begin. Morah will guide you every step of the way." },
+  2:  { val: 'complete_beginner', label: 'Complete Beginner', heb: 'מַתְחִיל',     emoji: '🌱', msg: "Welcome to Hebrew! You're starting from the very first letter — the best place to begin. Morah will guide you every step of the way." },
+  3:  { val: 'some_exposure',     label: 'Some Exposure',     heb: 'חֲשִׂיפָה בְּסִיסִית', emoji: '🌿', msg: "You've been around Hebrew before! You know the basics. Morah will build on what you already know and fill the gaps." },
+  4:  { val: 'some_exposure',     label: 'Some Exposure',     heb: 'חֲשִׂיפָה בְּסִיסִית', emoji: '🌿', msg: "You've been around Hebrew before! You know the basics. Morah will build on what you already know and fill the gaps." },
+  5:  { val: 'basic',             label: 'Basic',             heb: 'בְּסִיסִי',      emoji: '🌳', msg: "Nice! You have a solid foundation. You can read and know some words. Morah will push you to the next level!" },
+  6:  { val: 'basic',             label: 'Basic',             heb: 'בְּסִיסִי',      emoji: '🌳', msg: "Nice! You have a solid foundation. You can read and know some words. Morah will push you to the next level!" },
+  7:  { val: 'intermediate',      label: 'Intermediate',      heb: 'בֵּינוֹנִי',     emoji: '⭐', msg: "Impressive! Your Hebrew is already quite strong. Morah will challenge you with complex grammar, idioms, and real conversations." },
+  8:  { val: 'intermediate',      label: 'Intermediate',      heb: 'בֵּינוֹנִי',     emoji: '⭐', msg: "Impressive! Your Hebrew is already quite strong. Morah will challenge you with complex grammar, idioms, and real conversations." },
+  9:  { val: 'advanced',          label: 'Advanced',          heb: 'מִתְקַדֵּם',     emoji: '🔥', msg: "Wow — you're at an advanced level! Near-fluency is within your reach. Morah will take your Hebrew to the highest level." },
+  10: { val: 'advanced',          label: 'Advanced',          heb: 'מִתְקַדֵּם',     emoji: '🔥', msg: "Wow — you're at an advanced level! Near-fluency is within your reach. Morah will take your Hebrew to the highest level." }
+};
+
+function _ptLevelFromScore(score) {
+  if (score <= 2) return PT_LEVELS[2];
+  if (score <= 4) return PT_LEVELS[4];
+  if (score <= 6) return PT_LEVELS[6];
+  if (score <= 8) return PT_LEVELS[8];
+  return PT_LEVELS[10];
+}
+
+var _pt = { idx: 0, score: 0, answered: false, detectedLevel: null };
+
+function _showPT() {
+  _pt = { idx: 0, score: 0, answered: false, detectedLevel: null };
+  var el = document.getElementById('pt-overlay');
+  if (el) { el.style.display = 'flex'; el.style.opacity = '1'; }
+  _ptRender();
+}
+
+function _hidePT(cb) {
+  var el = document.getElementById('pt-overlay');
+  if (!el) { if (cb) cb(); return; }
+  el.style.transition = 'opacity 0.35s';
+  el.style.opacity = '0';
+  setTimeout(function() { el.style.display = 'none'; if (cb) cb(); }, 360);
+}
+
+function _ptRender() {
+  var q = PT_QUESTIONS[_pt.idx];
+  _pt.answered = false;
+
+  // Progress
+  document.getElementById('pt-progress-fill').style.width = (_pt.idx / PT_QUESTIONS.length * 100) + '%';
+  document.getElementById('pt-q-num').textContent = _pt.idx + 1 + ' / ' + PT_QUESTIONS.length;
+
+  // Question card
+  var card = document.getElementById('pt-question-card');
+  card.className = 'pt-card pt-card-in';
+  setTimeout(function() { card.classList.remove('pt-card-in'); }, 500);
+
+  document.getElementById('pt-emoji').textContent = q.emoji;
+  document.getElementById('pt-q-text').textContent = q.q;
+
+  var hebEl = document.getElementById('pt-heb');
+  if (q.heb) { hebEl.textContent = q.heb; hebEl.style.display = 'block'; }
+  else        { hebEl.style.display = 'none'; }
+
+  // Options
+  var optsEl = document.getElementById('pt-options');
+  optsEl.innerHTML = '';
+  q.opts.forEach(function(opt, i) {
+    var btn = document.createElement('button');
+    btn.className = 'pt-opt-btn';
+    btn.innerHTML = '<span class="pt-opt-text">' + escapeHtml(opt) + '</span>';
+    btn.onclick = function() { _ptAnswer(i, btn); };
+    optsEl.appendChild(btn);
+  });
+
+  document.getElementById('pt-fun-fact').style.display = 'none';
+}
+
+function _ptAnswer(chosen, btn) {
+  if (_pt.answered) return;
+  _pt.answered = true;
+
+  var q  = PT_QUESTIONS[_pt.idx];
+  var ok = chosen === q.ans;
+  if (ok) _pt.score++;
+
+  // Visual feedback on all buttons
+  var btns = document.querySelectorAll('.pt-opt-btn');
+  btns.forEach(function(b, i) {
+    b.disabled = true;
+    if (i === q.ans)   b.classList.add('pt-opt-correct');
+    if (i === chosen && !ok) b.classList.add('pt-opt-wrong');
+  });
+
+  // Show fun fact
+  var ff = document.getElementById('pt-fun-fact');
+  ff.textContent = q.fun;
+  ff.style.display = 'block';
+  ff.className = 'pt-fun-fact' + (ok ? ' pt-ff-correct' : ' pt-ff-wrong');
+
+  // Score display
+  document.getElementById('pt-score').textContent = '✓ ' + _pt.score;
+
+  // Auto-advance
+  setTimeout(_ptNext, 1600);
+}
+
+function _ptNext() {
+  _pt.idx++;
+  if (_pt.idx < PT_QUESTIONS.length) {
+    _ptRender();
+  } else {
+    _ptShowResults();
+  }
+}
+
+function _ptShowResults() {
+  var lvl = _ptLevelFromScore(_pt.score);
+  _pt.detectedLevel = lvl.val;
+
+  document.getElementById('pt-quiz-view').style.display = 'none';
+  var res = document.getElementById('pt-results-view');
+  res.style.display = 'flex';
+  res.className = 'pt-results pt-results-in';
+
+  var pct = Math.round(_pt.score / PT_QUESTIONS.length * 100);
+
+  document.getElementById('pt-res-emoji').textContent    = lvl.emoji;
+  var e2 = document.getElementById('pt-res-emoji-2');
+  if (e2) e2.textContent = lvl.emoji;
+  document.getElementById('pt-res-level').textContent    = lvl.label;
+  document.getElementById('pt-res-heb').textContent      = lvl.heb;
+  document.getElementById('pt-res-score').textContent    = _pt.score + ' / ' + PT_QUESTIONS.length;
+  document.getElementById('pt-res-pct').textContent      = pct + '%';
+  document.getElementById('pt-res-bar').style.width      = pct + '%';
+  document.getElementById('pt-res-msg').textContent      = lvl.msg;
+
+  // Animate score bar
+  document.getElementById('pt-res-bar').style.width = '0%';
+  setTimeout(function() {
+    document.getElementById('pt-res-bar').style.width = pct + '%';
+  }, 100);
+}
+
+function ptAccept() {
+  state.quizAnswers.level = _pt.detectedLevel;
+  state.quizAnswers._placementScore = _pt.score;
+  _hidePT(function() {
+    // Skip the level question — advance two steps from goal (idx 1) to learningStyle (idx 3)
+    state.currentQuizStep = 3;
+    renderQuizStep();
+  });
+}
+
+function ptOverride() {
+  // Pre-fill with detected level but show the question so they can change it
+  state.quizAnswers.level = _pt.detectedLevel;
+  state.quizAnswers._placementScore = _pt.score;
+  _hidePT(function() {
+    state.currentQuizStep = 2; // Show the level question
+    renderQuizStep();
+  });
 }
 
 // ─── USER ACCOUNT (registration, separate from learning profile) ─────────────
@@ -734,6 +976,12 @@ function quizNext() {
     state.quizAnswers[q.id] = val;
   } else if (q.type === 'choice') {
     if (!state.quizAnswers[q.id]) { showToast('Please pick an option!'); return; }
+  }
+
+  // After goal question: launch placement test before level
+  if (q.id === 'goal') {
+    _showPT();
+    return;
   }
 
   if (state.currentQuizStep < QUIZ_QUESTIONS.length - 1) {
