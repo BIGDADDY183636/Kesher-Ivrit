@@ -2026,6 +2026,9 @@ body {
   box-shadow: 0 3px 0 var(--border);
   position: relative;
   top: 0;
+  min-height: 44px;
+  -webkit-tap-highlight-color: transparent;
+  touch-action: manipulation;
 }
 .mc-btn:hover:not(:disabled) {
   border-color: var(--blue-mid);

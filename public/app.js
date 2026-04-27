@@ -2317,14 +2317,31 @@ const challengeStore = {};  // challengeId -> { challenge, answered }
 let challengeCounter = 0;
 
 function parseMorahResponse(raw) {
-  const teachMatch = raw.match(/\[TEACH\]([\s\S]*?)\[\/TEACH\]/);
-  const challengeMatch = raw.match(/\[CHALLENGE\]([\s\S]*?)\[\/CHALLENGE\]/);
-  const teach = teachMatch ? teachMatch[1].trim() : raw.replace(/📚 WORDS LEARNED:.*/s, '').trim();
-  let challenge = null;
+  var teachMatch     = raw.match(/\[TEACH\]([\s\S]*?)\[\/TEACH\]/);
+  var challengeMatch = raw.match(/\[CHALLENGE\]([\s\S]*?)\[\/CHALLENGE\]/);
+  var teach = teachMatch
+    ? teachMatch[1].trim()
+    : raw.replace(/📚 WORDS LEARNED:.*$/s, '').replace(/\[SKIP:[^\]]*\]/gi, '').trim();
+
+  // Strip numbered/lettered quiz option lists (3+ consecutive items) — Morah should never put these in TEACH
+  teach = teach
+    .replace(/(\n[ \t]*[1-4][.)]\s+[^\n]{1,80}){3,}/g, '')
+    .replace(/(\n[ \t]*[A-Da-d][.)]\s+[^\n]{1,80}){3,}/g, '')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+
+  var challenge = null;
   if (challengeMatch) {
-    try { challenge = JSON.parse(challengeMatch[1].trim()); } catch (e) { /* malformed JSON */ }
+    var rawC = challengeMatch[1].trim();
+    try {
+      challenge = JSON.parse(rawC);
+    } catch (e) {
+      // Tolerate extra prose before/after the JSON object
+      var m = rawC.match(/\{[\s\S]*\}/);
+      if (m) try { challenge = JSON.parse(m[0]); } catch (e2) {}
+    }
   }
-  return { teach, challenge };
+  return { teach: teach, challenge: challenge };
 }
 
 // ─── RENDERING ───────────────────────────────────────────
