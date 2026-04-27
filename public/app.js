@@ -2606,24 +2606,58 @@ function renderFillBlank(cId, c, container) {
   setTimeout(() => document.getElementById(`fill-${cId}`)?.focus(), 100);
 }
 
+// ── Transliteration normalizer ────────────────────────────────────────────────
+// Collapses common spelling variants so students aren't penalised for
+// valid alternative romanisations of the same Hebrew sound.
+//   ch/kh  →  kh   (chet / khaf: "lekhem" = "lechem")
+//   tz/ts  →  ts   (tsadi: "tsadik" = "tzaddik")
+//   ph     →  f    (feh)
+//   oo     →  u    (shuruk: "shuruk" = "shoorook")
+//   ee     →  i    (chirik)
+//   ay/ai/ei/ey → e  (tsere / segol vowel variants)
+//   doubled consonants → single  (shabbat = shabat)
+//   trailing h stripped  (todah = toda, halakhah = halakha)
+function _translitNormalize(s) {
+  if (!s) return '';
+  return String(s)
+    .toLowerCase()
+    .replace(/['’‘ʼ]/g, '') // apostrophes
+    .replace(/[\s\-]/g,   '')              // spaces and hyphens
+    .replace(/tz/g,       'ts')            // tzadi variants
+    .replace(/ch/g,       'kh')            // chet / khaf
+    .replace(/ph/g,       'f')             // feh
+    .replace(/oo/g,       'u')             // shuruk
+    .replace(/ee/g,       'i')             // chirik
+    .replace(/ay|ai|ei|ey/g, 'e')          // tsere / segol
+    .replace(/(.)\1/g,    '$1')            // doubled consonants
+    .replace(/h$/,        '');             // trailing h
+}
+
+function _translitMatch(userInput, expected) {
+  if (!userInput || !expected) return false;
+  return _translitNormalize(userInput) === _translitNormalize(expected);
+}
+
 function answerFill(cId) {
   const { challenge, answered } = challengeStore[cId];
   if (answered) return;
 
-  const input = document.getElementById(`fill-${cId}`);
-  const val = input.value.trim().toLowerCase();
-  const expected = challenge.answer.toLowerCase();
-  // Allow close matches (strip spaces/dashes)
-  const correct = val === expected || val.replace(/[\s-]/g,'') === expected.replace(/[\s-]/g,'');
+  const input    = document.getElementById('fill-' + cId);
+  const val      = input.value.trim();
+  const expected = challenge.answer;
+
+  // Accept exact match OR transliteration-normalised match
+  const correct = val.toLowerCase() === expected.toLowerCase()
+               || _translitMatch(val, expected);
 
   challengeStore[cId].answered = true;
   input.disabled = true;
   input.classList.add(correct ? 'fill-correct' : 'fill-wrong');
-  document.querySelector(`#challenge-${cId} .fill-submit`).disabled = true;
+  document.querySelector('#challenge-' + cId + ' .fill-submit').disabled = true;
 
   showChallengeFeedback(cId, correct, challenge.explanation);
   awardChallengePoints(correct, 10);
-  setTimeout(() => sendChallengeResult(correct, challenge, input.value.trim()), 800);
+  setTimeout(function() { sendChallengeResult(correct, challenge, val); }, 800);
 }
 
 function renderTrueFalse(cId, c, container) {
@@ -2734,14 +2768,53 @@ function selectMatch(btn, side) {
 }
 
 function showChallengeFeedback(cId, correct, explanation) {
-  const fb = document.getElementById(`cf-${cId}`);
+  var fb = document.getElementById('cf-' + cId);
   if (!fb) return;
-  fb.className = `challenge-feedback ${correct ? 'fb-correct' : 'fb-wrong'}`;
+  fb.className = 'challenge-feedback ' + (correct ? 'fb-correct' : 'fb-wrong');
+
+  var selfCorrectBtn = (!correct && !challengeStore[cId].selfCorrected)
+    ? '<button class="self-correct-btn" onclick="selfCorrect(' + cId + ')">Actually I got it right ✓</button>'
+    : '';
+
   fb.innerHTML = correct
-    ? `<span class="fb-icon">🎉</span> <strong>Correct!</strong> ${escapeHtml(explanation || '')}`
-    : `<span class="fb-icon">❌</span> <strong>Not quite.</strong> ${escapeHtml(explanation || '')}`;
+    ? '<span class="fb-icon">🎉</span> <strong>Correct!</strong> ' + escapeHtml(explanation || '')
+    : '<span class="fb-icon">❌</span> <strong>Not quite.</strong> ' + escapeHtml(explanation || '') +
+      (selfCorrectBtn ? '<div class="self-correct-wrap">' + selfCorrectBtn + '</div>' : '');
+
   fb.style.display = 'flex';
   autoScroll();
+}
+
+// ── Self-correction ────────────────────────────────────────────────────────────
+// Student taps "Actually I got it right ✓" after being marked wrong.
+// Awards full points and sends a warm acknowledgment to Morah.
+function selfCorrect(cId) {
+  var entry = challengeStore[cId];
+  if (!entry || entry.selfCorrected) return;
+  entry.selfCorrected = true;
+
+  // Update the feedback panel to show corrected state
+  var fb = document.getElementById('cf-' + cId);
+  if (fb) {
+    fb.className = 'challenge-feedback fb-correct fb-self-corrected';
+    fb.innerHTML =
+      '<span class="fb-icon">✓</span> ' +
+      '<div><strong>Got it!</strong> Your answer is accepted — multiple ' +
+      'transliterations are always valid in Hebrew. Well done!</div>';
+    autoScroll();
+  }
+
+  // Award the points they would have received
+  awardChallengePoints(true, 10);
+
+  // Send a self-correction event so Morah can respond warmly
+  if (!_isSending) {
+    var challenge = entry.challenge || {};
+    var msg = '[RESULT: self-corrected] The student indicated their answer was actually correct — likely a valid alternative transliteration or spelling. Acknowledge warmly in one sentence (e.g. "You\'re right — \'toda\' and \'todah\' are both perfectly valid!"). Then continue teaching.';
+    if (challenge.question) msg += ' Question was: ' + challenge.question;
+    state.messages.push({ role: 'user', content: msg });
+    sendToMorah(state.messages);
+  }
 }
 
 // After every challenge answer, send a silent result message so Morah always responds
