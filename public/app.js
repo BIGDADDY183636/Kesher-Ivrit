@@ -320,6 +320,20 @@ biblical: [
     heb: null,
     opts: ['בַּיִת שֶׁל אֱלֹהִים', 'בֵּית אֱלֹהִים', 'הַבַּיִת אֱלֹהִים', 'אֱלֹהִים בַּיִת'], ans: 1,
     fun: '🏛️ בֵּית אֱלֹהִים! In the construct (סְמִיכוּת), בַּיִת (house) becomes בֵּית — vowels shift, the definite article drops. This pattern gives us בֵּית הַמִּקְדָּשׁ = the Temple ("House of the Holy")!'
+  },
+  { n:11, emoji:'🔄', tier:'Expert',
+    q: 'The Niphal binyan (נִפְעַל) expresses what type of meaning?',
+    heb: null,
+    opts: ['Active — one who performs an action', 'The basic simple action (Kal/Qal)', 'Passive or reflexive — being acted upon or doing to oneself', 'Causing someone else to do an action (Hifil)'],
+    ans: 2,
+    fun: '🔄 נִפְעַל (Nifal) = passive or reflexive! "הַדָּבָר נֶאֱמַר" = "The thing was said." Compare כָּתַב (he wrote) with נִכְתַּב (it was written). Understanding the seven binyanim is the key to unlocking Biblical Hebrew!'
+  },
+  { n:12, emoji:'✡️', tier:'Expert',
+    q: 'In the Shema, the letters עַ (of שְׁמַע) and דָּ (of אֶחָד) are written enlarged. Together they spell:',
+    heb: 'שְׁמַע יִשְׂרָאֵל — אֶחָד',
+    opts: ['אֵל (El) — God', 'עֵד (Ed) — witness', 'עַד (Ad) — eternity', 'דַּע (Da) — know'],
+    ans: 1,
+    fun: '✡️ עַ + דָּ = עֵד (witness)! The enlarged letters teach that when we recite the Shema, we become witnesses to God\'s absolute oneness. A hidden message woven into the letters of Israel\'s most sacred declaration!'
   }
 ],
 
@@ -384,6 +398,20 @@ modern: [
     heb: null,
     opts: ['Approximately / roughly', 'Quickly / fast', 'Maybe / perhaps', 'Exactly / precisely'], ans: 3,
     fun: '🎯 בְּדִיּוּק (bediyuk) = exactly, precisely! From the root ד-י-ק = accuracy. "כֵּן, בְּדִיּוּק!" = "Yes, exactly!"'
+  },
+  { n:11, emoji:'🎯', tier:'Expert',
+    q: 'Which sentence correctly uses the conditional "if" in Hebrew — "If you come, I will be happy"?',
+    heb: null,
+    opts: ['כְּשֶׁתָּבוֹא, אֶשְׂמַח', 'אִם תָּבוֹא, אֶשְׂמַח', 'אֲשֶׁר תָּבוֹא, אֶשְׂמַח', 'מָתַי שֶׁתָּבוֹא, אֶשְׂמַח'],
+    ans: 1,
+    fun: '🎯 אִם (im) = if — the classic conditional! כְּשֶׁ (keshe) = when (time-based). אֲשֶׁר = who/which (relative clause). Mastering "if" sentences marks a genuine leap toward natural Hebrew conversation!'
+  },
+  { n:12, emoji:'😤', tier:'Expert',
+    q: 'The Israeli slang phrase "יֵשׁ לוֹ חוּצְפָּה" (yesh lo chutzpah) means he has:',
+    heb: null,
+    opts: ['Great wisdom and intelligence', 'Deep kindness and generosity', 'Audacity, nerve, or shameless boldness', 'Perfect Hebrew pronunciation'],
+    ans: 2,
+    fun: '😤 חוּצְפָּה (chutzpah) = audacity, nerve, brazen boldness! In Israeli culture it can be admired — the boldness to push forward. Now you know where the English word came from!'
   }
 ],
 
@@ -448,6 +476,20 @@ barmitzvah: [
     heb: null,
     opts: ['The Kiddush over wine', 'The Aleinu closing prayer', 'The Haftarah reading from the Prophets', 'The Torah scroll being dressed and returned'], ans: 2,
     fun: '🌟 The מַפְטִיר aliyah is the gateway to the Haftarah — that person reads or blesses the prophetic portion that concludes the service!'
+  },
+  { n:11, emoji:'🙏', tier:'Expert',
+    q: 'What is a מִי שֶׁבֵּרַךְ (Mi Shebeirach) prayer, and when is it recited?',
+    heb: null,
+    opts: ['The opening Kiddush blessing before the Torah service', 'A blessing or healing prayer recited after an aliyah on behalf of a person or community', 'The final Aleinu prayer that closes every service', 'The blessing over challah at the Shabbat meal'],
+    ans: 1,
+    fun: '🙏 מִי שֶׁבֵּרַךְ = "May the One Who Blessed..." It\'s a prayer of blessing or healing, often recited for someone ill (מִי שֶׁבֵּרַךְ לַחוֹלִים) or to honor someone after their aliyah. You\'ll hear it every Shabbat morning!'
+  },
+  { n:12, emoji:'📜', tier:'Expert',
+    q: 'The honor of lifting the Torah scroll is called הַגְבָּהָה (hagbahah). What is the honor of rolling and DRESSING it called?',
+    heb: null,
+    opts: ['עֲלִיָּה (aliyah) — going up to the Torah', 'גְּלִילָה (gelilah) — rolling and dressing the Torah', 'פְּתִיחָה (petichah) — opening the ark', 'הַחְזָרָה (hachzarah) — returning it to the ark'],
+    ans: 1,
+    fun: '📜 גְּלִילָה (gelilah) = rolling! After the dramatic lifting (הַגְבָּהָה), the gelilah person ties the binder (מַפָּה), replaces the mantle (מְעִיל), crown (כֶּתֶר), and breastplate. Often the first synagogue honor given to children!'
   }
 ],
 
@@ -512,6 +554,20 @@ fluency: [
     heb: null,
     opts: ['A loan or debt (money you owe)', 'A tax payment to the government', 'A credit or benefit (money in your favor)', 'A penalty for late payment'], ans: 2,
     fun: '💰 זִכּוּי (zikui) = credit/benefit — from ז-כ-ה = to merit/deserve. Practical financial Hebrew for daily Israeli life!'
+  },
+  { n:11, emoji:'📨', tier:'Expert',
+    q: 'In formal Israeli correspondence, what does לְכָבוֹד (lich\'vod) mean at the opening of a letter?',
+    heb: null,
+    opts: ['Best regards / warm wishes (closing salutation)', 'Dear / To the honored attention of (formal opening address)', 'Subject: (identifying the letter\'s topic)', 'On behalf of (identifying the sender)'],
+    ans: 1,
+    fun: '📨 לְכָבוֹד = "To the honor of..." — the standard formal letter opener in Israel, equivalent to "Dear" but literally honoring the recipient. From כָּבוֹד (kavod) = honor/respect. Mastering formal register marks true advanced Hebrew!'
+  },
+  { n:12, emoji:'📞', tier:'Expert',
+    q: 'How do you correctly say "I should have called" (expressing past regret) in Hebrew?',
+    heb: null,
+    opts: ['הָיִיתִי צָרִיךְ לְהַתְקַשֵּׁר', 'אֲנִי צָרִיךְ לְהַתְקַשֵּׁר', 'אֲנִי אַתְקַשֵּׁר', 'הִתְקַשַּׁרְתִּי'],
+    ans: 0,
+    fun: '📞 הָיִיתִי צָרִיךְ = "I was supposed to / I should have" — the past form of צָרִיךְ. This structure (past auxiliary + infinitive) expresses missed obligations in Hebrew. A genuine advanced-level construction!'
   }
 ],
 
@@ -576,6 +632,20 @@ heritage: [
     heb: 'חֶסֶד',
     opts: ['Everyday politeness and common courtesy', 'Formal religious obligation you must fulfill', 'Conditional love based on someone\'s merit', 'Unconditional loyal love that goes beyond what is required'], ans: 3,
     fun: '❤️ חֶסֶד is the defining attribute of God in Torah — unconditional, overflowing love and loyalty beyond all expectation!'
+  },
+  { n:11, emoji:'🌍', tier:'Expert',
+    q: 'What does גָּלוּת (galut) mean, and what is its opposite concept in Jewish thought?',
+    heb: null,
+    opts: ['Prayer (galut) — opposite is Torah study (limud)', 'Exile / diaspora (galut) — opposite is return / homecoming (עֲלִיָּה or גְּאֻלָּה)', 'Mourning (galut) — opposite is celebration (שִׂמְחָה)', 'Darkness (galut) — opposite is light (אוֹר)'],
+    ans: 1,
+    fun: '🌍 גָּלוּת (galut) = exile, diaspora — Jewish life outside the Land of Israel. Its opposite is עֲלִיָּה (going home) or גְּאֻלָּה (redemption). This tension between exile and return has shaped Jewish identity for 2,000 years!'
+  },
+  { n:12, emoji:'✨', tier:'Expert',
+    q: 'The Kabbalistic concept צִמְצוּם (tzimtzum) refers to:',
+    heb: null,
+    opts: ['God\'s presence filling and sustaining all of creation', 'God\'s self-contraction to make space for the world to exist', 'The mystical union of divine masculine and feminine forces', 'The Torah\'s divine fire encoded in its letters'],
+    ans: 1,
+    fun: '✨ צִמְצוּם (tzimtzum) = God\'s self-contraction — the central concept of Lurianic Kabbalah (16th century, Safed). To create the world, the infinite God "withdrew" to make space. This idea deeply shaped Hasidic thought and modern Jewish theology!'
   }
 ]
 
@@ -601,22 +671,26 @@ function _ptSelectSet(goal) {
 
 const PT_QUESTIONS = []; // unused — runtime reads _pt.questions (goal-adaptive set)
 
-// Scoring: 2 questions per tier × 5 tiers
-// 0-1 = CB · 2-3 = Some Exposure · 4-5 = Basic · 6-7 = Intermediate · 8-10 = Advanced
+// Scoring: 2 questions per tier × 6 tiers (12 total)
+// 0-1=New · 2-3=Basic · 4-5=Elementary · 6-7=Intermediate · 8-9=Advanced · 10-11=Near Fluent · 12=Expert
 const PT_LEVELS = {
-  cb:    { val: 'complete_beginner', label: 'Complete Beginner', heb: 'מַתְחִיל',    emoji: '🌱', msg: "No worries — everyone starts at Aleph! You're in exactly the right place. Morah will guide you letter by letter, word by word, from day one." },
-  se:    { val: 'some_exposure',     label: 'Some Exposure',     heb: 'חֲשִׂיפָה',   emoji: '🌿', msg: "You know the basics — the alphabet and common words. Morah will build on what you have and get you reading and speaking confidently." },
-  basic: { val: 'basic',             label: 'Basic',             heb: 'בְּסִיסִי',   emoji: '🌳', msg: "Great start! You handle everyday words and phrases. Morah will take you into present tense, family vocabulary, and real conversations." },
-  inter: { val: 'intermediate',      label: 'Intermediate',      heb: 'בֵּינוֹנִי',  emoji: '⭐', msg: "Solid Hebrew! You've got past tense, future tense, and binyanim basics down. Morah will challenge you with complex verb patterns and advanced grammar." },
-  adv:   { val: 'advanced',          label: 'Advanced',          heb: 'מִתְקַדֵּם',  emoji: '🔥', msg: "Impressive! You command complex binyanim, construct state, and advanced grammar. Morah will push you into Biblical texts and near-native fluency." }
+  newLvl:     { val: 'complete_beginner', label: 'New',         heb: 'חָדָשׁ',            emoji: '🌱', msg: "Everyone starts at the aleph-bet — and that's exactly the right place to begin! Morah will guide you letter by letter from day one." },
+  basic:      { val: 'some_exposure',     label: 'Basic',       heb: 'בְּסִיסִי',          emoji: '🌿', msg: "You've got some vocabulary! Morah will build on your word bank and get you reading and speaking with confidence." },
+  elementary: { val: 'basic',             label: 'Elementary',  heb: 'יְסוֹדִי',           emoji: '🌳', msg: "You know your verbs and infinitives! Morah will take you into full sentences, all three tenses, and real conversations." },
+  inter:      { val: 'intermediate',      label: 'Intermediate',heb: 'בֵּינוֹנִי',         emoji: '⭐', msg: "Solid Hebrew! You handle past tense and advanced binyanim. Morah will challenge you with complex grammar and authentic texts." },
+  adv:        { val: 'advanced',          label: 'Advanced',    heb: 'מִתְקַדֵּם',         emoji: '🔥', msg: "You can navigate Israel independently! You handle complex structures with confidence. Morah will push you toward near-native fluency." },
+  nearFluent: { val: 'advanced',          label: 'Near Fluent', heb: 'כִּמְעַט שׁוֹטֵף',   emoji: '🚀', msg: "90% there — impressive! You operate at a high level in Hebrew. Morah will fine-tune your advanced skills toward complete fluency." },
+  expert:     { val: 'advanced',          label: 'Expert',      heb: 'מוּמְחֶה',           emoji: '✨', msg: "Fully fluent! Your Hebrew mastery is remarkable — you think, read, and communicate at a near-native level. Morah will be your advanced study partner." }
 };
 
 function _ptLevelFromScore(score) {
-  if (score <= 1) return PT_LEVELS.cb;
-  if (score <= 3) return PT_LEVELS.se;
-  if (score <= 5) return PT_LEVELS.basic;
-  if (score <= 7) return PT_LEVELS.inter;
-  return PT_LEVELS.adv;  // 8-10
+  if (score <= 1)  return PT_LEVELS.newLvl;
+  if (score <= 3)  return PT_LEVELS.basic;
+  if (score <= 5)  return PT_LEVELS.elementary;
+  if (score <= 7)  return PT_LEVELS.inter;
+  if (score <= 9)  return PT_LEVELS.adv;
+  if (score <= 11) return PT_LEVELS.nearFluent;
+  return PT_LEVELS.expert;  // 12
 }
 
 var _pt = { idx: 0, score: 0, answered: false, detectedLevel: null };
@@ -634,6 +708,15 @@ function _showPT() {
   if (subEl) subEl.textContent = meta.sub;
   var el = document.getElementById('pt-overlay');
   if (el) { el.style.display = 'flex'; el.style.opacity = '1'; }
+  // Show intro screen first
+  document.getElementById('pt-intro-view').style.display = 'flex';
+  document.getElementById('pt-quiz-view').style.display  = 'none';
+  document.getElementById('pt-results-view').style.display = 'none';
+}
+
+function _ptStartTest() {
+  document.getElementById('pt-intro-view').style.display = 'none';
+  document.getElementById('pt-quiz-view').style.display  = 'flex';
   _ptRender();
 }
 
