@@ -3,6 +3,26 @@
    קשר עברית
 ═══════════════════════════════════════════════════════════ */
 
+// ─── DARK MODE ───────────────────────────────────────────
+(function initTheme() {
+  var saved = localStorage.getItem('kesher-theme');
+  if (saved === 'dark') {
+    document.documentElement.setAttribute('data-theme', 'dark');
+  }
+})();
+
+function toggleDarkMode() {
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+  if (isDark) {
+    document.documentElement.removeAttribute('data-theme');
+    localStorage.setItem('kesher-theme', 'light');
+  } else {
+    document.documentElement.setAttribute('data-theme', 'dark');
+    localStorage.setItem('kesher-theme', 'dark');
+  }
+  if (typeof _mobTab !== 'undefined' && _mobTab === 'me') renderMobileProfile();
+}
+
 // ─── STATE ───────────────────────────────────────────────
 const TOPICS = [
   { id: 'Greetings',             label: 'Greetings' },
@@ -1481,6 +1501,19 @@ function renderMobileProfile() {
         '<span class="mob-action-icon">🏠</span>' +
         '<div><div class="mob-action-title">Home</div><div class="mob-action-sub">Word of the Day &amp; settings</div></div>' +
       '</button>' +
+      (function() {
+        var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        return '<button class="dm-toggle-btn" onclick="toggleDarkMode()">' +
+          '<span class="dm-toggle-icon">' + (dark ? '☀️' : '🌙') + '</span>' +
+          '<span class="dm-toggle-text">' +
+            '<span class="dm-toggle-title">Dark Mode</span>' +
+            '<span class="dm-toggle-sub">' + (dark ? 'On — tap to switch to light' : 'Off — tap to switch to dark') + '</span>' +
+          '</span>' +
+          '<span class="dm-toggle-pill' + (dark ? ' dm-on' : '') + '">' +
+            '<span class="dm-toggle-knob"></span>' +
+          '</span>' +
+        '</button>';
+      })() +
     '</div>';
 }
 
