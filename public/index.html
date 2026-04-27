@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kesher Ivrit v3.3 | קשר עברית</title>
+  <title>Kesher Ivrit v3.4 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -21,9 +21,142 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=103" />
+  <link rel="stylesheet" href="style.css?v=104" />
 </head>
 <body>
+
+<!-- ═══════════════════════════════════════════
+     ONBOARDING INTRO (first-time users only)
+═══════════════════════════════════════════ -->
+<div id="ob-overlay" class="ob-overlay" style="display:none;">
+
+  <!-- ── Slide container ── -->
+  <div class="ob-slides-wrap" id="ob-slides-wrap">
+
+    <!-- SLIDE 1: Welcome -->
+    <div class="ob-slide ob-slide-1" id="ob-slide-0">
+      <div class="ob-s1-star-wrap">
+        <div class="ob-s1-star">✡</div>
+        <div class="ob-s1-ring ob-ring-1"></div>
+        <div class="ob-s1-ring ob-ring-2"></div>
+        <div class="ob-s1-ring ob-ring-3"></div>
+      </div>
+      <div class="ob-s1-heb">קֶשֶׁר עִבְרִית</div>
+      <div class="ob-s1-eng">Kesher Ivrit</div>
+      <div class="ob-s1-tag">Your personal Hebrew tutor, powered by AI</div>
+      <div class="ob-pills">
+        <span class="ob-pill">🤖 AI-Powered Tutor</span>
+        <span class="ob-pill">🇮🇱 Proudly Jewish</span>
+        <span class="ob-pill">🎮 Learn Through Play</span>
+        <span class="ob-pill">📚 Your Curriculum</span>
+      </div>
+    </div>
+
+    <!-- SLIDE 2: Meet Morah -->
+    <div class="ob-slide ob-slide-2" id="ob-slide-1">
+      <div class="ob-s2-header">
+        <div class="ob-s2-avatar">👩‍🏫</div>
+        <div>
+          <div class="ob-slide-title">Meet Morah</div>
+          <div class="ob-slide-sub">מוֹרָה — Your Hebrew Teacher</div>
+        </div>
+      </div>
+      <div class="ob-chat-preview">
+        <div class="ob-bubble ob-bubble-morah ob-bubble-1">
+          שָׁלוֹם! I'm Morah — your AI Hebrew teacher. I adapt to your level, your goals, and what your class is studying. 🇮🇱
+        </div>
+        <div class="ob-bubble ob-bubble-user ob-bubble-2">
+          Teach me the Hebrew word for "love"!
+        </div>
+        <div class="ob-bubble ob-bubble-morah ob-bubble-3">
+          Beautiful choice! <span class="ob-heb-badge">אַהֲבָה</span> <em>(ahavah)</em> — love. It shares its root with the word for "give" — in Hebrew, love is something you do. ✨
+        </div>
+      </div>
+      <div class="ob-slide-desc">She remembers what you've learned, adjusts difficulty in real-time, and teaches exactly what you need</div>
+    </div>
+
+    <!-- SLIDE 3: Games -->
+    <div class="ob-slide ob-slide-3" id="ob-slide-2">
+      <div class="ob-slide-eyebrow">🎮 Learn Through Play</div>
+      <div class="ob-slide-title">Three Hebrew Games</div>
+      <div class="ob-slide-sub">Because the best learning feels like fun</div>
+      <div class="ob-games-row">
+        <div class="ob-game-card ob-game-speed">
+          <div class="ob-game-icon">⚡</div>
+          <div class="ob-game-name">Speed Round</div>
+          <div class="ob-game-desc">60 seconds, 10 words — how many can you get?</div>
+        </div>
+        <div class="ob-game-card ob-game-wordle">
+          <div class="ob-game-icon">🟩</div>
+          <div class="ob-game-name">Hebrew Wordle</div>
+          <div class="ob-game-desc">Guess today's 5-letter Hebrew word in 6 tries</div>
+        </div>
+        <div class="ob-game-card ob-game-unscramble">
+          <div class="ob-game-icon">🔤</div>
+          <div class="ob-game-name">Unscramble</div>
+          <div class="ob-game-desc">Tap the letters in the right order to spell the word</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- SLIDE 4: My Class -->
+    <div class="ob-slide ob-slide-4" id="ob-slide-3">
+      <div class="ob-s4-icon">📚</div>
+      <div class="ob-slide-title">Syncs with Your Class</div>
+      <div class="ob-slide-desc">Tell Morah exactly what your teacher assigned — she'll focus 100% on it</div>
+      <div class="ob-myclass-card">
+        <div class="ob-mc-header-row">
+          <span class="ob-mc-chip">Tal Am · Chapter 5</span>
+          <span class="ob-mc-chip ob-mc-chip-gold">Active ✓</span>
+        </div>
+        <div class="ob-mc-row">
+          <span class="ob-mc-label">Learning</span>
+          <span class="ob-mc-val">Past tense (עָבַר) — Pa'al conjugations</span>
+        </div>
+        <div class="ob-mc-row">
+          <span class="ob-mc-label">Vocab</span>
+          <span class="ob-mc-val ob-mc-heb">לָלֶכֶת · לָשֶׁבֶת · לָקוּם · אָהַב</span>
+        </div>
+        <div class="ob-mc-row">
+          <span class="ob-mc-label">Grammar</span>
+          <span class="ob-mc-val">MS / FS / MP / FP agreement</span>
+        </div>
+      </div>
+      <div class="ob-s4-note">Morah teaches <strong>your textbook</strong>, <strong>your chapter</strong>, and <strong>your exact vocabulary words</strong></div>
+    </div>
+
+    <!-- SLIDE 5: Ready -->
+    <div class="ob-slide ob-slide-5" id="ob-slide-4">
+      <div class="ob-s5-stars-wrap">
+        <div class="ob-s5-star ob-s5-star-main">✡</div>
+        <div class="ob-s5-star ob-s5-star-l">✦</div>
+        <div class="ob-s5-star ob-s5-star-r">✦</div>
+      </div>
+      <div class="ob-s5-heb">עַם יִשְׂרָאֵל חַי</div>
+      <div class="ob-s5-trans">Am Yisrael Chai</div>
+      <div class="ob-s5-meaning">The people of Israel live</div>
+      <div class="ob-s5-msg">You're about to begin a journey through the most ancient living language on earth.</div>
+      <button class="ob-begin-btn" onclick="completeOnboarding()">
+        יַאַלָּה — Let's Begin! 🇮🇱
+      </button>
+    </div>
+
+  </div><!-- /ob-slides-wrap -->
+
+  <!-- ── Navigation bar ── -->
+  <div class="ob-nav">
+    <button class="ob-skip-btn" id="ob-skip-btn" onclick="skipOnboarding()">Skip</button>
+    <div class="ob-dots" id="ob-dots">
+      <button class="ob-dot ob-dot-active" onclick="obGoTo(0)"></button>
+      <button class="ob-dot" onclick="obGoTo(1)"></button>
+      <button class="ob-dot" onclick="obGoTo(2)"></button>
+      <button class="ob-dot" onclick="obGoTo(3)"></button>
+      <button class="ob-dot" onclick="obGoTo(4)"></button>
+    </div>
+    <button class="ob-next-btn" id="ob-next-btn" onclick="obNext()">Next →</button>
+  </div>
+
+</div><!-- /ob-overlay -->
 
 <!-- ═══════════════════════════════════════════
      SCREEN 0: REGISTRATION
@@ -239,7 +372,7 @@
         <div class="morah-info">
           <div class="morah-avatar">👩‍🏫</div>
           <div>
-            <div class="morah-name">Morah <span class="heb-small">מורה</span> <span class="build-tag">v3.3</span></div>
+            <div class="morah-name">Morah <span class="heb-small">מורה</span> <span class="build-tag">v3.4</span></div>
             <div class="morah-status" id="morah-status">Ready to teach! 🇮🇱</div>
             <button id="myclass-badge" class="myclass-badge" style="display:none;" onclick="showMyClass()">
               📚 <span id="myclass-badge-text">Chapter 3</span>
@@ -725,7 +858,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=103"></script>
+<script src="app.js?v=104"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">

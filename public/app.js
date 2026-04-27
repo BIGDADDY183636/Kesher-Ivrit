@@ -413,6 +413,78 @@ function _updateMyClassBadge() {
   }
 }
 
+// ═══════════════════════════════════════════════════════════
+//  ONBOARDING INTRO — shown once to first-time visitors
+// ═══════════════════════════════════════════════════════════
+const OB_KEY    = 'kesher_intro_done';
+var   _obIdx    = 0;
+const _obTotal  = 5;
+
+function _obShow() {
+  var el = document.getElementById('ob-overlay');
+  if (el) { el.style.display = 'flex'; el.style.opacity = '1'; }
+  obGoTo(0);
+}
+
+function obGoTo(n) {
+  // Determine direction for animation class
+  var dir = n > _obIdx ? 'ob-enter-right' : 'ob-enter-left';
+  _obIdx = Math.max(0, Math.min(n, _obTotal - 1));
+
+  // Slides
+  for (var i = 0; i < _obTotal; i++) {
+    var s = document.getElementById('ob-slide-' + i);
+    if (!s) continue;
+    s.className = 'ob-slide ob-slide-' + (i + 1);
+    if (i === _obIdx) s.classList.add('ob-active', dir);
+    else if (i < _obIdx) s.classList.add('ob-gone-left');
+    else s.classList.add('ob-gone-right');
+  }
+
+  // Dots
+  document.querySelectorAll('.ob-dot').forEach(function(d, i) {
+    d.classList.toggle('ob-dot-active', i === _obIdx);
+  });
+
+  // Next button label
+  var nb = document.getElementById('ob-next-btn');
+  if (nb) nb.textContent = _obIdx === _obTotal - 1 ? '✓ Done' : 'Next →';
+
+  // Skip button — hide on last slide
+  var sb = document.getElementById('ob-skip-btn');
+  if (sb) sb.style.opacity = _obIdx === _obTotal - 1 ? '0' : '1';
+}
+
+function obNext() {
+  if (_obIdx < _obTotal - 1) {
+    obGoTo(_obIdx + 1);
+  } else {
+    completeOnboarding();
+  }
+}
+
+function skipOnboarding() { completeOnboarding(); }
+
+function completeOnboarding() {
+  localStorage.setItem(OB_KEY, '1');
+  var el = document.getElementById('ob-overlay');
+  if (!el) return _afterOnboarding();
+  el.style.transition = 'opacity 0.45s ease';
+  el.style.opacity = '0';
+  setTimeout(function() {
+    el.style.display = 'none';
+    _afterOnboarding();
+  }, 450);
+}
+
+function _afterOnboarding() {
+  showScreen('screen-register');
+  setTimeout(function() {
+    var f = document.getElementById('reg-firstname');
+    if (f) f.focus();
+  }, 150);
+}
+
 document.addEventListener('DOMContentLoaded', async () => {
   loadUser();
   loadMyClass();
@@ -420,8 +492,13 @@ document.addEventListener('DOMContentLoaded', async () => {
   renderWordOfDay();
 
   if (!currentUser) {
-    showScreen('screen-register');
-    setTimeout(() => document.getElementById('reg-firstname').focus(), 100);
+    // Show onboarding only to genuine first-time visitors
+    if (!localStorage.getItem(OB_KEY)) {
+      _obShow();
+    } else {
+      showScreen('screen-register');
+      setTimeout(() => document.getElementById('reg-firstname').focus(), 100);
+    }
   } else {
     updateUserBadges();
     checkReturningUser();
