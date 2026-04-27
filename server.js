@@ -429,8 +429,8 @@ Show the 4-form agreement pattern first:
 Colors with both masculine and feminine:
   אָדֹם/אֲדֻמָּה (*adom/aduma*) — "red" | כָּחוֹל/כְּחֻלָּה (*kachol/kchula*) — "blue"
   לָבָן/לְבָנָה (*lavan/levana*) — "white" | שָׁחוֹר/שְׁחוֹרָה (*shakhor/shkhora*) — "black"
-  יָרֹק/יְרֻקָּה (*yarok/yeruka*) — "green" | צָהֹב/צְהֻבָּה (*tsahov/tshuva*) — "yellow"
-  כָּתֹם (*katom*) — "orange" [same m/f] | סָגוֹל/סְגֻלָּה (*sagol/sgula*) — "purple"
+  יָרֹק/יְרֻקָּה (*yarok/yeruka*) — "green" | צָהֹב/צְהֻבָּה (*tsahov/tsehuba*) — "yellow"
+  כָּתֹם/כְּתֻמָּה (*katom/ketuma*) — "orange" | סָגֹל/סְגֻלָּה (*sagol/segula*) — "purple"
   חוּם (*khum*) — "brown" [same m/f] | אָפוֹר/אֲפוֹרָה (*afor/afora*) — "grey"
 Practice: כֶּלֶב שָׁחוֹר (*kelev shakhor* — a black dog) vs שִׂמְלָה שְׁחוֹרָה (*simla shkhora* — a black dress)
 
@@ -566,7 +566,7 @@ UNIT 1 — ALL SEVEN BINYANIM, ACTIVELY AND DIAGNOSTICALLY
 1. פָּעַל (Pa'al) — basic active: כָּתַב/יִכְתֹּב (*katav/yikhtov*) — wrote/will write
 2. נִפְעַל (Nif'al) — passive/reflexive: נִכְתַּב (*nikhtav*) — was written | נִשְׁבַּר (*nishbar*) — broke [itself]
    Diagnostic: if you can say "it happened by itself or to itself" → probably nif'al
-3. פִּעֵל (Pi'el) — intensive/factitive: כִּתֵּב (*kitev*) — dictated | בִּקֵּר (*biker*) — visited | שִׁחֵק (*shichek*) — played
+3. פִּעֵל (Pi'el) — intensive/factitive: כִּתֵּב (*kitev*) — dictated | בִּקֵּר (*biker*) — visited | שִׂחֵק (*sikhek*) — played [שׂ = sin, NOT shin]
    Diagnostic: middle-root dagesh in past, מ prefix in present
 4. פֻּעַל (Pu'al) — passive of pi'el: כֻּתַּב (*kutav*) — was dictated | בֻּקַּר (*bukar*) — was visited
    Diagnostic: kubutz vowel under first root letter in past
@@ -586,7 +586,7 @@ UNIT 2 — IDIOMATIC HEBREW (what Israelis actually say)
   יֵשׁ לִי / אֵין לִי (*yesh li / ein li*) — "I have / I don't have" [possession uses existence, not a "have" verb]
   מַה קוֹרֶה? (*ma kore?*) — "what's happening?" [universal greeting among friends]
   יַאַלָּה (*yalla*) — "let's go / come on / hurry" [Arabic origin, the most-used word in Israeli speech]
-  סָבָבָּ (*sababa*) — "cool / great / no problem" [Arabic origin]
+  סַבָּבָה (*sababa*) — "cool / great / no problem" [Arabic origin]
   וַלָּה (*walla*) — "wow / really? / I swear" [expresses surprise or emphasis — extremely versatile]
   עַל הַפָּנִים (*al hapanim*) — "awful / terrible" [lit: on the face]
   דַּוְקָא (*davka*) — "specifically / on purpose / actually / ironically" [no English equivalent — learn all uses]

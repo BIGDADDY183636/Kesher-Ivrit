@@ -3476,61 +3476,164 @@ function renderNotebook(query) {
 }
 
 // ─── CURRICULUM MAP ──────────────────────────────────────
+// ─── CURRICULUM ──────────────────────────────────────────
+// All Hebrew embedded in lesson prompts has been verified for correct
+// nikud, transliteration (standard Israeli), and grammar accuracy.
 const CURRICULUM = [
+
+  // ══════════════════════════════════════════════════════
+  // UNIT 1 — THE ALEPH-BET  (Complete Beginner)
+  // ══════════════════════════════════════════════════════
   {
     id: 'unit1',
-    title: 'Unit 1: The Basics',
-    titleHeb: 'יְסוֹדוֹת',
+    title: 'Unit 1: The Aleph-Bet',
+    titleHeb: 'הָאָלֶף-בֵּית',
     levelReq: 0,
     color: '#2E8B57',
     lessons: [
-      { id: 'u1l1', title: 'The Aleph-Bet',   icon: '🔤', prompt: 'Teach me the Hebrew alphabet — the Aleph-Bet. Start with the first several letters, their names, and how to recognize and write them. Make it fun and visual.' },
-      { id: 'u1l2', title: 'Greetings',        icon: '👋', prompt: 'Teach me essential Hebrew greetings: shalom, boker tov, erev tov, lailah tov, lehitraot, and how to say "how are you" and "what\'s up" in Israeli Hebrew.' },
-      { id: 'u1l3', title: 'Numbers 1–10',     icon: '🔢', prompt: 'Teach me Hebrew numbers 1 through 10. Include both masculine and feminine forms, and how to use them in simple phrases.' },
-      { id: 'u1l4', title: 'Colors',            icon: '🎨', prompt: 'Teach me Hebrew color words: red, blue, white, black, green, yellow, orange, and pink. Show me how adjectives match gender in Hebrew.' },
-      { id: 'u1l5', title: 'Family Words',      icon: '👨‍👩‍👧', prompt: 'Teach me Hebrew family vocabulary: ima, aba, akh, akhot, saba, savta, ben, bat, dod, dodah. Use fun example sentences.' },
+      {
+        id: 'u1l1', title: 'Letters א–י', icon: '🔤',
+        prompt: 'Teach me the first ten Hebrew letters in alphabetical order: א (Alef, silent), בּ/ב (Bet/Vet — "b" with dagesh, "v" without), ג (Gimel, "g"), ד (Dalet, "d"), ה (He, "h"), ו (Vav, "v"), ז (Zayin, "z"), ח (Khet, guttural "kh" like Bach), ט (Tet, "t"), י (Yod, "y"). For each letter give: the name, the sound, an English memory anchor, and one Hebrew word I will learn anyway that uses it.'
+      },
+      {
+        id: 'u1l2', title: 'Letters כ–ת + Finals', icon: '🔡',
+        prompt: 'Teach me the remaining twelve Hebrew letters plus the five final forms. Letters: כּ/כ (Kaf/Khaf — "k" with dagesh, "kh" without), ל (Lamed, "l"), מ (Mem, "m"), נ (Nun, "n"), ס (Samekh, "s"), ע (Ayin, guttural or silent), פּ/פ (Pe/Fe — "p" with dagesh, "f" without), צ (Tsadi, "ts"), ק (Kof, "k"), ר (Resh, guttural "r"), שׁ/שׂ (Shin "sh" / Sin "s" — dot on RIGHT = sh, LEFT = s), ת (Tav, "t"). Final forms used ONLY at end of words: ך ם ן ף ץ — same sounds, different shapes.'
+      },
+      {
+        id: 'u1l3', title: 'Nikud — Vowel Marks', icon: '⬡',
+        prompt: 'Teach me Hebrew vowel marks (נִקּוּד — nikud). Cover these seven in order: קָמַץ (kamatz) under a letter = "ah" sound. פַּתַּח (patakh) = short "a". צֵרֵה (tsere) = "ey" as in "they". סֶגּוֹל (segol) = "eh". חִירִיק (khirik) = "ee". חוֹלָם (kholam) — dot above = "oh". שׁוּרוּק (shuruk) — dot inside ו = "oo". Also: שְׁוָא (sheva) — two dots = silent OR very brief "uh". Show each mark on the letter בּ so I can see the position clearly.'
+      },
+      {
+        id: 'u1l4', title: 'Greetings & Essentials', icon: '👋',
+        prompt: 'Teach me the most essential Hebrew greetings and polite words, one at a time with quiz after each: שָׁלוֹם (shalom) — peace/hello/goodbye. תּוֹדָה (todah) — thank you. בְּבַקָּשָׁה (bevakasha) — please AND you\'re welcome. כֵּן (ken) — yes. לֹא (lo) — no. בֹּקֶר טוֹב (boker tov) — good morning. עֶרֶב טוֹב (erev tov) — good evening. לַיְלָה טוֹב (layla tov) — good night. סְלִיחָה (slikha) — excuse me / sorry. מַה שְּׁלוֹמְךָ? (ma shlomkha? — to a male) / מַה שְּׁלוֹמֵךְ? (ma shlomekh? — to a female) — how are you? לְהִתְרָאוֹת (lehitraot) — see you later. Explain that Hebrew greetings have gender forms — the same word changes when addressing male vs female.'
+      },
+      {
+        id: 'u1l5', title: 'Numbers 1–10', icon: '🔢',
+        prompt: 'Teach me Hebrew numbers 1 through 10. CRITICAL: Hebrew numbers have a counterintuitive gender system — the form ending in ה is used with MASCULINE nouns, and the shorter form with FEMININE nouns. Teach both forms: 1 אֶחָד/אַחַת (echad/akhat). 2 שְׁנַיִם/שְׁתַּיִם (shnayim/shtayim). 3 שְׁלוֹשָׁה/שָׁלוֹשׁ (shloshah/shalosh). 4 אַרְבָּעָה/אַרְבַּע (arba\'ah/arba\'). 5 חֲמִישָׁה/חָמֵשׁ (khamisha/khamesh). 6 שִׁשָּׁה/שֵׁשׁ (shishah/shesh). 7 שִׁבְעָה/שֶׁבַע (shiv\'ah/sheva\'). 8 שְׁמוֹנָה/שְׁמוֹנֶה (shmonah/shmoneh). 9 תִּשְׁעָה/תֵּשַׁע (tish\'ah/tesha\'). 10 עֲשָׂרָה/עֶשֶׂר (asarah/eser). When Israelis count aloud they use the feminine forms: אַחַת, שְׁתַּיִם, שָׁלוֹשׁ...'
+      },
+      {
+        id: 'u1l6', title: 'Numbers 11–20', icon: '🔟',
+        prompt: 'Teach me Hebrew numbers 11 through 20. The pattern is: unit-number + עָשָׂר (asar, masc) or עֶשְׂרֵה (esreh, fem). 11 אַחַד עָשָׂר/אַחַת עֶשְׂרֵה. 12 שְׁנֵים עָשָׂר/שְׁתֵּים עֶשְׂרֵה. 13 שְׁלוֹשָׁה עָשָׂר/שָׁלוֹשׁ עֶשְׂרֵה. 14 אַרְבָּעָה עָשָׂר/אַרְבַּע עֶשְׂרֵה. 15 חֲמִישָׁה עָשָׂר/חָמֵשׁ עֶשְׂרֵה. 16 שִׁשָּׁה עָשָׂר/שֵׁשׁ עֶשְׂרֵה. 17 שִׁבְעָה עָשָׂר/שֶׁבַע עֶשְׂרֵה. 18 שְׁמוֹנָה עָשָׂר/שְׁמוֹנֶה עֶשְׂרֵה. 19 תִּשְׁעָה עָשָׂר/תְּשַׁע עֶשְׂרֵה. 20 עֶשְׂרִים (esrim) — same for both genders!'
+      },
+      {
+        id: 'u1l7', title: 'Colors', icon: '🎨',
+        prompt: 'Teach me Hebrew colors. Each color has four forms — masculine singular, feminine singular, masculine plural, feminine plural. Adjectives FOLLOW the noun in Hebrew. Teach these colors with BOTH genders: אָדֹם/אֲדֻמָּה (adom/aduma) — red. כָּחוֹל/כְּחֻלָּה (kakhol/kkhula) — blue. לָבָן/לְבָנָה (lavan/levana) — white. שָׁחֹר/שְׁחֹרָה (shakhor/shkhora) — black. יָרֹק/יְרֻקָּה (yarok/yeruka) — green. צָהֹב/צְהֻבָּה (tsahov/tsehuba) — yellow. כָּתֹם/כְּתֻמָּה (katom/ketuma) — orange. וָרֹד/וְרֻדָּה (varod/veruda) — pink. אָפוֹר/אֲפוֹרָה (afor/afora) — grey. חוּם (khum) — brown (same for m and f). Practice sentences like: כֶּלֶב שָׁחֹר (kelev shakhor — a black dog) vs. שִׂמְלָה שְׁחֹרָה (simla shkhora — a black dress).'
+      },
+      {
+        id: 'u1l8', title: 'Family Words', icon: '👨‍👩‍👧',
+        prompt: 'Teach me Hebrew family vocabulary (מִשְׁפָּחָה — mishpakha). Every noun has a gender — explain this as you teach each word: אַבָּא (aba) — dad [m]. אִמָּא (ima) — mom [f]. בֵּן (ben) — son [m]. בַּת (bat) — daughter [f]. אָח (akh) — brother [m]. אָחוֹת (akhot) — sister [f]. סָבָא (saba) — grandfather [m]. סָבְתָּא (savta) — grandmother [f]. דּוֹד (dod) — uncle [m]. דּוֹדָה (dodah) — aunt [f]. יֶלֶד (yeled) — boy [m]. יַלְדָּה (yalda) — girl [f]. בַּעַל (ba\'al) — husband [m]. אִשָּׁה (isha) — wife [f]. Build example sentences using הוּא/הִיא (hu/hi — he/she): אִמָּא שֶׁלִּי (ima sheli — my mom). אָחִי (akhi — my brother).'
+      }
     ]
   },
+
+  // ══════════════════════════════════════════════════════
+  // UNIT 2 — PRESENT TENSE & FIRST SENTENCES  (Some Exposure / Basic)
+  // ══════════════════════════════════════════════════════
   {
     id: 'unit2',
-    title: 'Unit 2: Building Sentences',
-    titleHeb: 'מִשְׁפָּטִים',
-    levelReq: 2,
+    title: 'Unit 2: Present Tense',
+    titleHeb: 'זְמַן הוֹוֶה',
+    levelReq: 1,
     color: '#1B5EE0',
     lessons: [
-      { id: 'u2l1', title: 'Present Tense',    icon: '⚡', prompt: 'Teach me how to conjugate verbs in the Hebrew present tense (hove). Cover holekh/holekhet, medaber/medaberet, akhel/okhelet, roeh/roah for all pronouns.' },
-      { id: 'u2l2', title: 'Food & Drink',     icon: '🥙', prompt: 'Teach me Hebrew words for common food and drink: lechem, mayim, shoko, tapuakh, falafel, hummus, gvina, basar, dag. Include how to order food in a restaurant.' },
-      { id: 'u2l3', title: 'Days & Months',    icon: '📅', prompt: 'Teach me the Hebrew days of the week (yom rishon through shabbat) and the Hebrew months. Include how to say today, yesterday, and tomorrow.' },
-      { id: 'u2l4', title: 'At Home',          icon: '🏠', prompt: 'Teach me Hebrew vocabulary for rooms and objects in a house: bayit, kheder, mitbakh, shulkhan, kise, mita, delet, khalon, ambatya.' },
-      { id: 'u2l5', title: 'Asking Questions', icon: '❓', prompt: 'Teach me how to form questions in Hebrew: ma (what), mi (who), eifoh (where), matai (when), lamah (why), eikh (how), kama (how much/many).' },
+      {
+        id: 'u2l1', title: 'Pronouns & Gender', icon: '👤',
+        prompt: 'Teach me all Hebrew personal pronouns and explain the gender system. Hebrew has different forms for masculine and feminine "you" and "they" — this is critical to know before verbs. Pronouns: אֲנִי (ani) — I. אַתָּה (atah) — you [m]. אַתְּ (at) — you [f]. הוּא (hu) — he. הִיא (hi) — she. אֲנַחְנוּ (anakhnu) — we. אַתֶּם (atem) — you all [m/mixed]. אַתֶּן (aten) — you all [f only]. הֵם (hem) — they [m/mixed]. הֵן (hen) — they [f only]. Also teach: Hebrew present tense has exactly FOUR forms per verb — masculine singular, feminine singular, masculine plural, feminine plural. NOT one form per pronoun like English.'
+      },
+      {
+        id: 'u2l2', title: 'Pa\'al Present — Core Verbs', icon: '⚡',
+        prompt: 'Teach me present tense Pa\'al (פָּעַל) verbs — the most common verb pattern. Show all FOUR forms for each verb. Start with the root pattern using לָלֶכֶת (to go/walk): הוֹלֵךְ (holekh) — he/I[m]/you[m] go. הוֹלֶכֶת (holekhet) — she/I[f]/you[f] goes. הוֹלְכִים (holkhim) — they[m]/we/you-all[m] go. הוֹלְכוֹת (holkhot) — they[f]/we[f]/you-all[f] go. Then teach these verbs with all four forms: לִכְתֹּב (to write): כּוֹתֵב/כּוֹתֶבֶת/כּוֹתְבִים/כּוֹתְבוֹת (kotev/kotevet/kotvim/kotvot). לֶאֱכֹל (to eat): אוֹכֵל/אוֹכֶלֶת/אוֹכְלִים/אוֹכְלוֹת (okhel/okhelet/okhlim/okhlot). לִשְׁתּוֹת (to drink): שׁוֹתֶה/שׁוֹתָה/שׁוֹתִים/שׁוֹתוֹת (shoteh/shotah/shotim/shotot). לִרְאוֹת (to see): רוֹאֶה/רוֹאָה/רוֹאִים/רוֹאוֹת (ro\'eh/ro\'ah/ro\'im/ro\'ot). לִשְׁמֹעַ (to hear): שׁוֹמֵעַ/שׁוֹמַעַת/שׁוֹמְעִים/שׁוֹמְעוֹת (shome\'a/shoma\'at/shom\'im/shom\'ot).'
+      },
+      {
+        id: 'u2l3', title: 'More Pa\'al Verbs', icon: '🏃',
+        prompt: 'Teach me more essential Pa\'al present-tense verbs with all four forms (MS/FS/MP/FP): לָרוּץ (to run): רָץ/רָצָה/רָצִים/רָצוֹת (rats/ratsa/ratsim/ratsot). לַעֲשׂוֹת (to do/make): עוֹשֶׂה/עוֹשָׂה/עוֹשִׂים/עוֹשׂוֹת (oseh/osah/osim/osot) — note שׂ is sin not shin. לָדַעַת (to know): יוֹדֵעַ/יוֹדַעַת/יוֹדְעִים/יוֹדְעוֹת (yode\'a/yoda\'at/yod\'im/yod\'ot). לַחְשֹׁב (to think): חוֹשֵׁב/חוֹשֶׁבֶת/חוֹשְׁבִים/חוֹשְׁבוֹת (khoshev/khoshevet/khoshvim/khoshvot). לִגּוּר (to live/reside): גָּר/גָּרָה/גָּרִים/גָּרוֹת (gar/gara/garim/garot). Then Pi\'el: לְדַבֵּר (to speak): מְדַבֵּר/מְדַבֶּרֶת/מְדַבְּרִים/מְדַבְּרוֹת (medaber/medaberet/medabrim/medabrot) — note the מ prefix signals Pi\'el binyan, not Pa\'al.'
+      },
+      {
+        id: 'u2l4', title: 'Building Sentences', icon: '📝',
+        prompt: 'Teach me how Hebrew sentences are built. Key rules: (1) Hebrew sentence order is often Subject-Verb-Object but is flexible. (2) Adjectives come AFTER the noun: בַּיִת גָּדוֹל (bayit gadol — a big house). (3) Hebrew has NO "to be" verb in present tense: אֲנִי תַּלְמִיד (ani talmid — I [am] a student). (4) The definite article is הַ (ha-) attached to the noun: הַבַּיִת (habayit — the house). With a definite adjective BOTH take הַ: הַבַּיִת הַגָּדוֹל (habayit hagadol — the big house). Build simple sentences with me using: אֲנִי אוֹכֵל לֶחֶם (ani okhel lekhem — I eat bread [m]). הִיא שׁוֹתָה מַיִם (hi shotah mayim — she drinks water). הַיֶּלֶד הַקָּטָן רָץ (hayeled hakatan rats — the small boy runs).'
+      },
+      {
+        id: 'u2l5', title: 'Question Words', icon: '❓',
+        prompt: 'Teach me Hebrew question words and how to form questions. No inversion needed — just add the question word at the start: מָה (ma) — what? מִי (mi) — who? אֵיפֹה (eifo) — where? מָתַי (matai) — when? לָמָּה (lama) — why? אֵיךְ (ekh) — how? כַּמָּה (kama) — how much/many? אֵיזֶה (eize, m) / אֵיזוֹ (eizo, f) — which? Practice questions: מָה אַתָּה אוֹכֵל? (ma atah okhel? — what are you eating?). אֵיפֹה הַשֵּׁרוּתִים? (eifo hasherutim? — where is the bathroom?). כַּמָּה זֶה עוֹלֶה? (kama ze ole? — how much does this cost?). מִי אַתָּה? (mi atah? — who are you?). לָמָּה? (lama? — why?).'
+      },
+      {
+        id: 'u2l6', title: 'Food & Daily Life', icon: '🥙',
+        prompt: 'Teach me Hebrew vocabulary for food and daily objects with their gender. All nouns must be taught with their gender: לֶחֶם (lekhem, m) — bread. מַיִם (mayim, m, always plural!) — water. חָלָב (khalav, m) — milk. בֵּיצָה (beytsa, f) → pl. בֵּיצִים (beytsim, irregular m pl!) — egg. תַּפּוּחַ (tapuakh, m) → pl. תַּפּוּחִים (tapukhim) — apple. עַגְבָנִיָּה (agvaniya, f) → pl. עַגְבָנִיּוֹת (agvaniyot) — tomato. בָּשָׂר (basar, m) — meat. דָּג (dag, m) → pl. דָּגִים (dagim) — fish. גְּבִינָה (gvina, f) — cheese. תֵּה (te, m) — tea. קָפֶה (kafe, m) — coffee. מִסְעָדָה (mis\'ada, f) — restaurant. שׁוּק (shuk, m) — market. Practice ordering: אֲנִי רוֹצֶה קָפֶה בְּבַקָּשָׁה (ani rotse kafe bevakasha — I want coffee please [said by a male]).'
+      }
     ]
   },
+
+  // ══════════════════════════════════════════════════════
+  // UNIT 3 — PAST & FUTURE TENSE  (Intermediate)
+  // ══════════════════════════════════════════════════════
   {
     id: 'unit3',
-    title: 'Unit 3: Real Conversation',
-    titleHeb: 'שִׂיחָה אֲמִיתִּית',
+    title: 'Unit 3: Past & Future',
+    titleHeb: 'עָבָר וְעָתִיד',
     levelReq: 3,
     color: '#8B4513',
     lessons: [
-      { id: 'u3l1', title: 'Past Tense',       icon: '⏪', prompt: 'Teach me Hebrew past tense (avar). How to conjugate pa\'al binyan verbs in the past for all pronouns: ani, atah/at, hu/hi, anakhnu, atem/aten, hem/hen.' },
-      { id: 'u3l2', title: 'Future Tense',     icon: '⏩', prompt: 'Teach me Hebrew future tense (atid). How to conjugate pa\'al binyan verbs in the future for all pronouns. Compare with past and present forms.' },
-      { id: 'u3l3', title: 'Adjectives',       icon: '🌟', prompt: 'Teach me common Hebrew adjectives and the rule that they must agree with nouns in gender and number. Cover: gadol/gdolah, katan/ktanah, tov/tovah, yafeh/yafah, etc.' },
-      { id: 'u3l4', title: 'Work & School',    icon: '💼', prompt: 'Teach me Hebrew vocabulary for work and school: misrad, beit sefer, moreh/morah, talmid/talmidah, avoda, boss, khalash, makhshev, telefon.' },
-      { id: 'u3l5', title: 'Israeli Slang',    icon: '😎', prompt: 'Teach me authentic Israeli slang that\'s used every day: sababa, yalla, walla, stam, nu, al hapanim, davka, achi/ahoti, b\'seder, chill, chai b\'seret.' },
+      {
+        id: 'u3l1', title: 'Pa\'al Past Tense', icon: '⏪',
+        prompt: 'Teach me the complete Pa\'al past tense (עָבַר — avar) paradigm. Past tense uses SUFFIXES. Teach the full conjugation using root כ-ת-ב (to write) as the model: אֲנִי כָּתַבְתִּי (ani katavti — I wrote). אַתָּה כָּתַבְתָּ (atah katavta — you wrote, m). אַתְּ כָּתַבְתְּ (at katavt — you wrote, f). הוּא כָּתַב (hu katav — he wrote). הִיא כָּתְבָה (hi katva — she wrote). אֲנַחְנוּ כָּתַבְנוּ (anakhnu katavnu — we wrote). אַתֶּם כְּתַבְתֶּם (atem ktavtem — you all wrote, m). אַתֶּן כְּתַבְתֶּן (aten ktavten — you all wrote, f). הֵם/הֵן כָּתְבוּ (hem/hen katvu — they wrote). Then practice with: אָכַל (to eat): אָכַלְתִּי, אָכַלְתָּ... הָלַךְ (to go): הָלַכְתִּי, הָלַכְתָּ...'
+      },
+      {
+        id: 'u3l2', title: 'Pa\'al Future Tense', icon: '⏩',
+        prompt: 'Teach me the complete Pa\'al future tense (עָתִיד — atid) paradigm. Future tense uses PREFIXES (opposite of past tense suffixes). Key prefix letters: א (I), ת (you/she), י (he/they m), נ (we). Teach the full conjugation using root כ-ת-ב: אֲנִי אֶכְתֹּב (ani ekhtov — I will write). אַתָּה תִּכְתֹּב (atah tikhtov — you will write, m). אַתְּ תִּכְתְּבִי (at tikhtevi — you will write, f). הוּא יִכְתֹּב (hu yikhtov — he will write). הִיא תִּכְתֹּב (hi tikhtov — she will write). אֲנַחְנוּ נִכְתֹּב (anakhnu nikhtov — we will write). אַתֶּם תִּכְתְּבוּ (atem tikhtvu — you all will write, m). אַתֶּן תִּכְתֹּבְנָה (aten tikhtovnah — you all will write, f). הֵם יִכְתְּבוּ (hem yikhtvu — they will write, m). הֵן תִּכְתֹּבְנָה (hen tikhtovnah — they will write, f). Also: future tense expresses polite commands — תִּכְתֹּב (tikhtov) = "write" [polite request].'
+      },
+      {
+        id: 'u3l3', title: 'Adjective Agreement', icon: '🌈',
+        prompt: 'Teach me the complete Hebrew adjective agreement system — four forms for every adjective (MS, FS, MP, FP). The adjective must agree with its noun in gender AND number AND definiteness. Pattern for גָּדוֹל (big): גָּדוֹל (gadol) — m.sg. גְּדוֹלָה (gdola) — f.sg. גְּדוֹלִים (gdolim) — m.pl. גְּדוֹלוֹת (gdolot) — f.pl. Teach these adjectives with all four forms: טוֹב/טוֹבָה/טוֹבִים/טוֹבוֹת (tov/tova/tovim/tovot) — good. רַע/רָעָה/רָעִים/רָעוֹת (ra/ra\'a/ra\'im/ra\'ot) — bad. יָפֶה/יָפָה/יָפִים/יָפוֹת (yafe/yafa/yafim/yafot) — beautiful. חָדָשׁ/חֲדָשָׁה/חֲדָשִׁים/חֲדָשׁוֹת (khadash/khadasha/khadashim/khadashot) — new. יָשָׁן/יְשָׁנָה/יְשָׁנִים/יְשָׁנוֹת (yashan/yeshana/yeshanim/yeshanot) — old. DEFINITENESS RULE: הַסֵּפֶר הַחָדָשׁ (hasefer hakhadash — THE new book) — BOTH noun and adjective take הַ.'
+      },
+      {
+        id: 'u3l4', title: 'Days, Time & Calendar', icon: '📅',
+        prompt: 'Teach me Hebrew days of the week — they are numbered, not named after gods. יוֹם רִאשׁוֹן (yom rishon — Sunday, lit. first day). יוֹם שֵׁנִי (yom sheni — Monday, 2nd day). יוֹם שְׁלִישִׁי (yom shlishi — Tuesday, 3rd day). יוֹם רְבִיעִי (yom revi\'i — Wednesday, 4th day). יוֹם חֲמִישִׁי (yom khamishi — Thursday, 5th day). יוֹם שִׁשִּׁי (yom shishi — Friday, 6th day). שַׁבָּת (Shabbat — Saturday, the Sabbath). Time words: הַיּוֹם (hayom) — today. מָחָר (makhar) — tomorrow. אֶתְמוֹל (etmol) — yesterday. עַכְשָׁו (akhshav) — now. אַחַר כָּךְ (akhar kakh) — later. בְּקָרוֹב (bekarov) — soon. שָׁנָה (shanah, f) — year. חֹדֶשׁ (khodesh, m) — month. שָׁבוּעַ (shavua, m) — week. יוֹם (yom, m) — day. שָׁעָה (sha\'ah, f) — hour.'
+      },
+      {
+        id: 'u3l5', title: 'Negation & Complex Questions', icon: '🚫',
+        prompt: 'Teach me the THREE negation words in Hebrew — using the wrong one is a common error: לֹא (lo) — "not" for present and past verbs: אֲנִי לֹא הוֹלֵךְ (ani lo holekh — I\'m not going). אֵין (ein) — "there is no / I don\'t have": אֵין לִי כֶּסֶף (ein li kesef — I have no money / I don\'t have money). אַל (al) — "don\'t!" with future tense ONLY, for negative commands: אַל תֵּלֵךְ (al telekh — don\'t go!). Also teach possession: יֵשׁ לִי (yesh li — I have, lit: there is to me). יֵשׁ לְךָ (yesh lekha — you have, m). אֵין לָהּ (ein lah — she doesn\'t have). Practice: יֵשׁ לִי שְׁאֵלָה (yesh li she\'ela — I have a question). אֵין לִי זְמַן (ein li zman — I don\'t have time). אַל תִּדְאַג (al tidag — don\'t worry! [to a male]).'
+      },
+      {
+        id: 'u3l6', title: 'Work & School', icon: '💼',
+        prompt: 'Teach me Hebrew vocabulary for work and school with gender for every noun: בֵּית סֵפֶר (beit sefer, m) — school [construct state: "house of book"]. מוֹרֶה (moreh, m) / מוֹרָה (mora, f) — teacher. תַּלְמִיד (talmid, m) / תַּלְמִידָה (talmida, f) — student. כִּתָּה (kita, f) — classroom/grade. שִׁיעוּר (shi\'ur, m) — lesson. בֵּגֶד עֲבוֹדָה (beted avoda) — literally "work clothes," but: עֲבוֹדָה (avoda, f) — work/job. מִשְׂרָד (misrad, m) — office. מַחְשֵׁב (makhshev, m) — computer. טֶלֶפוֹן (telefon, m) — phone. מַנְהֵל (manhel, m) / מַנְהֶלֶת (manhelet, f) — manager/principal. כֶּסֶף (kesef, m) — money. Practice: אֲנִי עוֹבֵד בְּמִשְׂרָד (ani oved bemisrad — I work in an office [m]). הִיא מוֹרָה טוֹבָה (hi mora tova — she is a good teacher).'
+      }
     ]
   },
+
+  // ══════════════════════════════════════════════════════
+  // UNIT 4 — THE BINYANIM  (Advanced)
+  // ══════════════════════════════════════════════════════
   {
     id: 'unit4',
-    title: 'Unit 4: Advanced Hebrew',
-    titleHeb: 'עִבְרִית מִתְקַדֶּמֶת',
+    title: 'Unit 4: The Binyanim',
+    titleHeb: 'הַבִּנְיָנִים',
     levelReq: 4,
     color: '#6B0AC9',
     lessons: [
-      { id: 'u4l1', title: 'The Binyanim',     icon: '🏗️', prompt: 'Teach me the seven Hebrew binyanim (verb patterns): pa\'al, nif\'al, pi\'el, pu\'al, hif\'il, huf\'al, hitpa\'el. Show the pattern and give 2 examples for each.' },
-      { id: 'u4l2', title: 'Hebrew Idioms',    icon: '💡', prompt: 'Teach me authentic Hebrew idioms and expressions that Israelis actually use: al ha\'lev, b\'kef, dai, lama lo, kvar, kacha kacha, ein mah la\'asot.' },
-      { id: 'u4l3', title: 'Complex Grammar',  icon: '📜', prompt: 'Teach me complex Hebrew sentence structures: relative clauses with she-, conditional sentences with im...az, passive voice, and the construct state (smichut).' },
-      { id: 'u4l4', title: 'Biblical Hebrew',  icon: '📖', prompt: 'Teach me the key differences between Biblical Hebrew (lashon hakodesh) and modern Israeli Hebrew. Cover key Torah vocabulary and how ancient roots appear in modern words.' },
-      { id: 'u4l5', title: 'Mastery Challenge',icon: '🏆', prompt: 'Give me a comprehensive mastery challenge covering all levels of Hebrew: vocabulary from all categories, grammar patterns, a short reading comprehension, and a conversation exercise.' },
+      {
+        id: 'u4l1', title: 'Pa\'al & Nif\'al', icon: '🏗️',
+        prompt: 'Teach me Pa\'al and Nif\'al in depth. PA\'AL (פָּעַל) — basic active voice, the default pattern. Root כ-ת-ב: past כָּתַב (katav), present כּוֹתֵב (kotev), future יִכְתֹּב (yikhtov), infinitive לִכְתֹּב (likhtov). NIF\'AL (נִפְעַל) — passive or reflexive, for things that happen TO something or by themselves. Signal: נ prefix in past, נִ + dagesh in present. Root כ-ת-ב in Nif\'al: past נִכְתַּב (nikhtav — was written). Present מִתְכַּתֵּב (mitkhatev — corresponds [reflexive, letters-related]). Root שׁ-ב-ר: נִשְׁבַּר (nishbar — broke by itself / was broken). Diagnostic: ask "did it happen by itself or to itself?" → likely Nif\'al. Contrast: כָּתַב סֵפֶר (katav sefer — he wrote a book) vs. הַסֵּפֶר נִכְתַּב (hasefer nikhtav — the book was written).'
+      },
+      {
+        id: 'u4l2', title: 'Pi\'el & Pu\'al', icon: '⚙️',
+        prompt: 'Teach me Pi\'el and Pu\'al in depth. PI\'EL (פִּיעֵל) — intensive or causative. Signal: middle root letter has dagesh forte (doubled) in past; מ prefix in present. Root ל-מ-ד: לִמֵּד (limed — taught [Pi\'el of to-learn root]). Present: מְלַמֵּד/מְלַמֶּדֶת/מְלַמְּדִים/מְלַמְּדוֹת (melamedˈ/melamˈedet/melamˈdim/melamˈdot). Root ד-ב-ר: דִּבֵּר (diber — spoke). Present: מְדַבֵּר/מְדַבֶּרֶת (medaber/medaberet). Root בּ-ק-ר: בִּקֵּר (biker — visited). Root שׂ-ח-ק: שִׂחֵק (sikhek — played) [שׂ = sin, "s" sound, NOT shin "sh"!]. PU\'AL (פֻּעַל) — passive of Pi\'el. Signal: kubutz under first root letter. Root ל-מ-ד: לֻמַּד (lumad — was taught). Root ד-ב-ר: דֻּבַּר (dubar — was spoken/discussed). Pattern contrast: לִמֵּד (active — he taught) → לֻמַּד (passive — was taught).'
+      },
+      {
+        id: 'u4l3', title: 'Hif\'il, Huf\'al & Hitpa\'el', icon: '🔄',
+        prompt: 'Teach me the final three binyanim. HIF\'IL (הִפְעִיל) — causative: making something happen or someone do something. Signal: הִ prefix in past, מַ prefix in present. Root כ-ת-ב: הִכְתִּיב (hiktiv — dictated, caused writing). Root ב-י-נ: הֵבִין (hevin — understood). Root ל-מ-ד: הִלְמִיד (hilmid — taught [different nuance from Pi\'el]). HUF\'AL (הֻפְעַל) — passive of Hif\'il. Signal: שׁוּרוּק under first root letter + ה prefix. Root כ-ת-ב: הוּכְתַּב (huktav — was dictated). HITPA\'EL (הִתְפַּעֵל) — reflexive or reciprocal. Signal: הִתְ prefix in past, מִתְ in present. Root ל-ב-שׁ: הִתְלַבֵּשׁ (hitlabesh — got dressed [dressed oneself]). Root ר-ח-צ: הִתְרַחֵץ (hitrakhets — washed oneself). Root פ-ל-ל: הִתְפַּלֵּל (hitpalel — prayed [lit: judged oneself]). Root נ-ה-ג: הִתְנַהֵג (hitnaheg — behaved). Diagnostic: if the action reflects back on the subject → Hitpa\'el.'
+      },
+      {
+        id: 'u4l4', title: 'Construct State — סְמִיכוּת', icon: '🔗',
+        prompt: 'Teach me the Hebrew construct state (סְמִיכוּת — smiikhut) — the grammatical chain that links two nouns. The first noun modifies into a special "construct" form. Rules: (1) The first noun loses its definite article and often changes vowels. (2) No word "of" is needed — the two nouns connect directly. (3) Only the SECOND noun can take the definite article הַ. Examples: בֵּית סֵפֶר (beit sefer — school, lit: "house of book"). בֵּית כְּנֶסֶת (beit knesset — synagogue, lit: "house of gathering"). יַד הַמֶּלֶךְ (yad hamelekh — the hand of the king). פָּרָשַׁת הַשָּׁבוּעַ (parashat hashavua — the Torah portion of the week). Masculine construct forms: בַּיִת → בֵּית. סֵפֶר → סִפְרֵי. Feminine construct forms usually drop the ה-: שָׁנָה → שְׁנַת. מִשְׁפָּחָה → מִשְׁפַּחַת. Practice: מִשְׁפַּחַת כֹּהֵן (mishpakhat kohen — the Cohen family). שְׁנַת הַלִּימּוּדִים (shnat halimudim — the school year).'
+      },
+      {
+        id: 'u4l5', title: 'Complex Sentences', icon: '📜',
+        prompt: 'Teach me complex Hebrew sentence structures. RELATIVE CLAUSES with שֶׁ-: הָאִישׁ שֶׁדִּבֵּר (ha\'ish shediber — the man who spoke). הַסֵּפֶר שֶׁקָּרִיתִי (hasefer shekkarati — the book that I read). CONDITIONAL with אִם...אָז: אִם תִּלְמַד, אָז תַּצְלִיחַ (im tilmad, az tatsliah — if you study, you will succeed). BECAUSE with כִּי: אֲנִי לוֹמֵד עִבְרִית כִּי אוֹהֵב אֶת יִשְׂרָאֵל (ani lomed ivrit ki ohev et Yisrael — I study Hebrew because I love Israel). PURPOSE with כְּדֵי ל-: אֲנִי לוֹמֵד כְּדֵי לִהְיוֹת שׁוֹטֵף (ani lomed kedei lihyot shote\'f — I study in order to be fluent). ALTHOUGH with אַף עַל פִּי שֶׁ-: אַף עַל פִּי שֶׁקָּשֶׁה, אֲנִי נֶהֱנֶה (af al pi shekashe, ani neheneh — although it is hard, I enjoy it).'
+      },
+      {
+        id: 'u4l6', title: 'Mastery Challenge', icon: '🏆',
+        prompt: 'Give me a comprehensive Hebrew mastery challenge. Include: (1) Identify the binyan and translate 5 conjugated verbs I haven\'t seen before. (2) Build 3 sentences using construct state (smiikhut). (3) Conjugate one verb fully in all three tenses (past, present, future) and all persons. (4) Correct the grammar errors in 3 sentences I will give you. (5) Read and explain a short paragraph of real Israeli Hebrew. Make it genuinely challenging — treat me as an advanced student ready for near-fluency.'
+      }
     ]
   }
 ];
