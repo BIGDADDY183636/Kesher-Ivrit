@@ -40,7 +40,7 @@ const anthropic  = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ── Provider routing ──────────────────────────────────────────────────────────
 // Anthropic (claude-sonnet-4-6): QA mode, bar/bat mitzvah, Bible, prayer
-// Groq (llama3-70b-8192):        all standard Hebrew lessons
+// Groq (llama-3.3-70b-versatile):        all standard Hebrew lessons
 const ANTHROPIC_GOALS = new Set(['bar_mitzvah', 'bible', 'prayer']);
 
 function selectProvider(userProfile) {
@@ -63,7 +63,7 @@ async function callAI(provider, systemPrompt, messages, maxTokens) {
     return r.content[0].text;
   }
   const r = await groq.chat.completions.create({
-    model:      'llama3-70b-8192',
+    model:      'llama-3.3-70b-versatile',
     max_tokens: maxTokens,
     messages:   [{ role: 'system', content: systemPrompt }, ...messages]
   });
@@ -480,7 +480,7 @@ app.post('/api/tooltip', async (req, res) => {
   try {
     const client = apiKey === process.env.GROQ_API_KEY ? groq : new Groq({ apiKey });
     const response = await client.chat.completions.create({
-      model:      'llama3-70b-8192',
+      model:      'llama-3.3-70b-versatile',
       max_tokens: 80,
       messages: [{
         role: 'user',
@@ -501,7 +501,7 @@ app.get('/api/status', (req, res) => {
   const anthropicKey = process.env.ANTHROPIC_API_KEY || '';
   res.json({
     configured:       !!(groqKey || anthropicKey),
-    groq:             { configured: !!groqKey,      model: 'llama3-70b-8192',    routes: 'standard lessons' },
+    groq:             { configured: !!groqKey,      model: 'llama-3.3-70b-versatile',    routes: 'standard lessons' },
     anthropic:        { configured: !!anthropicKey, model: 'claude-sonnet-4-6',  routes: 'QA mode, bar_mitzvah, bible, prayer' },
     nodeVersion:      process.version,
     environment:      process.env.VERCEL ? 'vercel' : 'local',
