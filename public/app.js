@@ -1676,7 +1676,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v6.3</div>';
+    '<div class="mob-me-version">Kesher Ivrit v6.4</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -2611,10 +2611,18 @@ function parseMorahResponse(raw) {
     ? teachMatch[1].trim()
     : raw.replace(/📚 WORDS LEARNED:.*$/s, '').replace(/\[SKIP:[^\]]*\]/gi, '').trim();
 
-  // Strip numbered/lettered quiz option lists (3+ consecutive items) — Morah should never put these in TEACH
+  // Aggressively strip ALL plain-text quiz option patterns from teach.
+  // Morah must never put options here; if she does, strip them so they
+  // never appear as unclickable text regardless of prompt compliance.
   teach = teach
-    .replace(/(\n[ \t]*[1-4][.)]\s+[^\n]{1,80}){3,}/g, '')
-    .replace(/(\n[ \t]*[A-Da-d][.)]\s+[^\n]{1,80}){3,}/g, '')
+    // Remove standalone lines: "A) text", "a. text", "1) text", "1. text"
+    .replace(/^[ \t]*[A-Da-d1-4][.)]\s+.+$/gm, '')
+    // Remove inline patterns: "(A) text (B) text" or "a) text b) text"
+    .replace(/\([A-Da-d]\)\s*[^()\n]{1,60}/g, '')
+    // Remove "Which is correct: a) x b) y" style
+    .replace(/which\s+is\s+correct[^?]*\?[^\n]*/gi, '')
+    // Remove option labels after a question mark: "? a) x b) y"
+    .replace(/\?\s*[a-d][)]\s*\S[^\n]*/g, '?')
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
@@ -2855,7 +2863,14 @@ function renderChallenge(cId) {
     case 'fill_blank':      renderFillBlank(cId, challenge, container);      break;
     case 'true_false':      renderTrueFalse(cId, challenge, container);      break;
     case 'match':           renderMatch(cId, challenge, container);          break;
-    default: break;
+    default:
+      // Unknown type: coerce to fill_blank so something interactive always renders
+      renderFillBlank(cId, {
+        question: challenge.question || challenge.statement || 'What is your answer?',
+        answer:   '__any__',
+        explanation: challenge.explanation || ''
+      }, container);
+      break;
   }
 }
 
@@ -2951,9 +2966,10 @@ function answerFill(cId) {
   const val      = input.value.trim();
   const expected = challenge.answer;
 
-  // Accept exact match OR transliteration-normalised match
-  const correct = val.toLowerCase() === expected.toLowerCase()
-               || _translitMatch(val, expected);
+  // '__any__' = fallback coercion — any non-empty answer is accepted
+  const correct = expected === '__any__'
+    ? val.length > 0
+    : (val.toLowerCase() === expected.toLowerCase() || _translitMatch(val, expected));
 
   challengeStore[cId].answered = true;
   input.disabled = true;
@@ -5846,7 +5862,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v6.3';
+  var CURRENT_VERSION = 'v6.4';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })

@@ -198,9 +198,45 @@ function buildSystemPrompt(userProfile, myClass) {
     advanced:          'an advanced learner seeking fluency'
   })[userProfile.level] || 'a Hebrew learner';
 
+  // ── ABSOLUTE CHALLENGE RULE — prepended to every prompt ────────────────────
+  const CHALLENGE_RULE = `
+████████████████████████████████████████████████████████████
+ABSOLUTE RULE — READ BEFORE EVERYTHING ELSE — NO EXCEPTIONS
+████████████████████████████████████████████████████████████
+CHALLENGES MUST ALWAYS USE ONE OF THESE 4 INTERACTIVE FORMATS:
+
+  1. multiple_choice  — 4 tappable answer boxes (MOST COMMON)
+  2. fill_blank       — student types into an input field
+  3. match            — tap to connect Hebrew↔English pairs
+  4. fill_blank       — tap letter tiles in order (word building)
+
+EVERY challenge MUST be valid JSON inside [CHALLENGE]...[/CHALLENGE].
+The app renders [CHALLENGE] JSON as interactive UI with tap buttons and live feedback.
+
+YOU MUST NEVER WRITE QUIZ OPTIONS AS PLAIN TEXT. EVER.
+If you write "a) shalom  b) toda  c) bevakasha" anywhere in your response,
+the student sees unclickable dead text. The challenge is broken. The app fails.
+
+❌ FORBIDDEN — plain text options (breaks the app):
+Which word means peace?  a) shalom  b) toda  c) lo
+
+❌ FORBIDDEN — numbered list options inside [TEACH]:
+1. שָׁלוֹם   2. תּוֹדָה   3. לֹא
+
+✅ REQUIRED — JSON inside [CHALLENGE]:
+[CHALLENGE]
+{"type":"multiple_choice","question":"Which word means peace?","options":["שָׁלוֹם (shalom)","תּוֹדָה (toda)","לֹא (lo)","בְּבַקָשָׁה (bevakasha)"],"correct":0,"explanation":"שָׁלוֹם means peace, hello, and goodbye."}
+[/CHALLENGE]
+
+IF YOU CANNOT EXPRESS A QUESTION AS JSON IN ONE OF THE 4 FORMATS ABOVE,
+DO NOT ASK THAT QUESTION. Rephrase it into one that fits, or skip it.
+████████████████████████████████████████████████████████████
+`;
+
   // ── ASK ANYTHING MODE — expert open Q&A, no lesson format ──────────────────
   if (userProfile.qaMode) {
-    return `You are Morah (מורה), a warm, brilliant, and proudly Jewish expert at Kesher Ivrit. The student has opened "Ask Anything" mode — they want a real answer to a real question, not a structured lesson.
+    return `${CHALLENGE_RULE}
+You are Morah (מורה), a warm, brilliant, and proudly Jewish expert at Kesher Ivrit. The student has opened "Ask Anything" mode — they want a real answer to a real question, not a structured lesson.
 
 YOUR STUDENT: ${name}, ${level}.
 
@@ -291,7 +327,8 @@ You are the student's go-to person for anything Jewish. Make them feel like they
 
   const isAboveElementary = (userProfile.level === 'intermediate' || userProfile.level === 'advanced' || userProfile.level === 'basic');
 
-  return `You are Morah (מורה), warm and brilliant Hebrew teacher at Kesher Ivrit. Your vibe: cool older Israeli sister — casual, funny, real, proudly Zionist. Never stiff.
+  return `${CHALLENGE_RULE}
+You are Morah (מורה), warm and brilliant Hebrew teacher at Kesher Ivrit. Your vibe: cool older Israeli sister — casual, funny, real, proudly Zionist. Never stiff.
 
 STUDENT: ${name} | ${levelFull} | Goal: ${goal} | Style: ${style} | Background: ${background} | Topic: ${userProfile.currentTopic || 'General Hebrew'} | Time: ${timeAvail}
 
@@ -605,7 +642,7 @@ ${
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v6.3', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v6.4', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {

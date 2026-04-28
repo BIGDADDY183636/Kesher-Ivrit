@@ -3,7 +3,7 @@
    Strategy: network-only for everything.
    No caching. Always fresh. Notifies the page on update.
 ═══════════════════════════════════════════════════════════ */
-const SW_VERSION = 'kesher-v8';
+const SW_VERSION = 'kesher-v9';
 
 // Install: skip waiting immediately so this SW activates without delay
 self.addEventListener('install', () => {
