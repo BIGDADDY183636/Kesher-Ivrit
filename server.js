@@ -7,12 +7,17 @@ const { createClient } = require('@supabase/supabase-js');
 const app = express();
 app.use(express.json({ limit: '10mb' }));
 
-// ── FORCE NO-CACHE on every response ─────────────────────────────────────────
-// This ensures browsers never serve stale HTML/CSS/JS during development.
+// ── FORCE NO-CACHE + CLEAR STALE CLIENT CACHES ───────────────────────────────
 app.use(function(req, res, next) {
   res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
   res.setHeader('Pragma', 'no-cache');
   res.setHeader('Expires', '0');
+  // Tell browsers to drop their HTTP cache for HTML navigation requests.
+  // This breaks the cycle where old cached HTML loads old cached JS/CSS.
+  // Does NOT clear localStorage/cookies — safe for user data.
+  if (req.method === 'GET' && req.headers.accept && req.headers.accept.includes('text/html')) {
+    res.setHeader('Clear-Site-Data', '"cache"');
+  }
   next();
 });
 
@@ -24,6 +29,7 @@ app.use(express.static(path.join(__dirname, 'public'), {
       res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
       res.setHeader('Pragma', 'no-cache');
       res.setHeader('Expires', '0');
+      res.setHeader('Clear-Site-Data', '"cache"');
     }
   }
 }));
