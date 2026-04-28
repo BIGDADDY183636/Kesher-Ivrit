@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Kesher Ivrit v6.1 | קשר עברית</title>
+  <title>Kesher Ivrit v6.2 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=610" />
+  <link rel="stylesheet" href="style.css?v=620" />
 </head>
 <body>
 
@@ -248,7 +248,7 @@
             <span class="dlc-badge" id="dlc-badge">Today's Lesson</span>
             <span class="dlc-session-dot" id="dlc-session">Session 1</span>
           </div>
-          <div class="dlc-title" id="dlc-title">Loading…</div>
+          <div class="dlc-title" id="dlc-title"></div>
           <div class="dlc-heb" id="dlc-heb"></div>
           <div class="dlc-meta">
             <span class="dlc-time" id="dlc-time">~15 min</span>
@@ -374,7 +374,7 @@
           <span class="cub-school" id="cub-school"></span>
         </div>
         <div class="cub-right">
-          <span class="cub-version">v6.1</span>
+          <span class="cub-version">v6.2</span>
           <button class="cub-restart-btn" onclick="newLesson()" title="New conversation">↺</button>
         </div>
       </div>
@@ -395,7 +395,7 @@
             <span class="typing-dot"></span>
           </div>
           <span class="typing-text">Morah is thinking…</span>
-          <span class="typing-version">v6.1</span>
+          <span class="typing-version">v6.2</span>
         </div>
         <div class="input-row">
           <button class="btn-mic" id="btn-mic" onclick="toggleVoiceInput()" title="Speak your answer">
@@ -690,26 +690,7 @@
   </div>
 </div>
 
-<!-- ═══════════════════════════════════════════
-     MODAL: API KEY SETUP
-═══════════════════════════════════════════ -->
-<div id="modal-apikey" class="modal-overlay" style="display:none;">
-  <div class="modal-box">
-    <h2>🔑 API Key Required</h2>
-    <p>Kesher Ivrit needs your Anthropic API key to power Morah, your AI Hebrew tutor.</p>
-    <p style="margin-bottom:14px; padding:10px 14px; background:#FFF8E7; border-radius:8px; border:1px solid #FFD700; font-size:0.82rem; color:#7A5C00;">
-      <strong>Option A (Recommended):</strong> Create a file named <code>.env</code> in the app folder with:<br/>
-      <code>ANTHROPIC_API_KEY=sk-ant-...</code><br/><br/>
-      <strong>Option B:</strong> Enter your key below (stored in this browser session only).
-    </p>
-    <div class="feedback-field">
-      <label>Anthropic API Key</label>
-      <input type="password" id="apikey-input" class="quiz-name-input"
-        placeholder="sk-ant-api03-..." style="margin-bottom:10px;" />
-    </div>
-    <button class="btn-feedback-submit" onclick="saveApiKey()">Save & Continue — יַאַלָּה!</button>
-  </div>
-</div>
+<!-- API key modal removed — keys are server-side only -->
 
 <!-- ═══════════════════════════════════════════
      TOAST NOTIFICATION
@@ -850,7 +831,7 @@
     <div class="pt-body">
       <div class="pt-card" id="pt-question-card">
         <div class="pt-emoji" id="pt-emoji">🔤</div>
-        <div class="pt-q-text" id="pt-q-text">Question text here</div>
+        <div class="pt-q-text" id="pt-q-text"></div>
         <div class="pt-heb" id="pt-heb" style="display:none;">שָׁלוֹם</div>
         <div class="pt-options" id="pt-options"></div>
         <div class="pt-fun-fact" id="pt-fun-fact" style="display:none;"></div>
@@ -876,15 +857,15 @@
     <div class="pt-res-score-wrap">
       <div class="pt-res-score-row">
         <span class="pt-res-score-label">Score</span>
-        <span class="pt-res-score-val" id="pt-res-score">7 / 10</span>
-        <span class="pt-res-pct-val" id="pt-res-pct">70%</span>
+        <span class="pt-res-score-val" id="pt-res-score"></span>
+        <span class="pt-res-pct-val" id="pt-res-pct"></span>
       </div>
       <div class="pt-res-bar-track">
         <div class="pt-res-bar" id="pt-res-bar"></div>
       </div>
     </div>
 
-    <div class="pt-res-msg" id="pt-res-msg">Encouraging message here.</div>
+    <div class="pt-res-msg" id="pt-res-msg"></div>
 
     <div class="pt-res-actions">
       <button class="pt-accept-btn" onclick="ptAccept()">
@@ -1023,7 +1004,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=610"></script>
+<script src="app.js?v=620"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">

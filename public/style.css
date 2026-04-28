@@ -3495,6 +3495,10 @@ body {
   box-shadow: 0 -6px 32px rgba(0,56,184,0.13);
 }
 .nav-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   position: relative;
   padding: 8px 4px 6px;
   gap: 3px;
@@ -3503,7 +3507,17 @@ body {
 .nav-btn:active { transform: scale(0.88); }
 .nav-btn .nav-icon {
   font-size: 1.5rem;
+  line-height: 1;
+  display: block;
   transition: transform 0.2s cubic-bezier(0.34,1.56,0.64,1);
+}
+.nav-btn .nav-label {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  display: block;
+  line-height: 1;
 }
 .nav-btn.active .nav-icon { transform: scale(1.18); }
 .nav-btn.active::before {

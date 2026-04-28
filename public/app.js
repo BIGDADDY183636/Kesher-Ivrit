@@ -1676,7 +1676,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v6.1</div>';
+    '<div class="mob-me-version">Kesher Ivrit v6.2</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -2264,7 +2264,14 @@ async function startLesson() {
   if (!VALID_LEVELS.includes(level)) level = 'complete_beginner';
 
   var firstMsg;
-  var dl = state.userProfile && state.userProfile.dailyLesson;
+  var dl    = state.userProfile && state.userProfile.dailyLesson;
+  var goals = Array.isArray(state.userProfile.goal) ? state.userProfile.goal
+              : state.userProfile.goal ? [state.userProfile.goal] : [];
+  var isBM      = goals.includes('bar_mitzvah');
+  var isBible   = goals.includes('bible');
+  var isPrayer  = goals.includes('prayer');
+  var myParasha = myClass && myClass.parasha;
+
   if (dl) {
     var dlSession = dl.reviewSession || 1;
     if (dlSession === 1) {
@@ -2276,6 +2283,14 @@ async function startLesson() {
     } else {
       firstMsg = "Mastery check for \"" + dl.conceptTitle + "\"! Quiz me hard on everything — I need to show I've mastered it.";
     }
+  } else if (isBM) {
+    firstMsg = myParasha
+      ? "Start my Bar/Bat Mitzvah preparation. My parasha is " + myParasha + ". Teach me the vocabulary, trope concepts, and brachot for my portion."
+      : "Start my Bar/Bat Mitzvah preparation. I don't know my parasha yet — please ask me, then begin teaching me the Hebrew concepts I need for my ceremony.";
+  } else if (isBible) {
+    firstMsg = "Start my Biblical Hebrew lesson. Focus on Torah vocabulary, vav-consecutive narrative, and construct state. I want to read and understand the actual Torah text.";
+  } else if (isPrayer) {
+    firstMsg = "Start my prayer Hebrew lesson. Teach me the Siddur word by word — I want to understand every word I pray, not just recite sounds.";
   } else if (level === 'intermediate') {
     firstMsg = "DO NOT say shalom. DO NOT greet me. I am Intermediate. Open your [TEACH] block immediately with הָלַךְ conjugated in all 9 past tense forms. Then [CHALLENGE].";
   } else if (level === 'advanced') {
@@ -2318,8 +2333,6 @@ function _cachedFallback() {
 // rate_limit) are re-thrown immediately.
 async function _fetchWithRetry(body, maxAttempts, onAttempt) {
   var headers = { 'Content-Type': 'application/json' };
-  var apiKey = getApiKey();
-  if (apiKey) headers['x-api-key'] = apiKey;
 
   var lastErr = null;
   for (var attempt = 1; attempt <= maxAttempts; attempt++) {
@@ -2460,7 +2473,6 @@ async function sendToMorah(messages) {
     console.error('[Chat] Failed after retries:', error.message);
 
     if (error.message === 'no_api_key') {
-      document.getElementById('modal-apikey').style.display = 'flex';
       appendErrorMessage('no_api_key');
     } else if (error.message === 'rate_limit') {
       appendErrorMessage('rate_limit');
@@ -2785,7 +2797,7 @@ function _streamBlocks(bubble, htmlContent, onDone) {
 
 function appendErrorMessage(errCode, serverDetail) {
   var MSGS = {
-    no_api_key:   { emoji: '🔑', title: 'API key needed',             body: 'Tap the ⚙️ icon above to add your Anthropic key.',           retry: false },
+    no_api_key:   { emoji: '🛠️', title: 'Service temporarily unavailable', body: 'Morah is having trouble connecting right now. Please try again in a moment.', retry: true },
     rate_limit:   { emoji: '⏳', title: 'Too many messages!',          body: 'Take a breath for a few seconds, then tap Retry.',            retry: true  },
     timeout:      { emoji: '⏱️', title: 'Morah is taking too long',    body: 'The response timed out. Tap Retry — she\'ll be right back!',  retry: true  },
     server_error: { emoji: '🛠️', title: 'Server hiccup',               body: 'Something glitched on our end. Already retried 3×. Tap Retry when ready.', retry: true },
@@ -4218,9 +4230,6 @@ async function showTooltip(word, rect) {
 
   try {
     const headers = { 'Content-Type': 'application/json' };
-    const apiKey = getApiKey();
-    if (apiKey) headers['x-api-key'] = apiKey;
-
     const res = await fetch('/api/tooltip', {
       method: 'POST',
       headers,
@@ -4245,34 +4254,7 @@ function closeTooltip() {
   clearTimeout(tooltipTimeout);
 }
 
-// ─── API KEY MANAGEMENT ───────────────────────────────────
-async function checkApiKey() {
-  try {
-    const r = await fetch('/api/status');
-    const d = await r.json();
-    if (!d.configured) {
-      const stored = sessionStorage.getItem('kesher_api_key');
-      if (!stored) {
-        document.getElementById('modal-apikey').style.display = 'flex';
-      }
-    }
-  } catch (e) { /* server not reachable */ }
-}
-
-function saveApiKey() {
-  const key = document.getElementById('apikey-input').value.trim();
-  if (!key || !key.startsWith('sk-')) {
-    showToast('Please enter a valid Anthropic API key (starts with sk-)');
-    return;
-  }
-  sessionStorage.setItem('kesher_api_key', key);
-  document.getElementById('modal-apikey').style.display = 'none';
-  showToast('API key saved for this session! Baruch Haba! ✡️');
-}
-
-function getApiKey() {
-  return sessionStorage.getItem('kesher_api_key') || '';
-}
+// API key management removed — keys are server-side only
 
 // ─── UTILITY ──────────────────────────────────────────────
 function escapeHtml(str) {
@@ -4451,23 +4433,24 @@ function _wlRenderBoard() {
   var target = _wlNorm(_wlDaily().base);
   var html   = '';
 
+  board.setAttribute('dir', 'rtl');
   for (var row = 0; row < 6; row++) {
-    html += '<div class="wl-row" id="wl-row-' + row + '">';
+    html += '<div class="wl-row" id="wl-row-' + row + '" dir="rtl">';
     var guess = state.guesses[row];
     if (guess) {
       var g      = _wlNorm(guess);
       var colors = _wlEval(g, target);
       for (var col = 0; col < 5; col++) {
-        html += '<div class="wl-tile wl-' + colors[col] + ' wl-filled" style="animation-delay:' + (col*0.12) + 's">' + guess[col] + '</div>';
+        html += '<div class="wl-tile wl-' + colors[col] + ' wl-filled" style="animation-delay:' + (col*0.12) + 's" dir="rtl">' + guess[col] + '</div>';
       }
     } else if (row === state.guesses.length && !state.won && !state.lost) {
       for (var col = 0; col < 5; col++) {
         var letter = _wlCurrent[col] || '';
-        html += '<div class="wl-tile' + (letter ? ' wl-active' : '') + '">' + letter + '</div>';
+        html += '<div class="wl-tile' + (letter ? ' wl-active' : '') + '" dir="rtl">' + letter + '</div>';
       }
     } else {
       for (var col = 0; col < 5; col++) {
-        html += '<div class="wl-tile"></div>';
+        html += '<div class="wl-tile" dir="rtl"></div>';
       }
     }
     html += '</div>';
@@ -4494,17 +4477,17 @@ function _wlKeyColors() {
 function _wlRenderKeyboard() {
   var kb = document.getElementById('wl-keyboard');
   if (!kb) return;
+  kb.setAttribute('dir', 'rtl');
   var colors = _wlKeyColors();
   var rows = [
     ['א','ב','ג','ד','ה','ו','ז','ח','ט'],
     ['י','כ','ל','מ','נ','ס','ע','פ','צ'],
-    ['ק','ר','ש','ת'],
-    ['ך','ם','ן','ף','ץ'],
+    ['ק','ר','ש','ת','ך','ם','ן','ף','ץ'],
     ['ENTER','⌫'],
   ];
   var html = '';
   rows.forEach(function(row) {
-    html += '<div class="wl-kb-row">';
+    html += '<div class="wl-kb-row" dir="rtl">';
     row.forEach(function(k) {
       var norm  = _WL_FINALS[k] || k;
       var cls   = colors[norm] ? ' wl-key-' + colors[norm] : '';
@@ -5615,10 +5598,48 @@ function getDailyTimeMinutes() {
 // ── Home screen card ──────────────────────────────────────
 function renderDailyLessonCard() {
   var card = document.getElementById('daily-lesson-card');
-  if (!card || !state.userProfile) { if (card) card.style.display = 'none'; return; }
+  if (!card) return;
+
+  // New user: has account but hasn't done placement test yet
+  if (!state.userProfile) {
+    if (currentUser) {
+      card.style.display = 'block';
+      var titleEl2 = document.getElementById('dlc-title');
+      var hebEl2   = document.getElementById('dlc-heb');
+      var badgeEl2 = document.getElementById('dlc-badge');
+      var sessionEl2 = document.getElementById('dlc-session');
+      var timeEl2  = document.getElementById('dlc-time');
+      var mastEl2  = document.getElementById('dlc-mastery');
+      var startBtn2 = document.getElementById('dlc-start-btn');
+      var doneMsg2  = document.getElementById('dlc-done-msg');
+      if (badgeEl2)  { badgeEl2.textContent = 'Welcome'; badgeEl2.style.background = '#7C3AED'; }
+      if (sessionEl2) sessionEl2.innerHTML = '';
+      if (titleEl2)  titleEl2.textContent = 'Start your Hebrew journey with Morah!';
+      if (hebEl2)    hebEl2.textContent = 'יַאַלָּה נִלְמַד!';
+      if (timeEl2)   timeEl2.textContent = '~5 min';
+      if (mastEl2)   mastEl2.textContent = 'Placement test included';
+      if (startBtn2) { startBtn2.style.display = 'block'; startBtn2.textContent = 'Start My First Lesson →'; startBtn2.onclick = function() { startOnboarding(); }; }
+      if (doneMsg2)  doneMsg2.style.display = 'none';
+    } else {
+      card.style.display = 'none';
+    }
+    return;
+  }
 
   var lessonInfo = computeTodayLesson();
-  if (!lessonInfo) { card.style.display = 'none'; return; }
+  if (!lessonInfo) {
+    // Fallback: all concepts mastered — show encouragement
+    card.style.display = 'block';
+    var tf = document.getElementById('dlc-title');
+    var bf = document.getElementById('dlc-badge');
+    var sf = document.getElementById('dlc-start-btn');
+    var df = document.getElementById('dlc-done-msg');
+    if (bf)  { bf.textContent = 'All done!'; bf.style.background = '#059669'; }
+    if (tf)  tf.textContent = 'Incredible — you\'ve mastered all concepts at your level!';
+    if (sf)  { sf.style.display = 'block'; sf.textContent = 'Keep practicing →'; sf.onclick = function() { continueLearning(); }; }
+    if (df)  df.style.display = 'none';
+    return;
+  }
 
   var concept     = lessonInfo.concept;
   var session     = lessonInfo.reviewSession;
@@ -5825,7 +5846,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v6.1';
+  var CURRENT_VERSION = 'v6.2';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
