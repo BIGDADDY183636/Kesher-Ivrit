@@ -7871,6 +7871,18 @@ body { background: var(--ui-bg) !important; color: var(--ui-text) !important; }
   color: var(--ui-muted);
   font-weight: 400;
 }
+.cub-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.cub-version {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--ui-border);
+  letter-spacing: 0.03em;
+}
 .cub-restart-btn {
   width: 32px;
   height: 32px;

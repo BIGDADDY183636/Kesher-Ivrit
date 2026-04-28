@@ -1173,7 +1173,8 @@ document.addEventListener('DOMContentLoaded', async () => {
   } else {
     updateUserBadges();
     checkReturningUser();
-    await checkApiKey();
+    // API key modal is shown only when a real chat request fails (no_api_key error)
+    // not proactively on load — avoids false interruptions when key is in .env
   }
 });
 
@@ -1644,7 +1645,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v5.8</div>';
+    '<div class="mob-me-version">Kesher Ivrit v5.9</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -2175,7 +2176,18 @@ async function startLesson() {
   state.session = { wordsThisSession: [], skipList: [], consecutiveCorrect: 0, consecutiveWrong: 0, totalCorrect: 0, totalWrong: 0 };
   document.getElementById('chat-messages').innerHTML = '';
   setMorahStatus('Starting your lesson...');
-  await sendToMorah([{ role: 'user', content: 'Please start our lesson! Greet me and let\'s begin.' }]);
+
+  var level = state.userProfile && state.userProfile.level;
+  var firstMsg;
+  if (level === 'intermediate') {
+    firstMsg = "Start our lesson now. I'm an intermediate Hebrew learner — open immediately with past tense Pa'al conjugations. Show the full paradigm with a concrete verb. Do NOT say shalom or teach greetings.";
+  } else if (level === 'advanced') {
+    firstMsg = "Start our lesson now. I'm an advanced Hebrew learner — open immediately with a binyan, complex idiom, or advanced grammar concept. No warmup, no basics whatsoever.";
+  } else {
+    firstMsg = "Please start our lesson!";
+  }
+
+  await sendToMorah([{ role: 'user', content: firstMsg }]);
 }
 
 function newLesson() {
