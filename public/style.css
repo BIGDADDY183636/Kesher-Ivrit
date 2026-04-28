@@ -7469,6 +7469,28 @@ body { background: var(--s-bg) !important; font-weight: 400; }
 .btn-scroll-bottom { background: var(--cat-learn) !important; box-shadow: none !important; }
 .btn-scroll-bottom:hover { transform: none !important; }
 
+/* ── Morah text — clean, consistent, no mixed styles ──────── */
+.heb-word {
+  font-family: var(--font-heb);
+  font-size: 1.1em;
+  font-weight: 700;
+  color: inherit;
+  direction: rtl;
+  display: inline;
+}
+.msg-bold { font-weight: 700 !important; color: inherit !important; background: none !important; -webkit-text-fill-color: inherit !important; }
+.msg-em   { font-style: italic; color: inherit !important; font-weight: inherit !important; }
+.msg-heading { font-size: inherit !important; font-weight: 700; color: var(--s-text) !important; border: none !important; padding: 0 !important; margin: 0 0 4px !important; }
+/* Games slide hero */
+.ob-slide-games-hero { display: flex; flex-direction: column; align-items: center; gap: 12px; width: 100%; text-align: center; }
+.ob-games-icon-wrap   { font-size: 3.5rem; line-height: 1; }
+.ob-games-title       { font-size: clamp(1.8rem, 6vw, 2.6rem) !important; }
+.ob-games-subtitle    { font-size: 1rem; color: rgba(255,255,255,0.75); font-weight: 500; }
+.ob-games-body        { font-size: 0.95rem; color: rgba(255,255,255,0.85); line-height: 1.65; max-width: 340px; }
+.ob-games-cta         { font-size: 0.82rem; color: rgba(255,255,255,0.55); font-style: italic; }
+/* Slide 1 desc */
+.ob-s1-desc { font-size: 0.95rem; color: rgba(255,255,255,0.8); line-height: 1.6; max-width: 320px; margin: 0 auto; }
+
 /* ── Dark mode compatibility — keep existing rules working ─── */
 [data-theme="dark"] .build-tag {
   background: rgba(79,142,247,0.18) !important;

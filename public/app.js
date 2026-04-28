@@ -794,16 +794,10 @@ function _ptAnswer(chosen) {
     if (i === chosen && !ok)       b.classList.add('pt-opt-wrong');
   });
 
-  // Fun fact
-  var ff = document.getElementById('pt-fun-fact');
-  ff.innerHTML = escapeHtml(q.fun);
-  ff.style.display = 'block';
-  ff.className = 'pt-fun-fact ' + (ok ? 'pt-ff-correct' : 'pt-ff-wrong');
-
   // Score badge
   document.getElementById('pt-score').textContent = '✓ ' + _pt.score;
 
-  setTimeout(_ptNext, 1600);
+  setTimeout(_ptNext, 700);
 }
 
 function ptDontKnow() {
@@ -819,15 +813,7 @@ function ptDontKnow() {
     if (i === q.ans) b.classList.add('pt-opt-correct');
   });
 
-  // Show answer + explanation in fun fact
-  var ff = document.getElementById('pt-fun-fact');
-  ff.innerHTML =
-    '<strong>💡 Answer: ' + escapeHtml(q.opts[q.ans]) + '</strong><br>' +
-    escapeHtml(q.fun);
-  ff.style.display = 'block';
-  ff.className = 'pt-fun-fact pt-ff-dontknow';
-
-  setTimeout(_ptNext, 2400); // slightly longer so they can read the answer
+  setTimeout(_ptNext, 1000);
 }
 
 function _ptNext() {
@@ -3112,10 +3098,10 @@ function formatMessage(text) {
       continue;
     }
 
-    // ── Markdown heading (# ## ###) ──────────────────────
+    // ── Markdown heading → plain paragraph ───────────────
     const hm = line.match(/^#{1,3}\s+(.+)/);
     if (hm) {
-      html += `<div class="msg-heading">${_msgInline(hm[1])}</div>`;
+      html += `<p><strong>${_msgInline(hm[1])}</strong></p>`;
       i++; continue;
     }
 
@@ -3159,21 +3145,21 @@ function formatMessage(text) {
   return html || '<p></p>';
 }
 
-// Inline formatter: bold → heb-pill or gold-bold, italic, code
+// Inline formatter: clean and minimal — no mixed font styles
 function _msgInline(raw) {
   let h = escapeHtml(raw);
-  // **text** → Hebrew pill if starts with Hebrew char, else gold bold
+  // **Hebrew word** → Hebrew font span (no pill background)
   h = h.replace(/\*\*([^*]+)\*\*/g, function(_, inner) {
-    return /^[֐-׿]/.test(inner.trim())
-      ? `<span class="heb-pill" dir="rtl">${inner}</span>`
-      : `<strong class="msg-bold">${inner}</strong>`;
+    return /[֐-׿]/.test(inner.trim())
+      ? `<span class="heb-word" dir="rtl">${inner}</span>`
+      : `<strong>${inner}</strong>`;
   });
-  // *text* → italic
-  h = h.replace(/\*([^*\n]+)\*/g, '<em class="msg-em">$1</em>');
-  // `code`
+  // *text* → italic (no extra color class)
+  h = h.replace(/\*([^*\n]+)\*/g, '<em>$1</em>');
+  // `code` → inline code
   h = h.replace(/`([^`]+)`/g, '<code class="msg-code">$1</code>');
-  // em-dash quoted examples
-  h = h.replace(/—\s*(?:&quot;|")([^"&]+)(?:&quot;|")/g, '— <code class="msg-code">$1</code>');
+  // Strip any remaining stray * or # characters
+  h = h.replace(/\*+/g, '').replace(/^#+\s*/gm, '');
   return h;
 }
 
