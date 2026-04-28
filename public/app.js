@@ -1456,7 +1456,7 @@ function quizBack() {
 function finishQuiz() {
   state.userProfile = { ...state.quizAnswers };
   saveProgress();
-  showToast(`Shalom, ${state.userProfile.name}! Let's learn! 🇮🇱`);
+  showToast('Yalla, ' + state.userProfile.name + '! Let\'s learn!');
   showScreen('screen-lesson');
   setupLessonScreen();
   updateUserBadges();
@@ -2177,15 +2177,19 @@ async function startLesson() {
   document.getElementById('chat-messages').innerHTML = '';
   setMorahStatus('Starting your lesson...');
 
-  var level = state.userProfile && state.userProfile.level;
+  var VALID_LEVELS = ['complete_beginner','some_exposure','basic','intermediate','advanced'];
+  var level = (state.userProfile && state.userProfile.level) || 'complete_beginner';
+  if (!VALID_LEVELS.includes(level)) level = 'complete_beginner';
+
   var firstMsg;
   if (level === 'intermediate') {
-    firstMsg = "DO NOT say shalom. DO NOT teach greetings. I am Intermediate level. Start IMMEDIATELY with past tense Pa'al. First word: הָלַךְ conjugated in all 9 forms.";
+    firstMsg = "DO NOT say shalom. DO NOT greet me. I am Intermediate. Open your [TEACH] block immediately with הָלַךְ conjugated in all 9 past tense forms. Then [CHALLENGE].";
   } else if (level === 'advanced') {
-    firstMsg = "DO NOT say shalom. DO NOT teach greetings or basics. I am Advanced level. Start IMMEDIATELY with a binyan, idiom, or complex grammar. Go.";
+    firstMsg = "DO NOT say shalom. DO NOT greet me. I am Advanced. Open your [TEACH] block immediately with a binyan or idiom. No introduction.";
   } else {
     firstMsg = "Please start our lesson!";
   }
+  console.log('[startLesson] level=' + level + ' msg=' + firstMsg.slice(0, 80));
 
   await sendToMorah([{ role: 'user', content: firstMsg }]);
 }

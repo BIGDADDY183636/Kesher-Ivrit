@@ -239,13 +239,25 @@ You are the student's go-to person for anything Jewish. Make them feel like they
   const curriculum  = curriculumMap[userProfile.curriculum] || 'a mixed approach';
   const timeAvail   = userProfile.timeAvailable || '10-15 minutes';
 
+  const isAboveElementary = (userProfile.level === 'intermediate' || userProfile.level === 'advanced');
+
   return `You are Morah (מורה), warm and brilliant Hebrew teacher at Kesher Ivrit. Your vibe: cool older Israeli sister — casual, funny, real, proudly Zionist. Never stiff.
 
 STUDENT: ${name} | ${levelFull} | Goal: ${goal} | Style: ${style} | Background: ${background} | Topic: ${userProfile.currentTopic || 'General Hebrew'} | Time: ${timeAvail}
 
 VIBE: Hyped when right: "WALLA! כָּל הַכָּבוֹד!" Breezy when wrong: "Oof, almost!" Israeli slang (yalla, sababa, walla, stam, b'seder) natural. Short punchy sentences.
 
-🔴 ABSOLUTE RULE — NO EXCEPTIONS: If the student is Intermediate or Advanced, you MUST NEVER teach שָׁלוֹם, greetings, the aleph-bet, numbers 1-10, or any beginner vocabulary — not even as a warmup, not even in the first message. Their FIRST message from you must open with past tense conjugations (Intermediate) or advanced grammar/idioms (Advanced). Teaching greetings to an Intermediate or Advanced student is an error.
+${isAboveElementary ? `🚫🚫🚫 HARD STOP — READ THIS FIRST 🚫🚫🚫
+This student is ${userProfile.level.toUpperCase()}. The following are FORBIDDEN in every single message you send, starting with message #1:
+- The word שָׁלוֹם or any greeting equivalent
+- The aleph-bet or any letter teaching
+- Numbers 1-10
+- Basic vocabulary (colors, body parts, family basics)
+- Any phrase like "Hello!", "Hi!", "Let's start!", "Welcome!"
+Your FIRST word in your FIRST message must be a Hebrew grammar term or verb form.
+You will be penalized for every greeting. There are no exceptions.
+🚫🚫🚫 END HARD STOP 🚫🚫🚫
+` : ''}
 
 LEVEL RULES:
 ${
@@ -352,6 +364,13 @@ app.post('/api/chat', async (req, res) => {
     ? anthropic
     : new Anthropic({ apiKey });
 
+  // Normalise level — guard against null/undefined/stale values from old localStorage
+  const VALID_LEVELS = ['complete_beginner','some_exposure','basic','intermediate','advanced'];
+  if (!VALID_LEVELS.includes(userProfile.level)) {
+    console.warn(`[API] Invalid level "${userProfile.level}" — defaulting to complete_beginner`);
+    userProfile.level = 'complete_beginner';
+  }
+
   let systemPrompt;
   try {
     systemPrompt = buildSystemPrompt(userProfile, myClass || null);
@@ -360,10 +379,12 @@ app.post('/api/chat', async (req, res) => {
     return res.status(500).json({ error: 'server_error', message: 'Failed to build system prompt: ' + promptErr.message });
   }
 
-  // Debug log so we can verify level and first-message instruction in Vercel logs
-  console.log(`[API] Chat request — level: ${userProfile.level} | qaMode: ${!!userProfile.qaMode} | msgs: ${messages.length} | topic: ${userProfile.currentTopic || 'none'}`);
-  const lastLine = systemPrompt.split('\n').filter(l => l.trim()).pop();
-  console.log(`[API] Prompt last line: ${lastLine}`);
+  // ── FULL DIAGNOSTIC LOG — visible in Vercel Functions logs ──────────────────
+  console.log(`[API] level=${userProfile.level} qaMode=${!!userProfile.qaMode} msgs=${messages.length} topic=${userProfile.currentTopic||'none'}`);
+  console.log(`[API] PROMPT FIRST 400: ${systemPrompt.slice(0, 400)}`);
+  console.log(`[API] PROMPT LAST LINE: ${systemPrompt.split('\n').filter(l=>l.trim()).pop()}`);
+  console.log(`[API] FIRST USER MSG: ${(messages[0]||{}).content||'(none)'}`);
+  // ────────────────────────────────────────────────────────────────────────────
 
   try {
     // Single attempt — client handles retries. No server-side delay loops that
