@@ -1727,6 +1727,7 @@ function renderMobileProfile() {
         (pc > 0 ? '<span class="mob-mr-item mob-mr-practicing">🔵 ' + pc + ' practicing</span>' : '') +
       '</div>';
     })() +
+    '<button class="share-kesher-btn" onclick="shareKesherIvrit(\'me\')">🇮🇱 Share Kesher Ivrit with Friends</button>' +
     '<button class="mob-progress-btn" onclick="showProgressScreen()">📊 My Progress</button>' +
     '<button class="mob-lb-open-btn" onclick="showLeaderboardScreen()">🏆 Leaderboard</button>' +
     '<button class="mob-share-btn" onclick="shareScore()">📤 Share My Score</button>' +
@@ -1761,7 +1762,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v7.1</div>';
+    '<div class="mob-me-version">Kesher Ivrit v7.2</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -1913,6 +1914,60 @@ function renderLeaderboardScreen(dbBoard, loading) {
     '</div>' +
     '<button class="lb-share-btn" onclick="shareScore()">📤 Share My Score &amp; Challenge Friends</button>' +
     '<div class="lb-disclaimer">Rankings include demo students. Compete with real classmates by sharing the app!</div>';
+}
+
+// ─── SHARE KESHER IVRIT ───────────────────────────────────────────────────────
+// Context: 'me' | 'daily' | 'quiz'
+// Uses Web Share API on mobile; clipboard fallback on desktop.
+function shareKesherIvrit(context) {
+  var base = "I'm learning Hebrew with Kesher Ivrit — a free AI Hebrew tutor that adapts to your level. Try it at kesher-ivrit.vercel.app 🇮🇱";
+  var url  = 'https://kesher-ivrit.vercel.app';
+  var text;
+
+  if (context === 'daily') {
+    var streak = state.progress.streak;
+    var words  = state.progress.wordsLearned.length;
+    var stats  = [];
+    if (streak > 1) stats.push(streak + '-day streak 🔥');
+    if (words  > 0) stats.push(words  + ' Hebrew words learned');
+    text = '🎓 Just completed a daily Hebrew lesson!' +
+           (stats.length ? ' (' + stats.join(' · ') + ')' : '') +
+           '\n\n' + base;
+  } else if (context === 'quiz') {
+    var sc = (_qm && _qm.score)            || 0;
+    var tt = (_qm && _qm.questions && _qm.questions.length) || 10;
+    text = '🧠 I scored ' + sc + '/' + tt + ' on a Hebrew quiz — can you beat me?\n\n' + base;
+  } else {
+    var pts = state.progress.points;
+    var wds = state.progress.wordsLearned.length;
+    var bits = [];
+    if (pts > 0) bits.push(pts + ' points');
+    if (wds > 0) bits.push(wds + ' words learned');
+    text = (bits.length ? '✡️ ' + bits.join(' · ') + ' — and still going!\n\n' : '') + base;
+  }
+
+  var payload = { title: 'Kesher Ivrit 🇮🇱', text: text, url: url };
+
+  if (navigator.share) {
+    navigator.share(payload).catch(function() { _copyShareText(text + '\n' + url); });
+  } else {
+    _copyShareText(text + '\n' + url);
+  }
+}
+
+function _copyShareText(text) {
+  function done() { showToast('📋 Copied! Paste into iMessage, WhatsApp, or email to share.', 4500); }
+  function fallback() {
+    var ta = document.createElement('textarea');
+    ta.value = text;
+    ta.style.cssText = 'position:fixed;top:0;left:0;opacity:0;pointer-events:none';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e) { showToast('Visit kesher-ivrit.vercel.app 🇮🇱'); }
+    document.body.removeChild(ta);
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText)
+    navigator.clipboard.writeText(text).then(done).catch(fallback);
+  else fallback();
 }
 
 function shareScore() {
@@ -3510,10 +3565,14 @@ function showPointsPop(points) {
   setTimeout(() => el.remove(), 1600);
 }
 
-function showStreakModal(emoji, title, message) {
-  document.getElementById('streak-emoji').textContent = emoji;
-  document.getElementById('streak-title').textContent = title;
+function showStreakModal(emoji, title, message, showShare, closeTxt) {
+  document.getElementById('streak-emoji').textContent  = emoji;
+  document.getElementById('streak-title').textContent  = title;
   document.getElementById('streak-message').textContent = message;
+  var shareBtn  = document.getElementById('streak-share-btn');
+  var closeBtn  = document.getElementById('streak-close-btn');
+  if (shareBtn) shareBtn.style.display = showShare ? '' : 'none';
+  if (closeBtn) closeBtn.textContent   = closeTxt || (showShare ? 'Keep Learning! 🔥' : "OK, I'll do better! 🙏");
   document.getElementById('modal-streak').style.display = 'flex';
 }
 
@@ -5904,14 +5963,16 @@ function completeDailyLesson() {
 
   if (justMastered) {
     showStreakModal('🏆', 'Concept Mastered!',
-      '"' + (title || 'This concept') + '" mastered! Score: ' + score + '%. Tomorrow: something new!');
+      '"' + (title || 'This concept') + '" mastered! Score: ' + score + '%. Tomorrow: something new!',
+      true);
   } else {
-    var msg = score >= 80
-      ? 'Sababa! ' + score + '% — great work! Review scheduled for tomorrow.'
+    var celebEmoji = score >= 80 ? '🎉' : score >= 60 ? '⭐' : '💪';
+    var celebMsg   = score >= 80
+      ? 'Sababa! ' + score + '% — great work! Review in a few days.'
       : score >= 60
-      ? 'B\'seder! ' + score + '% — we\'ll practice more tomorrow.'
+      ? "B'seder! " + score + "% — we'll practice more tomorrow."
       : 'Keep going! ' + score + '% — Morah will help you nail this.';
-    showToast(msg);
+    showStreakModal(celebEmoji, 'Lesson Complete!', celebMsg, true);
   }
 }
 
@@ -5969,7 +6030,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v7.1';
+  var CURRENT_VERSION = 'v7.2';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
@@ -6334,6 +6395,7 @@ function _qmShowResults() {
       '<div class="qm-res-bar-bg"><div class="qm-res-bar" data-pct="' + pct + '" style="width:0%"></div></div>' +
       wrongHtml +
       '<div class="qm-res-actions">' +
+        '<button class="qm-share-btn" onclick="shareKesherIvrit(\'quiz\')">🇮🇱 Challenge Your Friends!</button>' +
         '<button class="qm-btn-primary" onclick="startQuizMode(\'' + _qm.topic + '\')">Try Again →</button>' +
         (_qm.wrongAnswers.length ? '<button class="qm-btn-secondary" onclick="_qmReviewMorah()">Review Mistakes with Morah</button>' : '') +
         '<button class="qm-btn-ghost" onclick="closeQuizMode()">Done</button>' +

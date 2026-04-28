@@ -2475,6 +2475,32 @@ body {
   -webkit-tap-highlight-color: transparent; transition: transform 0.12s;
 }
 .mob-progress-btn:active { transform: scale(0.97); }
+/* ── Share Kesher Ivrit — Me tab prominent button ── */
+.share-kesher-btn {
+  width: 100%;
+  padding: 16px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #D4A017 0%, #FFD700 50%, #D4A017 100%);
+  background-size: 200% auto;
+  color: #001F77;
+  font-size: 1.05rem;
+  font-weight: 900;
+  font-family: var(--font-eng);
+  cursor: pointer;
+  letter-spacing: 0.01em;
+  box-shadow: 0 5px 0 #A07800, 0 8px 24px rgba(212,160,23,0.45);
+  transition: transform 0.12s, box-shadow 0.12s, background-position 0.4s;
+  -webkit-tap-highlight-color: transparent;
+  animation: share-shimmer 3s ease-in-out infinite;
+}
+@keyframes share-shimmer {
+  0%, 100% { background-position: 0% center; }
+  50%       { background-position: 100% center; }
+}
+.share-kesher-btn:hover  { transform: translateY(-2px); box-shadow: 0 7px 0 #A07800, 0 12px 32px rgba(212,160,23,0.55); }
+.share-kesher-btn:active { transform: translateY(4px);  box-shadow: 0 1px 0 #A07800; }
+
 .mob-share-btn {
   width: 100%; padding: 13px; border: 2px solid var(--blue-mid); border-radius: 16px;
   background: var(--white); color: var(--blue-deep); font-size: 0.95rem; font-weight: 700;
@@ -8938,6 +8964,56 @@ p, li, .mob-action-title { font-weight: 500; }
 [data-theme="dark"] .qm-mc-btn { background: #12121A !important; border-color: #2A2A40 !important; color: #E8EAFF !important; }
 [data-theme="dark"] .qm-res-stat { background: #12121A !important; border-color: #2A2A40 !important; }
 [data-theme="dark"] .qm-wrong-box { background: #12121A !important; }
+/* ── Share button in Daily Lesson / streak modal ── */
+.btn-share-celebration {
+  display: block;
+  width: 100%;
+  padding: 15px;
+  margin-bottom: 10px;
+  border: none;
+  border-radius: 16px;
+  background: linear-gradient(135deg, #D4A017, #FFD700, #D4A017);
+  background-size: 200% auto;
+  color: #001F77;
+  font-size: 1rem;
+  font-weight: 900;
+  font-family: var(--font-eng);
+  cursor: pointer;
+  box-shadow: 0 4px 0 #A07800, 0 6px 20px rgba(212,160,23,0.4);
+  letter-spacing: 0.01em;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s, box-shadow 0.12s;
+  animation: share-shimmer 3s ease-in-out infinite;
+}
+.btn-share-celebration:active { transform: translateY(3px); box-shadow: 0 1px 0 #A07800; }
+
+/* ── Share button in Quiz results ── */
+.qm-share-btn {
+  width: 100%;
+  padding: 15px;
+  border: none;
+  border-radius: 14px;
+  background: linear-gradient(135deg, #D4A017, #FFD700, #D4A017);
+  background-size: 200% auto;
+  color: #001F77;
+  font-size: 1rem;
+  font-weight: 900;
+  font-family: var(--font-eng);
+  cursor: pointer;
+  box-shadow: 0 4px 0 #A07800, 0 6px 20px rgba(212,160,23,0.35);
+  margin-bottom: 8px;
+  letter-spacing: 0.01em;
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.12s, box-shadow 0.12s;
+  animation: share-shimmer 3s ease-in-out infinite;
+}
+.qm-share-btn:active { transform: translateY(3px); box-shadow: 0 1px 0 #A07800; }
+
+/* Dark mode for share buttons */
+[data-theme="dark"] .share-kesher-btn,
+[data-theme="dark"] .btn-share-celebration,
+[data-theme="dark"] .qm-share-btn { box-shadow: 0 4px 0 #A07800, 0 6px 20px rgba(212,160,23,0.25) !important; }
+
 [data-theme="dark"] .qm-btn-secondary { background: #12121A !important; }
 
 /* ╔═══════════════════════════════════════════════════════════╗

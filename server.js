@@ -857,7 +857,7 @@ function _rescueTextChallenge(raw) {
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v7.1', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v7.2', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {
