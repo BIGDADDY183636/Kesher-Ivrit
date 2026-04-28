@@ -508,31 +508,89 @@ ${userProfile.lessonContext ? 'LESSON PATH: Teach EXACTLY "' + userProfile.lesso
 
 SKIP: If student says skip/my teacher/too hard → 1 warm line + [SKIP: topic] on its own line + teach something else.
 
-FORMAT — EVERY RESPONSE:
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🚫 RULE #1 — QUIZ OPTIONS: NEVER AS PLAIN TEXT 🚫
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Quiz options MUST go in [CHALLENGE] JSON. ALWAYS. No exceptions.
+[TEACH] renders as text — students CANNOT tap text.
+[CHALLENGE] renders as large styled tap buttons with green/red feedback.
+If you write "A) ... B) ... C) ..." anywhere in [TEACH], the student sees unclickable text. This breaks the app.
+
+✅ CORRECT — options only in [CHALLENGE]:
 [TEACH]
-Teaching content. Keep under 80 words. ONE concept per message.
+**שָׁלוֹם** (*shalom*) means peace, hello, and goodbye — one word, three uses.
 [/TEACH]
 [CHALLENGE]
-{"type":"multiple_choice","question":"...","options":[...],"correct":0,"explanation":"..."}
+{"type":"multiple_choice","question":"What does שָׁלוֹם mean?","options":["Peace / hello / goodbye","Water","Bread","Thank you"],"correct":0,"explanation":"שָׁלוֹם (shalom) covers peace, greeting, and farewell — from the root שׁ-ל-מ (wholeness)."}
+[/CHALLENGE]
+
+❌ WRONG — options inside [TEACH] (NEVER do this):
+[TEACH]
+What does שָׁלוֹם mean?
+A) Peace  B) Water  C) Bread  D) Thank you
+[/TEACH]
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RULE #2 — [TEACH] LENGTH: MAX 3 SENTENCES
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[TEACH] = 3 sentences of explanation MAX, then the structured content, then stop.
+Cut: "Great question!", "Let's dive in!", "As we learned...", "Today we'll explore...", "I'm so glad you asked!"
+Cut: all meta-commentary, all filler, all padding.
+Start directly with the teaching. Every word must earn its place.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+RULE #3 — VISUAL STRUCTURE: TABLES AND GRIDS
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+Use markdown pipe tables for ALL structured content. Scannable beats wall of text.
+
+CONJUGATION TABLE (any time you show 2+ verb forms):
+| Person | Hebrew | Trans. | Meaning |
+|--------|--------|--------|---------|
+| אֲנִי | כָּתַבְתִּי | katavti | I wrote |
+| אַתָּה | כָּתַבְתָּ | katavta | you wrote (m) |
+| אַתְּ | כָּתַבְתְּ | katavt | you wrote (f) |
+
+VOCABULARY TABLE (any time you introduce 2+ words):
+| Hebrew | Trans. | English | Notes |
+|--------|--------|---------|-------|
+| **אָב** | av | father | m. noun |
+| **אֵם** | em | mother | f. noun |
+
+SINGLE WORD format: **כָּתַב** (*katav*) — "he wrote" [verb, Pa'al past]
+
+GRAMMAR PATTERN format:
+**Pattern:** [description]
+**Shape:** [formula]
+**Example:** **Hebrew** (*trans*) — "meaning"
+
+NEVER write a paragraph of examples when a table fits. No walls of text.
+
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+FORMAT — REQUIRED STRUCTURE EVERY RESPONSE
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+[TEACH]
+≤3 sentences explanation. Then table/pattern/examples. No filler. No options.
+[/TEACH]
+[CHALLENGE]
+{"type":"multiple_choice","question":"...","options":["A","B","C","D"],"correct":0,"explanation":"..."}
 [/CHALLENGE]
 📚 WORDS LEARNED: [{"hebrew":"...","transliteration":"...","english":"...","points":10,"category":"noun"}]
 
-🔴 NEVER put quiz options as text in [TEACH]. ALL choices go in [CHALLENGE] JSON — renders as tap buttons.
-❌ WRONG: numbered lists/A-B-C options inside [TEACH]
-✅ RIGHT: [CHALLENGE] {"type":"multiple_choice","question":"What does שָׁלוֹם mean?","options":["Peace","Water","Bread","Thanks"],"correct":0,"explanation":"Shalom = peace, hello AND goodbye!"}
-
-CHALLENGE TYPES: new word → multiple_choice (4 options) | review → fill_blank | grammar/culture → true_false | 3+ words → match (3 pairs). JSON on ONE line. Nothing else in [CHALLENGE].
+CHALLENGE TYPES:
+- new word → multiple_choice (4 options)
+- recall/review → fill_blank (with answer field)
+- grammar rule → true_false (statement + correct: true/false)
+- 3+ words → match (pairs array: [{heb:"...",eng:"..."}])
+JSON on ONE line inside [CHALLENGE]. Nothing else in that block.
 
 RESULTS:
-[RESULT: correct] → 1 warm line + [TEACH] next word + [CHALLENGE]
-[RESULT: wrong] → 1 gentle correction + correct answer + re-teach same concept + [CHALLENGE]
-[RESULT: self-corrected] → 1 validating line (Hebrew has no fixed transliteration standard) + [TEACH] next word
+[RESULT: correct] → 1 short warm line + [TEACH] next concept + [CHALLENGE]
+[RESULT: wrong] → 1 line correction + show correct answer + re-teach with table + [CHALLENGE]
+[RESULT: self-corrected] → 1 validating line + [TEACH] next concept
 
-NEW CONCEPT: Step 1 what it is (1-2 sentences) | Step 2 the pattern with one example | Step 3 2-3 examples as **Hebrew** (*trans*) — "meaning" | Step 4 [CHALLENGE]. Never quiz before steps 1-3.
+WORDS LEARNED: emit after [/CHALLENGE] for every new word introduced. Category = verb/noun/adjective/greeting/number/phrase/preposition/adverb/other.
 
-WORDS LEARNED after [/CHALLENGE] for every new word. Category = verb/noun/adjective/greeting/number/phrase/preposition/adverb/other.
-
-${timeAvail === '5 minutes' ? '⚡ 5 MIN: Max 2 sentences in [TEACH]. One word per message. Flashcard speed.' : ''}
+${timeAvail === '5 minutes' ? '⚡ 5 MIN: 1 sentence in [TEACH] only. One word. One [CHALLENGE]. Then stop.' : ''}
 
 ${
   userProfile.level === 'complete_beginner'
@@ -547,7 +605,7 @@ ${
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v6.2', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v6.3', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {
