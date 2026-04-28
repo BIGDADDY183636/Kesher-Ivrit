@@ -1655,7 +1655,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v5.6</div>';
+    '<div class="mob-me-version">Kesher Ivrit v5.7</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -3213,10 +3213,41 @@ function sendTopic(topic) {
     'binyanim':     "Explain the Hebrew binyan system at my level. Focus on the most important pattern I should know right now.",
     'vocabulary':   "Give me five Hebrew words I should know at my level. For each: the word, pronunciation, and a short example.",
     'grammar':      "Teach me one Hebrew grammar rule that matters at my level — explain it clearly with two or three examples.",
+    'quiz':         "Quiz me on what I've learned so far. Mix vocabulary and grammar — whatever is most useful at my level right now.",
   };
   exitQAMode();
   sendQuick(map[topic] || "Teach me something new in Hebrew.");
 }
+
+var _teachMenuOpen = false;
+
+function toggleTeachMenu() {
+  _teachMenuOpen = !_teachMenuOpen;
+  var dd    = document.getElementById('teach-dropdown');
+  var arrow = document.getElementById('cab-arrow');
+  if (dd)    dd.classList.toggle('teach-dropdown-open', _teachMenuOpen);
+  if (arrow) arrow.textContent = _teachMenuOpen ? '▴' : '▾';
+}
+
+function pickTopic(topic) {
+  _teachMenuOpen = false;
+  var dd    = document.getElementById('teach-dropdown');
+  var arrow = document.getElementById('cab-arrow');
+  if (dd)    dd.classList.remove('teach-dropdown-open');
+  if (arrow) arrow.textContent = '▾';
+  sendTopic(topic);
+}
+
+// Close teach menu when clicking outside
+document.addEventListener('click', function(e) {
+  if (_teachMenuOpen && !e.target.closest('.cab-teach-wrap')) {
+    _teachMenuOpen = false;
+    var dd    = document.getElementById('teach-dropdown');
+    var arrow = document.getElementById('cab-arrow');
+    if (dd)    dd.classList.remove('teach-dropdown-open');
+    if (arrow) arrow.textContent = '▾';
+  }
+});
 
 var _toastTimer = null;
 function showToast(msg, duration) {

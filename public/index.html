@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kesher Ivrit v5.6 | קשר עברית</title>
+  <title>Kesher Ivrit v5.7 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=130" />
+  <link rel="stylesheet" href="style.css?v=131" />
 </head>
 <body>
 
@@ -224,7 +224,7 @@
     <div class="flag-stripe top"></div>
     <div class="home-hero">
       <div class="logo-wrap">
-        <div class="star-of-david">✡</div>
+        <div class="star-of-david-css" aria-label="Star of David"></div>
       </div>
       <h1 class="hebrew-title">קֶשֶׁר עִבְרִית</h1>
       <h2 class="english-title">Kesher Ivrit</h2>
@@ -303,22 +303,22 @@
 
       <div class="stats-grid">
         <div class="stat-box">
-          <div class="stat-icon">🔥</div>
+          <div class="stat-icon"><svg class="si" viewBox="0 0 24 24" fill="none"><path d="M12 2c0 0-5 4-5 10a5 5 0 0 0 10 0c0-6-5-10-5-10z" fill="#F97316" stroke="#EA6200" stroke-width="1.2" stroke-linejoin="round"/><path d="M12 10c0 0-2 1.5-2 4a2 2 0 0 0 4 0c0-2.5-2-4-2-4z" fill="#FCD34D"/></svg></div>
           <div class="stat-value" id="streak-count">0</div>
-          <div class="stat-label">Day Streak</div>
+          <div class="stat-label">Streak</div>
         </div>
         <div class="stat-box">
-          <div class="stat-icon">📖</div>
+          <div class="stat-icon"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M4 19.5A2.5 2.5 0 0 1 6.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z"/></svg></div>
           <div class="stat-value" id="words-count">0</div>
           <div class="stat-label">Words</div>
         </div>
         <div class="stat-box">
-          <div class="stat-icon">⭐</div>
+          <div class="stat-icon"><svg class="si" viewBox="0 0 24 24" fill="none"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2" stroke="#003399" stroke-width="1.5" stroke-linejoin="round" fill="#C7D2FE"/></svg></div>
           <div class="stat-value" id="points-count">0</div>
           <div class="stat-label">Points</div>
         </div>
         <div class="stat-box">
-          <div class="stat-icon">📅</div>
+          <div class="stat-icon"><svg class="si" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg></div>
           <div class="stat-value" id="lessons-count">0</div>
           <div class="stat-label">Lessons</div>
         </div>
@@ -337,10 +337,10 @@
       </div>
 
       <div class="sidebar-actions">
-        <button class="btn-sidebar btn-lesson-path" onclick="showCurriculumMap()">🗺️ Lesson Path</button>
-        <button class="btn-sidebar" onclick="showNotebook()">📓 My Notebook</button>
-        <button class="btn-sidebar" onclick="showFeedback()">📝 Feedback</button>
-        <button class="btn-sidebar btn-secondary" onclick="goHome()">🏠 Home</button>
+        <button class="btn-sidebar btn-lesson-path" onclick="showCurriculumMap()">Lesson Path</button>
+        <button class="btn-sidebar" onclick="showNotebook()">My Notebook</button>
+        <button class="btn-sidebar" onclick="showFeedback()">Feedback</button>
+        <button class="btn-sidebar btn-secondary" onclick="goHome()">Home</button>
       </div>
     </aside>
 
@@ -403,18 +403,23 @@
           <span class="qa-mode-text">Ask Anything — Hebrew · Torah · Israel · Jewish History</span>
           <button class="qa-mode-exit" onclick="exitQAMode()">Back to Lesson</button>
         </div>
-        <div class="topic-selector" id="topic-selector">
-          <div class="topic-pills-row">
-            <button class="topic-pill topic-pill-primary" onclick="sendTopic('new-topic')">Teach me</button>
-            <button class="topic-pill" onclick="sendTopic('verbs')">Verbs</button>
-            <button class="topic-pill" onclick="sendTopic('nouns')">Nouns</button>
-            <button class="topic-pill" onclick="sendTopic('past-tense')">Past Tense</button>
-            <button class="topic-pill" onclick="sendTopic('future-tense')">Future Tense</button>
-            <button class="topic-pill" onclick="sendTopic('binyanim')">Binyanim</button>
-            <button class="topic-pill" onclick="sendTopic('vocabulary')">New Words</button>
-            <button class="topic-pill" onclick="sendTopic('grammar')">Grammar</button>
+        <div class="chat-action-bar" id="chat-action-bar">
+          <button class="cab-btn cab-quiz" onclick="sendTopic('quiz')">Quiz Me</button>
+          <div class="cab-teach-wrap">
+            <button class="cab-btn cab-teach" id="cab-teach-btn" onclick="toggleTeachMenu()">
+              Teach Me <span class="cab-arrow" id="cab-arrow">▾</span>
+            </button>
+            <div class="teach-dropdown" id="teach-dropdown">
+              <button class="teach-opt" onclick="pickTopic('verbs')">Verbs</button>
+              <button class="teach-opt" onclick="pickTopic('nouns')">Nouns</button>
+              <button class="teach-opt" onclick="pickTopic('past-tense')">Past Tense</button>
+              <button class="teach-opt" onclick="pickTopic('future-tense')">Future Tense</button>
+              <button class="teach-opt" onclick="pickTopic('binyanim')">Binyanim</button>
+              <button class="teach-opt" onclick="pickTopic('vocabulary')">New Words</button>
+              <button class="teach-opt" onclick="pickTopic('grammar')">Grammar</button>
+            </div>
           </div>
-          <button class="topic-ask-btn" onclick="enterQAMode()">Ask Anything</button>
+          <button class="cab-btn cab-ask" onclick="enterQAMode()">Ask Anything</button>
         </div>
       </div>
     </main>
@@ -438,37 +443,37 @@
       <button class="gp-card gp-speed" onclick="startSpeedRound()">
         <div class="gp-card-accent"></div>
         <div class="gp-card-body">
-          <div class="gp-icon">⚡</div>
+          <div class="gp-icon"><svg class="gp-svg" viewBox="0 0 32 32" fill="none"><polygon points="19 2 5 18 15 18 13 30 27 14 17 14 19 2" stroke="#F97316" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" fill="#FED7AA"/></svg></div>
           <div class="gp-name">Speed Round</div>
           <div class="gp-desc">60 seconds · 10 words · how fast are you?</div>
-          <div class="gp-play">Play Now!</div>
+          <div class="gp-play">Play Now</div>
         </div>
       </button>
       <button class="gp-card gp-wordle" onclick="showWordleGame()">
         <div class="gp-card-accent"></div>
         <div class="gp-card-body">
-          <div class="gp-icon">🟩</div>
+          <div class="gp-icon"><svg class="gp-svg" viewBox="0 0 32 32" fill="none"><rect x="2" y="2" width="8" height="8" rx="2" fill="#D1FAE5" stroke="#059669" stroke-width="1.8"/><rect x="12" y="2" width="8" height="8" rx="2" fill="#FEF3C7" stroke="#D97706" stroke-width="1.8"/><rect x="22" y="2" width="8" height="8" rx="2" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.8"/><rect x="2" y="12" width="8" height="8" rx="2" fill="#FEF3C7" stroke="#D97706" stroke-width="1.8"/><rect x="12" y="12" width="8" height="8" rx="2" fill="#D1FAE5" stroke="#059669" stroke-width="1.8"/><rect x="22" y="12" width="8" height="8" rx="2" fill="#F3F4F6" stroke="#9CA3AF" stroke-width="1.8"/></svg></div>
           <div class="gp-name">Hebrew Wordle</div>
           <div class="gp-desc">Guess the 5-letter Hebrew word in 6 tries. New word daily!</div>
-          <div class="gp-play" id="wordle-card-btn">Play Today!</div>
+          <div class="gp-play" id="wordle-card-btn">Play Today</div>
         </div>
       </button>
       <button class="gp-card gp-unscramble" onclick="showUnscrambleGame()">
         <div class="gp-card-accent"></div>
         <div class="gp-card-body">
-          <div class="gp-icon">🔤</div>
+          <div class="gp-icon"><svg class="gp-svg" viewBox="0 0 32 32" fill="none"><rect x="2" y="8" width="10" height="14" rx="2" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.8"/><rect x="14" y="5" width="10" height="14" rx="2" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.8"/><rect x="8" y="12" width="10" height="14" rx="2" fill="#DDD6FE" stroke="#7C3AED" stroke-width="2"/><text x="10" y="24" font-family="serif" font-size="10" fill="#4C1D95" font-weight="bold">א</text></svg></div>
           <div class="gp-name">Unscramble</div>
           <div class="gp-desc">10 Hebrew words — tap letters in the right order!</div>
-          <div class="gp-play">Play Now!</div>
+          <div class="gp-play">Play Now</div>
         </div>
       </button>
       <button class="gp-card gp-matchit" onclick="showMIGame()">
         <div class="gp-card-accent"></div>
         <div class="gp-card-body">
-          <div class="gp-icon">🔗</div>
+          <div class="gp-icon"><svg class="gp-svg" viewBox="0 0 32 32" fill="none"><rect x="2" y="6" width="11" height="8" rx="2" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.8"/><rect x="19" y="6" width="11" height="8" rx="2" fill="#DBEAFE" stroke="#003399" stroke-width="1.8"/><line x1="13" y1="10" x2="19" y2="10" stroke="#9CA3AF" stroke-width="1.5" stroke-dasharray="2 2"/><rect x="2" y="18" width="11" height="8" rx="2" fill="#EDE9FE" stroke="#7C3AED" stroke-width="1.8"/><rect x="19" y="18" width="11" height="8" rx="2" fill="#DBEAFE" stroke="#003399" stroke-width="1.8"/><line x1="13" y1="22" x2="19" y2="22" stroke="#003399" stroke-width="1.8"/></svg></div>
           <div class="gp-name">Match It</div>
           <div class="gp-desc">Match Hebrew words to their English meanings — race the clock!</div>
-          <div class="gp-play">Play Now!</div>
+          <div class="gp-play">Play Now</div>
         </div>
       </button>
     </div>
@@ -587,16 +592,20 @@
   <!-- ═══ BOTTOM NAVIGATION — mobile only ═══ -->
   <nav class="bottom-nav" id="bottom-nav">
     <button class="nav-btn active" data-panel="learn" onclick="switchTab('learn')">
-      <span class="nav-icon">💬</span><span class="nav-label">Learn</span>
+      <span class="nav-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg></span>
+      <span class="nav-label">Learn</span>
     </button>
     <button class="nav-btn" data-panel="path" onclick="switchTab('path')">
-      <span class="nav-icon">🗺️</span><span class="nav-label">Path</span>
+      <span class="nav-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg></span>
+      <span class="nav-label">Path</span>
     </button>
     <button class="nav-btn" data-panel="games" onclick="switchTab('games')">
-      <span class="nav-icon">⚡</span><span class="nav-label">Games</span>
+      <span class="nav-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+      <span class="nav-label">Games</span>
     </button>
     <button class="nav-btn" data-panel="me" onclick="switchTab('me')">
-      <span class="nav-icon">👤</span><span class="nav-label">Me</span>
+      <span class="nav-icon"><svg width="21" height="21" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg></span>
+      <span class="nav-label">Me</span>
     </button>
   </nav>
 
@@ -961,7 +970,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=130"></script>
+<script src="app.js?v=131"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">

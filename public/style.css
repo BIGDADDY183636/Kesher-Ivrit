@@ -7977,7 +7977,148 @@ body {
 .gp-name         { letter-spacing: -0.02em !important; }
 p, li, .mob-action-title { font-weight: 500; }
 
-/* ── 36. Dark mode overrides ──────────────────────────────────── */
+/* ── 36. CSS Star of David ────────────────────────────────────── */
+.star-of-david-css {
+  position: relative;
+  width: 0;
+  height: 0;
+  border-left: 34px solid transparent;
+  border-right: 34px solid transparent;
+  border-bottom: 58px solid rgba(255,255,255,0.95);
+  margin: 0 auto 34px;
+  filter: drop-shadow(0 4px 16px rgba(0,0,0,0.2));
+  animation: float 3s ease-in-out infinite;
+}
+.star-of-david-css::before {
+  content: '';
+  position: absolute;
+  top: 19px;
+  left: -34px;
+  width: 0;
+  height: 0;
+  border-left: 34px solid transparent;
+  border-right: 34px solid transparent;
+  border-top: 58px solid rgba(255,255,255,0.95);
+}
+
+/* ── 37. SVG icon utilities ───────────────────────────────────── */
+.si {
+  width: 22px;
+  height: 22px;
+  display: block;
+  margin: 0 auto;
+  opacity: 0.85;
+}
+.gp-svg {
+  width: 44px;
+  height: 44px;
+  display: block;
+}
+.nav-icon svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+}
+
+/* ── 38. Username card elevation ──────────────────────────────── */
+.chat-user-bar {
+  margin: 16px 20px 0 !important;
+  padding: 12px 16px !important;
+  border: 1px solid var(--ui-border) !important;
+  border-bottom: none !important;
+  background: var(--ui-card) !important;
+  border-radius: 10px 10px 0 0 !important;
+}
+@media (max-width: 768px) {
+  .chat-user-bar { margin: 12px 12px 0 !important; padding: 10px 14px !important; }
+}
+
+/* ── 39. 3-button action bar ──────────────────────────────────── */
+.chat-action-bar {
+  display: flex;
+  gap: 6px;
+  align-items: flex-start;
+  padding: 10px 0 2px;
+}
+.cab-btn {
+  flex: 1;
+  padding: 8px 10px;
+  border-radius: 7px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-eng);
+  white-space: nowrap;
+  -webkit-tap-highlight-color: transparent;
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  min-height: 36px;
+  letter-spacing: 0.005em;
+}
+.cab-quiz {
+  background: var(--ui-blue) !important;
+  color: #fff !important;
+  border: 1.5px solid var(--ui-blue) !important;
+}
+.cab-quiz:hover { background: #0044CC !important; border-color: #0044CC !important; }
+
+.cab-teach-wrap {
+  flex: 1;
+  position: relative;
+}
+.cab-teach {
+  width: 100%;
+  background: var(--ui-card) !important;
+  border: 1.5px solid var(--ui-blue) !important;
+  color: var(--ui-blue) !important;
+  font-weight: 700 !important;
+}
+.cab-teach:hover { background: #EEF2FF !important; }
+.cab-arrow { font-size: 0.62rem; margin-left: 4px; display: inline-block; transition: transform 0.15s; }
+
+.teach-dropdown {
+  display: none;
+  position: absolute;
+  bottom: calc(100% + 5px);
+  left: 0;
+  right: 0;
+  background: var(--ui-card);
+  border: 1px solid var(--ui-border);
+  border-radius: 9px;
+  overflow: hidden;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.1);
+  z-index: 200;
+}
+.teach-dropdown-open { display: block; }
+.teach-opt {
+  display: block;
+  width: 100%;
+  padding: 10px 14px;
+  text-align: left;
+  border: none;
+  background: none;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--ui-text);
+  cursor: pointer;
+  border-bottom: 1px solid var(--ui-border);
+  font-family: var(--font-eng);
+  transition: background 0.1s;
+  -webkit-tap-highlight-color: transparent;
+  letter-spacing: 0;
+}
+.teach-opt:last-child { border-bottom: none; }
+.teach-opt:hover, .teach-opt:active { background: #EEF2FF; color: var(--ui-blue); }
+
+.cab-ask {
+  flex: 1;
+  background: none !important;
+  border: 1.5px solid var(--ui-border) !important;
+  color: var(--ui-muted) !important;
+}
+.cab-ask:hover { border-color: var(--ui-blue) !important; color: var(--ui-blue) !important; background: #EEF2FF !important; }
+
+/* ── 40. Dark mode for new elements ──────────────────────────── */
+/* (merged with section 36 dark mode block below) */
 [data-theme="dark"] body { background: #0A0A0F !important; }
 [data-theme="dark"] .chat-input-area { background: #12121A !important; border-color: #2A2A40 !important; }
 [data-theme="dark"] .mob-me-hero { background: #12121A !important; border-color: #2A2A40 !important; }
@@ -7988,8 +8129,11 @@ p, li, .mob-action-title { font-weight: 500; }
 [data-theme="dark"] .lb-header-title { color: #F9FAFB !important; }
 [data-theme="dark"] .mob-me-name { color: #F9FAFB !important; }
 [data-theme="dark"] .mob-me-version { color: #374151 !important; }
-[data-theme="dark"] .chat-user-bar { border-color: #2A2A40 !important; }
+[data-theme="dark"] .chat-user-bar { border-color: #2A2A40 !important; background: #12121A !important; }
 [data-theme="dark"] .cub-name      { color: #F9FAFB !important; }
 [data-theme="dark"] .cub-restart-btn { border-color: #2A2A40 !important; }
-[data-theme="dark"] .topic-pill    { border-color: #2A2A40 !important; color: #6B7280 !important; }
-[data-theme="dark"] .topic-pill-primary { border-color: var(--ui-blue) !important; color: #7EB3FF !important; }
+[data-theme="dark"] .teach-dropdown { background: #12121A !important; border-color: #2A2A40 !important; }
+[data-theme="dark"] .teach-opt { color: #D1D5DB !important; border-color: #2A2A40 !important; }
+[data-theme="dark"] .teach-opt:hover { background: #1E293B !important; color: #7EB3FF !important; }
+[data-theme="dark"] .cab-teach { background: #12121A !important; }
+[data-theme="dark"] .cab-ask  { border-color: #2A2A40 !important; }
