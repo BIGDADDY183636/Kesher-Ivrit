@@ -3,7 +3,10 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kesher Ivrit v5.10 | קשר עברית</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <meta http-equiv="Pragma" content="no-cache" />
+  <meta http-equiv="Expires" content="0" />
+  <title>Kesher Ivrit v6.0 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -21,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=200" />
+  <link rel="stylesheet" href="style.css?v=600" />
 </head>
 <body>
 
@@ -43,7 +46,7 @@
       </div>
       <div class="ob-s1-heb">קֶשֶׁר עִבְרִית</div>
       <div class="ob-s1-eng">Kesher Ivrit</div>
-      <div class="ob-s1-tag">Your personal Hebrew tutor, powered by AI</div>
+      <div class="ob-s1-tag">The language of our people. Finally yours.</div>
       <div class="ob-s1-desc">Learn Hebrew through real conversation with an AI teacher who knows your level, your goals, and the language of the Jewish people.</div>
     </div>
 
@@ -238,10 +241,28 @@
 
       <div id="returning-user-section" style="display:none;">
         <div class="divider-or">— or —</div>
+
+        <!-- Today's Daily Lesson Card -->
+        <div id="daily-lesson-card" class="daily-lesson-card" style="display:none;">
+          <div class="dlc-top">
+            <span class="dlc-badge" id="dlc-badge">Today's Lesson</span>
+            <span class="dlc-session-dot" id="dlc-session">Session 1</span>
+          </div>
+          <div class="dlc-title" id="dlc-title">Loading…</div>
+          <div class="dlc-heb" id="dlc-heb"></div>
+          <div class="dlc-meta">
+            <span class="dlc-time" id="dlc-time">~15 min</span>
+            <span class="dlc-sep">·</span>
+            <span class="dlc-mastery-tag" id="dlc-mastery">New concept</span>
+          </div>
+          <button class="dlc-start-btn" id="dlc-start-btn" onclick="startDailyLesson()">Start Today's Lesson →</button>
+          <div class="dlc-done-msg" id="dlc-done-msg" style="display:none;"></div>
+        </div>
+
         <div class="returning-card" onclick="continueLearning()">
           <div class="returning-name">Welcome back, <strong id="returning-name"></strong></div>
           <div class="returning-stats" id="returning-stats"></div>
-          <button class="btn-continue">Continue Learning →</button>
+          <button class="btn-continue">Continue from yesterday →</button>
         </div>
         <button class="btn-reset" onclick="resetProgress()">Start Fresh</button>
       </div>
@@ -353,7 +374,7 @@
           <span class="cub-school" id="cub-school"></span>
         </div>
         <div class="cub-right">
-          <span class="cub-version">v5.10</span>
+          <span class="cub-version">v6.0</span>
           <button class="cub-restart-btn" onclick="newLesson()" title="New conversation">↺</button>
         </div>
       </div>
@@ -374,7 +395,7 @@
             <span class="typing-dot"></span>
           </div>
           <span class="typing-text">Morah is thinking…</span>
-          <span class="typing-version">v5.10</span>
+          <span class="typing-version">v6.0</span>
         </div>
         <div class="input-row">
           <button class="btn-mic" id="btn-mic" onclick="toggleVoiceInput()" title="Speak your answer">
@@ -400,6 +421,15 @@
         <div id="qa-mode-banner" class="qa-mode-banner" style="display:none;">
           <span class="qa-mode-text">Ask Anything — Hebrew · Torah · Israel · Jewish History</span>
           <button class="qa-mode-exit" onclick="exitQAMode()">Back to Lesson</button>
+        </div>
+        <!-- Daily Lesson Banner — shown when in a daily structured lesson -->
+        <div id="daily-lesson-banner" class="daily-lesson-banner" style="display:none;">
+          <div class="dlb-info">
+            <span class="dlb-badge" id="dlb-label">Today's Lesson</span>
+            <span class="dlb-concept" id="dlb-concept"></span>
+            <span class="dlb-session" id="dlb-session"></span>
+          </div>
+          <button class="dlb-complete-btn" onclick="completeDailyLesson()">✓ Complete</button>
         </div>
         <div class="chat-action-bar" id="chat-action-bar">
           <button class="cab-btn cab-quiz" onclick="sendTopic('quiz')">Quiz Me</button>
@@ -993,7 +1023,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=200"></script>
+<script src="app.js?v=600"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">

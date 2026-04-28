@@ -1,6 +1,6 @@
 {
   "version": 2,
-  "_comment": "v5.10 — forced redeploy 2026-04-27",
+  "_comment": "v6.0 — Daily Structured Lessons, spaced repetition — 2026-04-27",
   "builds": [
     {
       "src": "server.js",

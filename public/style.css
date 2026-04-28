@@ -8226,3 +8226,390 @@ p, li, .mob-action-title { font-weight: 500; }
 [data-theme="dark"] .teach-opt:hover { background: #1E293B !important; color: #7EB3FF !important; }
 [data-theme="dark"] .cab-teach { background: #12121A !important; }
 [data-theme="dark"] .cab-ask  { border-color: #2A2A40 !important; }
+
+/* ══════════════════════════════════════════════════════════
+   DAILY STRUCTURED LESSON SYSTEM — v6.0
+══════════════════════════════════════════════════════════ */
+
+/* ── Home screen: Today's Lesson card ── */
+.daily-lesson-card {
+  background: #fff;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 16px;
+  padding: 18px 20px 16px;
+  margin: 0 0 14px;
+  text-align: left;
+  box-shadow: 0 2px 12px rgba(0,51,153,0.07);
+  position: relative;
+  overflow: hidden;
+  transition: box-shadow 0.2s;
+}
+.daily-lesson-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #003399, #1B5EE0);
+  border-radius: 16px 16px 0 0;
+}
+.dlc-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.dlc-badge {
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #003399;
+  padding: 3px 10px;
+  border-radius: 20px;
+}
+.dlc-session-dot {
+  font-size: 0.72rem;
+  color: #6B7280;
+  font-weight: 500;
+}
+.dlc-title {
+  font-size: 1.12rem;
+  font-weight: 700;
+  color: #1A1A2E;
+  line-height: 1.25;
+  margin-bottom: 2px;
+}
+.dlc-heb {
+  font-size: 0.95rem;
+  color: #003399;
+  font-family: 'Heebo', sans-serif;
+  direction: rtl;
+  margin-bottom: 8px;
+  min-height: 1.2em;
+}
+.dlc-meta {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 14px;
+}
+.dlc-time {
+  font-size: 0.8rem;
+  color: #6B7280;
+  font-weight: 500;
+}
+.dlc-sep { color: #D1D5DB; font-size: 0.8rem; }
+.dlc-mastery-tag {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: #374151;
+  background: #F3F4F6;
+  padding: 2px 8px;
+  border-radius: 10px;
+}
+.dlc-start-btn {
+  width: 100%;
+  background: #003399;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  padding: 12px 0;
+  font-size: 0.95rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.18s, transform 0.12s;
+  letter-spacing: 0.01em;
+}
+.dlc-start-btn:hover { background: #0044BB; }
+.dlc-start-btn:active { transform: scale(0.98); }
+.dlc-done-msg {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 0.88rem;
+  font-weight: 600;
+  color: #2E8B57;
+  background: #F0FFF4;
+  border: 1px solid #BBF7D0;
+  border-radius: 8px;
+  padding: 9px 14px;
+}
+.dlc-done-check {
+  font-size: 1rem;
+  color: #2E8B57;
+}
+
+/* ── Chat area: Daily lesson banner ── */
+.daily-lesson-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #F0F4FF;
+  border-top: 1px solid #C7D2FE;
+  border-bottom: 1px solid #C7D2FE;
+  padding: 8px 14px;
+}
+.dlb-info {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex: 1;
+  min-width: 0;
+}
+.dlb-badge {
+  font-size: 0.65rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #003399;
+  padding: 2px 8px;
+  border-radius: 20px;
+  flex-shrink: 0;
+}
+.dlb-concept {
+  font-size: 0.84rem;
+  font-weight: 600;
+  color: #1A1A2E;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.dlb-session {
+  font-size: 0.75rem;
+  color: #6B7280;
+  white-space: nowrap;
+}
+.dlb-complete-btn {
+  flex-shrink: 0;
+  background: #003399;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 6px 14px;
+  font-size: 0.82rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.dlb-complete-btn:hover { background: #0044BB; }
+
+/* Dark mode */
+[data-theme="dark"] .daily-lesson-card {
+  background: #12121A !important;
+  border-color: #2A2A40 !important;
+}
+[data-theme="dark"] .dlc-title { color: #F9FAFB !important; }
+[data-theme="dark"] .dlc-heb   { color: #7EB3FF !important; }
+[data-theme="dark"] .dlc-mastery-tag { background: #1E293B !important; color: #9CA3AF !important; }
+[data-theme="dark"] .daily-lesson-banner {
+  background: #12121A !important;
+  border-color: #2A2A40 !important;
+}
+[data-theme="dark"] .dlb-concept { color: #F9FAFB !important; }
+
+/* ═══════════════════════════════════════════════════════
+   DAILY LESSON — Session progress dots (home card)
+═══════════════════════════════════════════════════════ */
+.dlc-session-dot {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.dlc-dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: #D1D5DB;
+  display: inline-block;
+  flex-shrink: 0;
+}
+.dlc-dot.dlc-dot-done { background: #003399; }
+.dlc-dot.dlc-dot-cur  { background: #1B5EE0; box-shadow: 0 0 0 2px rgba(27,94,224,0.25); }
+.dlc-session-txt {
+  font-size: 0.72rem;
+  color: #6B7280;
+  font-weight: 500;
+  margin-left: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   PROGRESS SCREEN — Daily Concepts mastery card
+═══════════════════════════════════════════════════════ */
+.prog-mastery-card { border-top: 3px solid #003399; }
+
+.prog-today-row {
+  font-size: 0.84rem;
+  font-weight: 600;
+  padding: 8px 12px;
+  border-radius: 8px;
+  margin-bottom: 12px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.prog-today-done    { background: #F0FFF4; color: #059669; }
+.prog-today-pending { background: #EFF6FF; color: #1D4ED8; }
+.prog-today-btn {
+  margin-left: auto;
+  background: #003399;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  cursor: pointer;
+}
+.prog-today-btn:hover { background: #0044BB; }
+
+.prog-mastery-pills {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.prog-mastery-pill {
+  flex: 1;
+  text-align: center;
+  border-radius: 10px;
+  padding: 10px 6px 8px;
+}
+.prog-mp-mastered  { background: #ECFDF5; border: 1px solid #A7F3D0; }
+.prog-mp-practicing{ background: #EFF6FF; border: 1px solid #BFDBFE; }
+.prog-mp-learning  { background: #FFF7ED; border: 1px solid #FED7AA; }
+.prog-mp-num {
+  display: block;
+  font-size: 1.4rem;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.prog-mp-mastered  .prog-mp-num { color: #059669; }
+.prog-mp-practicing .prog-mp-num{ color: #2563EB; }
+.prog-mp-learning  .prog-mp-num { color: #D97706; }
+.prog-mp-lbl {
+  display: block;
+  font-size: 0.7rem;
+  font-weight: 600;
+  color: #6B7280;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin-top: 2px;
+}
+
+.prog-mastered-list { margin-top: 4px; }
+.prog-mastered-item {
+  font-size: 0.82rem;
+  color: #059669;
+  font-weight: 600;
+  padding: 3px 0;
+  border-bottom: 1px solid #F0FFF4;
+}
+.prog-mastered-more {
+  font-size: 0.78rem;
+  color: #9CA3AF;
+  padding-top: 4px;
+}
+
+/* ═══════════════════════════════════════════════════════
+   ME TAB — Daily lesson card + mastery summary
+═══════════════════════════════════════════════════════ */
+.mob-daily-card {
+  background: #fff;
+  border: 1.5px solid #E5E7EB;
+  border-radius: 14px;
+  padding: 14px 16px 12px;
+  margin: 0 0 12px;
+  position: relative;
+  overflow: hidden;
+}
+.mob-daily-card::before {
+  content: '';
+  position: absolute;
+  top: 0; left: 0; right: 0;
+  height: 3px;
+  background: linear-gradient(90deg, #003399, #1B5EE0);
+  border-radius: 14px 14px 0 0;
+}
+.mob-daily-card.mob-daily-done { border-color: #A7F3D0; }
+.mob-daily-card.mob-daily-done::before { background: linear-gradient(90deg, #059669, #34D399); }
+
+.mob-daily-top {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 6px;
+}
+.mob-daily-badge {
+  font-size: 0.62rem;
+  font-weight: 700;
+  letter-spacing: 0.07em;
+  text-transform: uppercase;
+  color: #fff;
+  background: #003399;
+  padding: 2px 8px;
+  border-radius: 20px;
+}
+.mob-daily-session {
+  font-size: 0.7rem;
+  color: #9CA3AF;
+  font-weight: 500;
+}
+.mob-daily-title {
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: #1A1A2E;
+  margin-bottom: 8px;
+  line-height: 1.25;
+}
+.mob-daily-done-row {
+  font-size: 0.82rem;
+  font-weight: 600;
+  color: #059669;
+}
+.mob-daily-start {
+  width: 100%;
+  background: #003399;
+  color: #fff;
+  border: none;
+  border-radius: 8px;
+  padding: 9px 0;
+  font-size: 0.84rem;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.mob-daily-start:hover { background: #0044BB; }
+
+.mob-mastery-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.mob-mr-item {
+  font-size: 0.78rem;
+  font-weight: 600;
+  padding: 5px 12px;
+  border-radius: 20px;
+}
+.mob-mr-mastered  { background: #ECFDF5; color: #059669; }
+.mob-mr-practicing{ background: #EFF6FF; color: #2563EB; }
+
+/* Dark mode for new elements */
+[data-theme="dark"] .mob-daily-card {
+  background: #12121A !important;
+  border-color: #2A2A40 !important;
+}
+[data-theme="dark"] .mob-daily-title { color: #F9FAFB !important; }
+[data-theme="dark"] .prog-mastery-card { border-top-color: #7EB3FF !important; }
+[data-theme="dark"] .prog-mp-mastered  { background: #0D2D1A !important; border-color: #065F46 !important; }
+[data-theme="dark"] .prog-mp-practicing{ background: #0D1B38 !important; border-color: #1E3A8A !important; }
+[data-theme="dark"] .prog-mp-learning  { background: #2D1B0D !important; border-color: #92400E !important; }
+[data-theme="dark"] .prog-today-done    { background: #0D2D1A !important; }
+[data-theme="dark"] .prog-today-pending { background: #0D1B38 !important; }
+[data-theme="dark"] .prog-mastered-item { border-color: #1A3A2A !important; }
+[data-theme="dark"] .mob-mr-mastered   { background: #0D2D1A !important; }
+[data-theme="dark"] .mob-mr-practicing { background: #0D1B38 !important; }

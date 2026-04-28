@@ -948,7 +948,6 @@ function submitRegistration() {
   showScreen('screen-home');
   renderWordOfDay();
   checkReturningUser();
-  checkApiKey();
   _registerWithDb(firstName, lastInitial, schoolFinal);
 }
 
@@ -1236,6 +1235,7 @@ function checkReturningUser() {
   }
 
   checkStreak();
+  renderDailyLessonCard();
 }
 
 function checkStreak() {
@@ -1314,6 +1314,10 @@ function resetProgress() {
   localStorage.removeItem('kesher_profile');
   localStorage.removeItem('kesher_messages');
   localStorage.removeItem('kesher_user');
+  localStorage.removeItem('kesher_mastery');
+  localStorage.removeItem('kesher_daily');
+  _dailyLessonActive = false;
+  _dailyLessonInfo   = null;
   currentUser = null;
   state = {
     userProfile: null,
@@ -1611,6 +1615,33 @@ function renderMobileProfile() {
       '<span class="mob-score-emoji">' + lbMsg.emoji + '</span>' +
       '<span>' + lbMsg.text + '</span>' +
     '</div>' +
+    (function() {
+      var todayL = computeTodayLesson ? computeTodayLesson() : null;
+      if (!todayL) return '';
+      var ds = todayL.dailyState;
+      var done = ds && ds.status === 'completed';
+      var rt = DAILY_REVIEW_TYPES[Math.min(todayL.reviewSession, 4)] || DAILY_REVIEW_TYPES[1];
+      return '<div class="mob-daily-card' + (done ? ' mob-daily-done' : '') + '">' +
+        '<div class="mob-daily-top">' +
+          '<span class="mob-daily-badge" style="background:' + rt.color + '">' + rt.label + '</span>' +
+          '<span class="mob-daily-session">Session ' + todayL.reviewSession + ' of 4</span>' +
+        '</div>' +
+        '<div class="mob-daily-title">' + escapeHtml(todayL.concept.title) + '</div>' +
+        (done
+          ? '<div class="mob-daily-done-row">✓ Completed today' + (ds.score !== null ? ' · ' + ds.score + '%' : '') + '</div>'
+          : '<button class="mob-daily-start" onclick="goHome();switchTab(\'learn\')">Start Today\'s Lesson →</button>') +
+      '</div>';
+    })() +
+    (function() {
+      var md = loadMastery ? loadMastery() : {};
+      var mc = 0, pc = 0;
+      Object.keys(md).forEach(function(id) { if (md[id].level === 'mastered') mc++; else if (md[id].level === 'practicing') pc++; });
+      if (mc + pc === 0) return '';
+      return '<div class="mob-mastery-row">' +
+        '<span class="mob-mr-item mob-mr-mastered">🏆 ' + mc + ' mastered</span>' +
+        (pc > 0 ? '<span class="mob-mr-item mob-mr-practicing">🔵 ' + pc + ' practicing</span>' : '') +
+      '</div>';
+    })() +
     '<button class="mob-progress-btn" onclick="showProgressScreen()">📊 My Progress</button>' +
     '<button class="mob-lb-open-btn" onclick="showLeaderboardScreen()">🏆 Leaderboard</button>' +
     '<button class="mob-share-btn" onclick="shareScore()">📤 Share My Score</button>' +
@@ -1645,7 +1676,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v5.10</div>';
+    '<div class="mob-me-version">Kesher Ivrit v6.0</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -2040,6 +2071,57 @@ function renderProgressScreen() {
     '</div>'
   );
 
+  // Daily Concept Mastery
+  var masteryData   = loadMastery();
+  var allDailyCons  = getDailyConcepts ? getDailyConcepts() : [];
+  var masteredIds   = [], practicingIds = [], learningIds = [];
+  Object.keys(masteryData).forEach(function(id) {
+    var lv = masteryData[id] && masteryData[id].level;
+    if      (lv === 'mastered')  masteredIds.push(id);
+    else if (lv === 'practicing') practicingIds.push(id);
+    else                          learningIds.push(id);
+  });
+  var totalCons = allDailyCons.length || 1;
+  var mastPct   = Math.round((masteredIds.length / totalCons) * 100);
+
+  var todayLesson  = computeTodayLesson ? computeTodayLesson() : null;
+  var todayStatus  = '';
+  if (todayLesson) {
+    var ds = todayLesson.dailyState;
+    if (ds && ds.status === 'completed') {
+      todayStatus = '<div class="prog-today-row prog-today-done">✓ Today\'s lesson completed' + (ds.score !== null ? ' — ' + ds.score + '%' : '') + '</div>';
+    } else {
+      todayStatus = '<div class="prog-today-row prog-today-pending">📅 ' + escapeHtml(todayLesson.concept.title) + ' — Session ' + todayLesson.reviewSession + ' of 4 <button class="prog-today-btn" onclick="hideProgressScreen();startDailyLesson()">Start →</button></div>';
+    }
+  }
+
+  if (Object.keys(masteryData).length > 0 || todayLesson) {
+    html.push(
+      '<div class="prog-card prog-mastery-card">',
+        '<div class="prog-section-hdr">',
+          '<span class="prog-section-icon">🎯</span>',
+          '<span class="prog-section-title">Daily Concepts</span>',
+          '<span class="prog-section-count">' + masteredIds.length + ' mastered</span>',
+        '</div>',
+        todayStatus,
+        '<div class="prog-mastery-pills">',
+          '<div class="prog-mastery-pill prog-mp-mastered"><span class="prog-mp-num">' + masteredIds.length + '</span><span class="prog-mp-lbl">Mastered</span></div>',
+          '<div class="prog-mastery-pill prog-mp-practicing"><span class="prog-mp-num">' + practicingIds.length + '</span><span class="prog-mp-lbl">Practicing</span></div>',
+          '<div class="prog-mastery-pill prog-mp-learning"><span class="prog-mp-num">' + learningIds.length + '</span><span class="prog-mp-lbl">Learning</span></div>',
+        '</div>',
+        masteredIds.length > 0
+          ? '<div class="prog-mastered-list">' +
+              masteredIds.slice(0, 5).map(function(id) {
+                var c = allDailyCons.find(function(x){ return x.id === id; });
+                return '<div class="prog-mastered-item">✓ ' + escapeHtml((c && c.title) || id) + '</div>';
+              }).join('') +
+              (masteredIds.length > 5 ? '<div class="prog-mastered-more">+' + (masteredIds.length - 5) + ' more</div>' : '') +
+            '</div>'
+          : '<div class="prog-hint">Complete your first daily lesson to start tracking mastery!</div>',
+      '</div>'
+    );
+  }
+
   // Strongest topics
   if (strongest.length > 0) {
     html.push(
@@ -2182,19 +2264,35 @@ async function startLesson() {
   if (!VALID_LEVELS.includes(level)) level = 'complete_beginner';
 
   var firstMsg;
-  if (level === 'intermediate') {
+  var dl = state.userProfile && state.userProfile.dailyLesson;
+  if (dl) {
+    var dlSession = dl.reviewSession || 1;
+    if (dlSession === 1) {
+      firstMsg = "Today's daily lesson: teach me about \"" + dl.conceptTitle + "\". Introduce it from scratch — I have " + dl.timeMinutes + " minutes.";
+    } else if (dlSession === 2) {
+      firstMsg = "Review time! I studied \"" + dl.conceptTitle + "\" yesterday. Quickly recap the key points, then add something new.";
+    } else if (dlSession === 3) {
+      firstMsg = "Quiz me on \"" + dl.conceptTitle + "\"! I want to prove I know it — then teach me something advanced about it.";
+    } else {
+      firstMsg = "Mastery check for \"" + dl.conceptTitle + "\"! Quiz me hard on everything — I need to show I've mastered it.";
+    }
+  } else if (level === 'intermediate') {
     firstMsg = "DO NOT say shalom. DO NOT greet me. I am Intermediate. Open your [TEACH] block immediately with הָלַךְ conjugated in all 9 past tense forms. Then [CHALLENGE].";
   } else if (level === 'advanced') {
     firstMsg = "DO NOT say shalom. DO NOT greet me. I am Advanced. Open your [TEACH] block immediately with a binyan or idiom. No introduction.";
   } else {
     firstMsg = "Please start our lesson!";
   }
-  console.log('[startLesson] level=' + level + ' msg=' + firstMsg.slice(0, 80));
+  console.log('[startLesson] level=' + level + ' daily=' + (dl ? dl.conceptTitle : 'none') + ' msg=' + firstMsg.slice(0, 80));
 
   await sendToMorah([{ role: 'user', content: firstMsg }]);
 }
 
 function newLesson() {
+  _dailyLessonActive = false;
+  _dailyLessonInfo   = null;
+  if (state.userProfile) delete state.userProfile.dailyLesson;
+  hideDailyLessonBanner();
   startLesson();
 }
 
@@ -5329,3 +5427,414 @@ function triggerCelebration(cx, cy) {
     })(i);
   }
 }
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  DAILY STRUCTURED LESSON SYSTEM — v6.0
+//  Spaced repetition: Session 1 (intro) → Session 2 (+1d review) →
+//  Session 3 (+1d quiz) → Session 4 (+4d mastery check → MASTERED)
+// ═══════════════════════════════════════════════════════════════════════════
+
+var DAILY_CONCEPTS = {
+  complete_beginner: [
+    { id:'aleph_bet_1',      title:'Hebrew Alphabet — א to י',       heb:'האלפבית א–י',      tags:['alphabet','reading'] },
+    { id:'aleph_bet_2',      title:'Hebrew Alphabet — כ to ת',       heb:'האלפבית כ–ת',      tags:['alphabet','reading'] },
+    { id:'greetings_basic',  title:'Essential Greetings',             heb:'ברכות',             tags:['greetings','vocabulary'] },
+    { id:'numbers_1_10',     title:'Numbers 1–10',                    heb:'מספרים 1–10',       tags:['numbers'] },
+    { id:'colors_basic',     title:'Colors in Hebrew',                heb:'צבעים',             tags:['vocabulary'] },
+    { id:'family_members',   title:'Family Members',                  heb:'משפחה',             tags:['vocabulary','nouns'] },
+    { id:'basic_verbs',      title:'First Hebrew Verbs',              heb:'פעלים בסיסיים',    tags:['verbs'] },
+    { id:'days_week',        title:'Days of the Week',                heb:'ימות השבוע',        tags:['vocabulary','time'] },
+    { id:'body_parts',       title:'Body Parts',                      heb:'חלקי הגוף',        tags:['vocabulary'] },
+    { id:'food_basics',      title:'Food & Drinks',                   heb:'אוכל ושתייה',       tags:['vocabulary'] },
+  ],
+  some_exposure: [
+    { id:'gender_nouns',     title:'Masculine & Feminine Nouns',     heb:'זכר ונקבה',         tags:['grammar','nouns'] },
+    { id:'definite_article', title:'The Definite Article — ה',       heb:'ה הידיעה',          tags:['grammar'] },
+    { id:'present_tense',    title:'Present Tense Verbs',             heb:'הווה',              tags:['verbs','grammar'] },
+    { id:'adjectives_agree', title:'Adjectives & Agreement',          heb:'שמות תואר',         tags:['grammar'] },
+    { id:'plural_nouns',     title:'Plural Nouns',                    heb:'רבים',              tags:['grammar','nouns'] },
+    { id:'question_words',   title:'Question Words',                  heb:'מילות שאלה',        tags:['grammar','conversation'] },
+    { id:'numbers_11_100',   title:'Numbers 11–100',                  heb:'מספרים 11–100',     tags:['numbers'] },
+    { id:'basic_sentences',  title:'Building Basic Sentences',        heb:'משפטים בסיסיים',   tags:['grammar','conversation'] },
+    { id:'prepositions_1',   title:'Prepositions — in, on, from',    heb:'מילות יחס',         tags:['grammar'] },
+    { id:'daily_phrases',    title:'Everyday Phrases',                heb:'ביטויים יומיומיים',  tags:['conversation'] },
+  ],
+  basic: [
+    { id:'past_tense',       title:'Past Tense — Pa\'al',             heb:'עבר',               tags:['verbs','grammar'] },
+    { id:'future_tense',     title:'Future Tense — Pa\'al',           heb:'עתיד',              tags:['verbs','grammar'] },
+    { id:'pronouns',         title:'Personal Pronouns',               heb:'כינויי גוף',        tags:['grammar'] },
+    { id:'possessives',      title:'Possessive Pronouns',             heb:'כינויי שייכות',     tags:['grammar'] },
+    { id:'negation',         title:'Negation — לא, אין, אל',         heb:'שלילה',             tags:['grammar'] },
+    { id:'construct_state',  title:'Construct State (Smichut)',       heb:'סמיכות',            tags:['grammar'] },
+    { id:'shoresh_intro',    title:'The Hebrew Root System',          heb:'שורש',              tags:['grammar','etymology'] },
+    { id:'prayer_vocab_1',   title:'Prayer Vocabulary — Part 1',     heb:'מילות תפילה',       tags:['prayer','vocabulary'] },
+    { id:'time_expressions', title:'Time Expressions',                heb:'ביטויי זמן',        tags:['vocabulary'] },
+    { id:'conversation_1',   title:'Real Conversation Phrases',       heb:'שיחה',              tags:['conversation'] },
+  ],
+  intermediate: [
+    { id:'binyan_paal',      title:'The Pa\'al Binyan — Deep Dive',  heb:'בניין פעל',         tags:['grammar','binyanim'] },
+    { id:'binyan_piel',      title:'The Pi\'el Binyan',               heb:'בניין פיעל',        tags:['grammar','binyanim'] },
+    { id:'binyan_hifil',     title:'The Hif\'il Binyan',              heb:'בניין הפעיל',       tags:['grammar','binyanim'] },
+    { id:'binyan_nifal',     title:'The Nif\'al (Passive)',           heb:'בניין נפעל',        tags:['grammar','binyanim'] },
+    { id:'relative_clauses', title:'Relative Clauses — ש׳, אשר',    heb:'משפטי זיקה',        tags:['grammar'] },
+    { id:'idioms_1',         title:'Common Hebrew Idioms',            heb:'ביטויים',           tags:['vocabulary','culture'] },
+    { id:'newspaper_hebrew', title:'Reading Israeli News',            heb:'עברית עיתונאית',    tags:['reading','vocabulary'] },
+    { id:'complex_sentences',title:'Complex Sentence Structures',     heb:'משפטים מורכבים',    tags:['grammar'] },
+    { id:'formal_vs_casual', title:'Formal vs. Casual Register',     heb:'פורמלי וסלנג',      tags:['sociolinguistics'] },
+    { id:'advanced_vocab',   title:'Advanced Vocabulary Building',   heb:'אוצר מילים',        tags:['vocabulary'] },
+  ],
+  advanced: [
+    { id:'all_binyanim',     title:'All 7 Binyanim Mastery',          heb:'שבעת הבניינים',     tags:['grammar','binyanim'] },
+    { id:'biblical_grammar', title:'Biblical Hebrew Grammar',         heb:'דקדוק מקרא',        tags:['grammar','biblical'] },
+    { id:'poetry_analysis',  title:'Modern Hebrew Poetry',            heb:'שירה עברית',        tags:['literature'] },
+    { id:'literature_modern',title:'Israeli Literature Excerpts',     heb:'ספרות ישראלית',     tags:['reading','culture'] },
+    { id:'slang_modern',     title:'Modern Israeli Slang & Culture',  heb:'סלנג ישראלי',       tags:['sociolinguistics'] },
+    { id:'formal_writing',   title:'Formal Written Hebrew',           heb:'כתיבה פורמלית',     tags:['writing'] },
+    { id:'talmud_phrases',   title:'Talmudic Hebrew & Aramaic',      heb:'ארמית ועברית',      tags:['religious','language'] },
+    { id:'roots_advanced',   title:'Advanced Root Analysis',          heb:'ניתוח שורשים',      tags:['etymology','grammar'] },
+    { id:'debate_idioms',    title:'Debate & Advanced Idioms',        heb:'ויכוח וביטויים',    tags:['conversation'] },
+    { id:'fluency_review',   title:'Full Fluency Review',             heb:'סיכום כולל',        tags:['review'] },
+  ]
+};
+
+var DAILY_REVIEW_TYPES = {
+  1: { label:'New Concept',   color:'#003399', instruction:'first introduction — teach thoroughly from scratch' },
+  2: { label:'First Review',  color:'#1B5EE0', instruction:'review yesterday\'s concept and add one new dimension' },
+  3: { label:'Quiz Session',  color:'#E67E00', instruction:'quiz heavily on Sessions 1–2, then teach one advanced extension' },
+  4: { label:'Mastery Check', color:'#2E8B57', instruction:'full mastery evaluation — test everything from all prior sessions' },
+};
+
+// ── State & persistence ────────────────────────────────────
+var _dailyLessonActive = false;
+var _dailyLessonInfo   = null;
+
+function loadMastery() {
+  try { return JSON.parse(localStorage.getItem('kesher_mastery') || '{}'); } catch(e) { return {}; }
+}
+function saveMastery(m) {
+  try { localStorage.setItem('kesher_mastery', JSON.stringify(m)); } catch(e) {}
+}
+function loadDailyState() {
+  try { return JSON.parse(localStorage.getItem('kesher_daily') || 'null'); } catch(e) { return null; }
+}
+function saveDailyState(d) {
+  try { localStorage.setItem('kesher_daily', JSON.stringify(d)); } catch(e) {}
+}
+
+// ── Concept list (My Class overrides first) ────────────────
+function getDailyConcepts() {
+  var level    = (state.userProfile && state.userProfile.level) || 'complete_beginner';
+  var base     = DAILY_CONCEPTS[level] || DAILY_CONCEPTS.complete_beginner;
+  var myClass  = null;
+  try { myClass = JSON.parse(localStorage.getItem('kesher_myclass') || 'null'); } catch(e) {}
+  if (!myClass) return base;
+
+  var extras = [];
+  if (myClass.parasha) {
+    extras.push({ id:'myclass_parasha_' + myClass.parasha.replace(/\W/g,'_'),
+      title:'Parasha: ' + myClass.parasha, heb:'פרשת ' + myClass.parasha, tags:['parasha','biblical'], isMyClass:true });
+  }
+  if (myClass.weeklyFocus) {
+    extras.push({ id:'myclass_focus_' + myClass.weeklyFocus.slice(0,20).replace(/\W/g,'_'),
+      title:'Class Focus: ' + myClass.weeklyFocus, heb:'מוקד השבוע', tags:['myclass'], isMyClass:true });
+  }
+  if (myClass.assignedVocab) {
+    extras.push({ id:'myclass_vocab_' + myClass.assignedVocab.slice(0,20).replace(/\W/g,'_'),
+      title:'Assigned Vocabulary', heb:'מילות שיעור', tags:['vocabulary','myclass'], isMyClass:true });
+  }
+  return extras.concat(base);
+}
+
+// ── Spaced repetition: pick today's concept ────────────────
+function computeTodayLesson() {
+  if (!state.userProfile) return null;
+
+  var today   = new Date().toDateString();
+  var todayMs = new Date().setHours(0,0,0,0);
+  var mastery  = loadMastery();
+  var concepts = getDailyConcepts();
+
+  // Return existing daily state if already set for today
+  var existing = loadDailyState();
+  if (existing && existing.date === today) {
+    var concept = concepts.find(function(c) { return c.id === existing.conceptId; })
+      || { id:existing.conceptId, title:existing.conceptTitle||existing.conceptId, heb:'', tags:[] };
+    return { concept:concept, reviewSession:existing.reviewSession||1, dailyState:existing };
+  }
+
+  // Find concept due for spaced repetition review
+  var todayConcept = null, reviewSession = 1;
+  for (var i = 0; i < concepts.length; i++) {
+    var m = mastery[concepts[i].id];
+    if (!m || m.level === 'mastered') continue;
+    if (m.nextReviewDate) {
+      var dueMs = new Date(m.nextReviewDate).setHours(0,0,0,0);
+      if (dueMs <= todayMs) { todayConcept = concepts[i]; reviewSession = (m.sessionCount || 0) + 1; break; }
+    }
+  }
+
+  // If no review pending, find the next un-introduced concept
+  if (!todayConcept) {
+    for (var j = 0; j < concepts.length; j++) {
+      if (!mastery[concepts[j].id]) { todayConcept = concepts[j]; reviewSession = 1; break; }
+    }
+  }
+
+  // Fallback: all concepts started but none due — pick first non-mastered
+  if (!todayConcept) {
+    for (var k = 0; k < concepts.length; k++) {
+      var mk = mastery[concepts[k].id];
+      if (!mk || mk.level !== 'mastered') {
+        todayConcept = concepts[k]; reviewSession = (mk && mk.sessionCount || 0) + 1; break;
+      }
+    }
+  }
+
+  if (!todayConcept) return null;
+
+  var newDaily = {
+    date: today, conceptId: todayConcept.id, conceptTitle: todayConcept.title,
+    reviewSession: Math.min(reviewSession, 4), status:'pending',
+    startedAt:null, completedAt:null, score:null
+  };
+  saveDailyState(newDaily);
+  return { concept:todayConcept, reviewSession:newDaily.reviewSession, dailyState:newDaily };
+}
+
+// ── Time available from onboarding ────────────────────────
+function getDailyTimeMinutes() {
+  var t = state.userProfile && state.userProfile.timeAvailable;
+  if (!t) return 15;
+  if (t.indexOf('5') === 0 || t === '5 minutes') return 5;
+  if (t.indexOf('10') >= 0 || t.indexOf('15') >= 0) return 12;
+  if (t.indexOf('20') >= 0 || t.indexOf('30') >= 0) return 25;
+  if (t.indexOf('45') >= 0 || t.indexOf('60') >= 0) return 45;
+  return 20;
+}
+
+// ── Home screen card ──────────────────────────────────────
+function renderDailyLessonCard() {
+  var card = document.getElementById('daily-lesson-card');
+  if (!card || !state.userProfile) { if (card) card.style.display = 'none'; return; }
+
+  var lessonInfo = computeTodayLesson();
+  if (!lessonInfo) { card.style.display = 'none'; return; }
+
+  var concept     = lessonInfo.concept;
+  var session     = lessonInfo.reviewSession;
+  var dailyState  = lessonInfo.dailyState;
+  var reviewType  = DAILY_REVIEW_TYPES[Math.min(session, 4)] || DAILY_REVIEW_TYPES[1];
+  var mastery     = loadMastery();
+  var m           = mastery[concept.id];
+  var masteryLabel = !m ? 'New concept' : m.level === 'mastered' ? 'Mastered' : m.level === 'practicing' ? 'Practicing' : 'Learning';
+  var timeMin     = getDailyTimeMinutes();
+  var isCompleted = dailyState && dailyState.status === 'completed';
+
+  var badgeEl   = document.getElementById('dlc-badge');
+  var sessionEl = document.getElementById('dlc-session');
+  var titleEl   = document.getElementById('dlc-title');
+  var hebEl     = document.getElementById('dlc-heb');
+  var timeEl    = document.getElementById('dlc-time');
+  var mastEl    = document.getElementById('dlc-mastery');
+  var startBtn  = document.getElementById('dlc-start-btn');
+  var doneMsg   = document.getElementById('dlc-done-msg');
+
+  if (badgeEl)   { badgeEl.textContent = reviewType.label; badgeEl.style.background = reviewType.color; }
+  if (sessionEl) {
+    var dots = '';
+    for (var si = 1; si <= 4; si++) {
+      dots += '<span class="dlc-dot' + (si < session ? ' dlc-dot-done' : si === session ? ' dlc-dot-cur' : '') + '"></span>';
+    }
+    sessionEl.innerHTML = dots + '<span class="dlc-session-txt">Session ' + session + ' of 4</span>';
+  }
+  if (titleEl)   titleEl.textContent = concept.title;
+  if (hebEl)     hebEl.textContent = concept.heb || '';
+  if (timeEl)    timeEl.textContent = '~' + timeMin + ' min';
+  if (mastEl) {
+    mastEl.textContent = masteryLabel;
+    var mastColors = { 'New concept':'#6B7280', 'Learning':'#D97706', 'Practicing':'#2563EB', 'Mastered':'#059669' };
+    mastEl.style.color = mastColors[masteryLabel] || '#6B7280';
+  }
+
+  if (isCompleted) {
+    if (startBtn) startBtn.style.display = 'none';
+    if (doneMsg) {
+      var scoreText = dailyState.score !== null ? ' · ' + dailyState.score + '% score' : '';
+      doneMsg.style.display = 'flex';
+      doneMsg.innerHTML = '<span class="dlc-done-check">✓</span>Completed today' + scoreText;
+    }
+  } else {
+    if (startBtn) {
+      startBtn.style.display = 'block';
+      startBtn.textContent = session === 1 ? 'Start Today\'s Lesson →' :
+                             session <= 2  ? 'Start Review →' :
+                             session === 3 ? 'Start Quiz Session →' :
+                                            'Start Mastery Check →';
+    }
+    if (doneMsg) doneMsg.style.display = 'none';
+  }
+
+  card.style.display = 'block';
+}
+
+// ── Start daily lesson ────────────────────────────────────
+function startDailyLesson() {
+  var lessonInfo = computeTodayLesson();
+  if (!lessonInfo) { continueLearning(); return; }
+
+  _dailyLessonActive = true;
+  _dailyLessonInfo   = lessonInfo;
+
+  var daily = loadDailyState();
+  if (daily) { daily.status = 'active'; daily.startedAt = Date.now(); saveDailyState(daily); }
+
+  // Pass daily lesson context to Morah via userProfile
+  state.userProfile.dailyLesson = {
+    conceptId:     lessonInfo.concept.id,
+    conceptTitle:  lessonInfo.concept.title,
+    reviewSession: lessonInfo.reviewSession,
+    reviewType:    (DAILY_REVIEW_TYPES[Math.min(lessonInfo.reviewSession, 4)] || DAILY_REVIEW_TYPES[1]).instruction,
+    timeMinutes:   getDailyTimeMinutes(),
+    tags:          lessonInfo.concept.tags || []
+  };
+
+  showScreen('screen-lesson');
+  setupLessonScreen();
+  updateUserBadges();
+  showDailyLessonBanner(lessonInfo);
+  startLesson();
+}
+
+// ── Daily lesson banner in chat ───────────────────────────
+function showDailyLessonBanner(lessonInfo) {
+  var banner  = document.getElementById('daily-lesson-banner');
+  if (!banner) return;
+  var rt = DAILY_REVIEW_TYPES[Math.min(lessonInfo.reviewSession, 4)] || DAILY_REVIEW_TYPES[1];
+  var lbl = document.getElementById('dlb-label');
+  var cpt = document.getElementById('dlb-concept');
+  var ses = document.getElementById('dlb-session');
+  if (lbl) { lbl.textContent = rt.label; lbl.style.background = rt.color; }
+  if (cpt) cpt.textContent = lessonInfo.concept.title;
+  if (ses) ses.textContent = 'Session ' + lessonInfo.reviewSession + ' of 4';
+  banner.style.display = 'flex';
+}
+
+function hideDailyLessonBanner() {
+  var banner = document.getElementById('daily-lesson-banner');
+  if (banner) banner.style.display = 'none';
+}
+
+// ── Complete daily lesson ─────────────────────────────────
+function completeDailyLesson() {
+  if (!_dailyLessonActive) return;
+
+  var total = state.session.totalCorrect + state.session.totalWrong;
+  var score = total > 0 ? Math.round((state.session.totalCorrect / total) * 100) : 0;
+
+  var daily = loadDailyState();
+  if (daily) { daily.status = 'completed'; daily.completedAt = Date.now(); daily.score = score; saveDailyState(daily); }
+
+  var conceptId = _dailyLessonInfo && _dailyLessonInfo.concept.id;
+  var session   = _dailyLessonInfo && _dailyLessonInfo.reviewSession;
+  var title     = _dailyLessonInfo && _dailyLessonInfo.concept.title;
+
+  if (conceptId) updateMasteryForConcept(conceptId, score, session);
+
+  _dailyLessonActive = false;
+  _dailyLessonInfo   = null;
+  if (state.userProfile) delete state.userProfile.dailyLesson;
+  hideDailyLessonBanner();
+
+  // Score-based bonus points (daily lesson completion reward)
+  var dlBonus = score >= 80 ? 25 : score >= 60 ? 15 : 5;
+  state.progress.points += dlBonus;
+
+  updateStreak();
+  saveProgress();
+
+  var mastery = loadMastery();
+  var m = conceptId && mastery[conceptId];
+  var justMastered = m && m.level === 'mastered';
+
+  triggerCelebration();
+
+  if (justMastered) {
+    showStreakModal('🏆', 'Concept Mastered!',
+      '"' + (title || 'This concept') + '" mastered! Score: ' + score + '%. Tomorrow: something new!');
+  } else {
+    var msg = score >= 80
+      ? 'Sababa! ' + score + '% — great work! Review scheduled for tomorrow.'
+      : score >= 60
+      ? 'B\'seder! ' + score + '% — we\'ll practice more tomorrow.'
+      : 'Keep going! ' + score + '% — Morah will help you nail this.';
+    showToast(msg);
+  }
+}
+
+// ── Mastery update (spaced repetition logic) ──────────────
+function updateMasteryForConcept(conceptId, score, reviewSession) {
+  var mastery = loadMastery();
+  var today   = new Date().toDateString();
+  var pass    = score >= 80;
+
+  if (!mastery[conceptId]) {
+    mastery[conceptId] = { level:'learning', sessionCount:0, sessions:[], nextReviewDate:null };
+  }
+  var m = mastery[conceptId];
+  m.sessions.push({ date:today, score:score, session:reviewSession });
+  m.sessionCount = Math.max(m.sessionCount || 0, reviewSession);
+
+  if (reviewSession === 1) {
+    m.level = 'learning';
+    m.nextReviewDate = _dlAddDays(today, 1);
+  } else if (reviewSession === 2) {
+    m.level = 'learning';
+    if (pass) {
+      m.nextReviewDate = _dlAddDays(today, 1);
+    } else {
+      m.sessionCount   = 1;
+      m.nextReviewDate = _dlAddDays(today, 1);
+    }
+  } else if (reviewSession === 3) {
+    if (pass) {
+      m.level          = 'practicing';
+      m.nextReviewDate = _dlAddDays(today, 4);
+    } else {
+      m.sessionCount   = 2;
+      m.nextReviewDate = _dlAddDays(today, 1);
+    }
+  } else {
+    if (pass) {
+      m.level          = 'mastered';
+      m.nextReviewDate = null;
+    } else {
+      m.level          = 'practicing';
+      m.sessionCount   = 3;
+      m.nextReviewDate = _dlAddDays(today, 2);
+    }
+  }
+
+  saveMastery(mastery);
+}
+
+function _dlAddDays(dateStr, days) {
+  var d = new Date(dateStr);
+  d.setDate(d.getDate() + days);
+  return d.toDateString();
+}
+
+// ── Version check — forces reload if server has a newer build ─────────────
+(function checkAppVersion() {
+  var CURRENT_VERSION = 'v6.0';
+  if (sessionStorage.getItem('_kv_checked')) return;
+  fetch('/api/version')
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+      if (data && data.version && data.version !== CURRENT_VERSION) {
+        console.log('[Version] Server=' + data.version + ' Client=' + CURRENT_VERSION + ' — refreshing');
+        sessionStorage.setItem('_kv_checked', '1');
+        window.location.reload(true);
+      }
+    })
+    .catch(function() {});
+})();

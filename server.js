@@ -16,7 +16,17 @@ app.use(function(req, res, next) {
   next();
 });
 
-app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.static(path.join(__dirname, 'public'), {
+  etag: false,
+  lastModified: false,
+  setHeaders: function(res, filePath) {
+    if (filePath.endsWith('.html')) {
+      res.setHeader('Cache-Control', 'no-cache, no-store, must-revalidate');
+      res.setHeader('Pragma', 'no-cache');
+      res.setHeader('Expires', '0');
+    }
+  }
+}));
 
 const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
@@ -279,6 +289,33 @@ ${myClass.weeklyFocus ? 'This week: ' + myClass.weeklyFocus : ''}${myClass.assig
 First message MUST acknowledge the assignment. If student strays, redirect warmly. Use ONLY assigned material in every example and challenge.
 ` : ''}
 
+${userProfile.dailyLesson ? `
+📅 DAILY STRUCTURED LESSON — SPACED REPETITION:
+Today's concept: "${userProfile.dailyLesson.conceptTitle}"
+Session: ${userProfile.dailyLesson.reviewSession} of 4 (${userProfile.dailyLesson.reviewType})
+Time budget: ${userProfile.dailyLesson.timeMinutes} minutes
+
+SESSION GOAL:
+${userProfile.dailyLesson.reviewSession === 1
+  ? 'SESSION 1 — INTRODUCTION: Student has never seen this concept. Build from zero. Teach the core idea clearly, give 2–3 graded examples, then challenge.'
+  : userProfile.dailyLesson.reviewSession === 2
+  ? 'SESSION 2 — REVIEW & EXPAND: Open with a one-sentence recap of Session 1, then add one new dimension (e.g. a new form, exception, or usage). Challenge on both old and new.'
+  : userProfile.dailyLesson.reviewSession === 3
+  ? 'SESSION 3 — QUIZ & REINFORCE: Open immediately with a quiz on Sessions 1–2 before teaching anything. If they pass, extend with one advanced point. If they struggle, reteach the weak spot.'
+  : 'SESSION 4 — MASTERY CHECK: Full evaluation. Test everything from Sessions 1–3. No new material — pure assessment. Student needs 80 %+ to master this concept.'}
+
+TIME STRUCTURE:
+${userProfile.dailyLesson.timeMinutes <= 6
+  ? '⚡ 5-MIN MICRO-LESSON — absolute efficiency mode:\n• [TEACH]: max 40 words, 1 core idea, 1 example.\n• [CHALLENGE]: 1 question.\n• After student answers: 1-line feedback + "Mini-lesson done! Same concept tomorrow for a deeper dive." STOP. Do not chain more questions.'
+  : userProfile.dailyLesson.timeMinutes <= 15
+  ? '🕐 SHORT LESSON (12–15 min):\n• [TEACH]: under 70 words, core idea + 2 examples.\n• 2–3 [CHALLENGE] exchanges with brief feedback after each.\n• Brief wrap-up after the last answer. No tangents — stay on topic.'
+  : userProfile.dailyLesson.timeMinutes <= 28
+  ? '📚 STANDARD LESSON (20–25 min):\n• [TEACH]: full concept with 3–4 examples + exceptions.\n• 4–5 [CHALLENGE] exchanges: start easy, increase difficulty.\n• After the last challenge: short summary of what was learned today.'
+  : '🔥 INTENSIVE LESSON (30+ min):\n• [TEACH]: deep dive — concept, patterns, all forms, exceptions, cultural/etymological notes.\n• 6–8 [CHALLENGE] exchanges across multiple difficulty tiers.\n• Mid-lesson recap after exchange 4. End with a synthesis challenge and a full summary.'}
+
+FOCUS RULE: Every single example and [CHALLENGE] must be about "${userProfile.dailyLesson.conceptTitle}". Never drift to another topic.
+` : ''}
+
 ${(() => {
   const goals = Array.isArray(userProfile.goal) ? userProfile.goal : (userProfile.goal ? [userProfile.goal] : []);
   const hasBible    = goals.includes('bible')       || userProfile.curriculum === 'biblical';
@@ -342,7 +379,7 @@ ${userProfile.level === "intermediate" ? "🔴 FIRST MESSAGE MANDATORY: NO greet
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v5.10', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v6.0', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {

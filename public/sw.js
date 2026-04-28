@@ -3,17 +3,17 @@
    Strategy: network-only for everything.
    No caching. Always fresh. Notifies the page on update.
 ═══════════════════════════════════════════════════════════ */
-const SW_VERSION = 'kesher-v2';
+const SW_VERSION = 'kesher-v4';
 
 // Install: skip waiting immediately so this SW activates without delay
 self.addEventListener('install', () => {
-  console.log('[SW v2] Installing — skipWaiting');
+  console.log('[SW v3] Installing — skipWaiting');
   self.skipWaiting();
 });
 
 // Activate: delete ALL old caches from any previous version, claim clients
 self.addEventListener('activate', event => {
-  console.log('[SW v2] Activating — clearing all caches');
+  console.log('[SW v3] Activating — clearing all caches');
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(keys.map(k => {
