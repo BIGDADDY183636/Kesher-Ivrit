@@ -7989,6 +7989,39 @@ body {
 .gp-name         { letter-spacing: -0.02em !important; }
 p, li, .mob-action-title { font-weight: 500; }
 
+/* ── SW update banner ─────────────────────────────────────────── */
+.sw-update-banner {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  z-index: 99999;
+  background: #003399;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 14px;
+  padding: 12px 20px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  font-family: var(--font-eng);
+  box-shadow: 0 2px 12px rgba(0,0,0,0.25);
+}
+.sw-update-text { flex: 1; text-align: center; }
+.sw-update-btn {
+  background: #fff;
+  color: #003399;
+  border: none;
+  border-radius: 6px;
+  padding: 7px 18px;
+  font-size: 0.82rem;
+  font-weight: 800;
+  cursor: pointer;
+  font-family: var(--font-eng);
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.sw-update-btn:active { opacity: 0.85; }
+
 /* ── 36. CSS Star of David ────────────────────────────────────── */
 .star-of-david-css {
   position: relative;

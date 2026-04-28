@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=134" />
+  <link rel="stylesheet" href="style.css?v=200" />
 </head>
 <body>
 
@@ -993,7 +993,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=134"></script>
+<script src="app.js?v=200"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">
@@ -1012,30 +1012,53 @@
   </div>
 </div>
 
+<!-- ── Update banner — shown when a new SW version is detected ── -->
+<div id="sw-update-banner" style="display:none;" class="sw-update-banner">
+  <span class="sw-update-text">New version available</span>
+  <button class="sw-update-btn" onclick="window.location.reload(true)">Update now</button>
+</div>
+
 <script>
-// ── FORCE CLEAR: Unregister all service workers + delete all caches ──────────
-// This guarantees the browser always fetches fresh HTML/CSS/JS from the server.
+// ── Service Worker v2 — register and listen for updates ──────────────────────
 (function() {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.getRegistrations().then(function(regs) {
-      regs.forEach(function(r) {
-        r.unregister();
-        console.log('[SW] Unregistered:', r.scope);
-      });
-      // Register a fresh SW (cache-nuking passthrough version)
-      navigator.serviceWorker.register('/sw.js')
-        .then(function(reg) { console.log('[SW] Registered clean SW'); })
-        .catch(function(e) { console.warn('[SW] register failed:', e); });
-    });
-  }
+  if (!('serviceWorker' in navigator)) return;
+
+  // Delete all stale caches immediately in the page context too
   if (window.caches) {
     caches.keys().then(function(keys) {
-      keys.forEach(function(k) {
-        caches.delete(k);
-        console.log('[Cache] Deleted:', k);
-      });
+      keys.forEach(function(k) { caches.delete(k); });
     });
   }
+
+  navigator.serviceWorker.register('/sw.js')
+    .then(function(reg) {
+      console.log('[SW] Registered, scope:', reg.scope);
+
+      // Check for an update right now (important on mobile where SW may be cached)
+      reg.update();
+
+      // Listen for a new SW finding itself
+      reg.addEventListener('updatefound', function() {
+        var newWorker = reg.installing;
+        if (!newWorker) return;
+        newWorker.addEventListener('statechange', function() {
+          // New SW installed and old one was controlling — show banner
+          if (newWorker.state === 'installed' && navigator.serviceWorker.controller) {
+            document.getElementById('sw-update-banner').style.display = 'flex';
+          }
+        });
+      });
+    })
+    .catch(function(e) { console.warn('[SW] Register failed:', e); });
+
+  // Also listen for the SW posting SW_UPDATED (after activate + claim)
+  navigator.serviceWorker.addEventListener('message', function(e) {
+    if (e.data && e.data.type === 'SW_UPDATED') {
+      console.log('[SW] Update message received:', e.data.version);
+      // Reload silently — the SW already claimed the client
+      window.location.reload();
+    }
+  });
 })();
 
 // ── Install prompt logic ─────────────────────────────────
