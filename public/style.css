@@ -8117,7 +8117,18 @@ p, li, .mob-action-title { font-weight: 500; }
 }
 .cab-ask:hover { border-color: var(--ui-blue) !important; color: var(--ui-blue) !important; background: #EEF2FF !important; }
 
-/* ── 40. Dark mode for new elements ──────────────────────────── */
+/* ── 40. Version badge in typing indicator ────────────────────── */
+.typing-version {
+  font-size: 0.62rem;
+  font-weight: 500;
+  color: var(--ui-border);
+  letter-spacing: 0.03em;
+  margin-left: auto;
+  flex-shrink: 0;
+  align-self: center;
+}
+
+/* ── 41. Dark mode for new elements ──────────────────────────── */
 /* (merged with section 36 dark mode block below) */
 [data-theme="dark"] body { background: #0A0A0F !important; }
 [data-theme="dark"] .chat-input-area { background: #12121A !important; border-color: #2A2A40 !important; }
