@@ -1269,7 +1269,6 @@ body {
 }
 
 .typing-indicator {
-  display: flex;
   align-items: center;
   gap: 6px;
   margin-bottom: 10px;
@@ -3776,7 +3775,6 @@ button, [role="button"], .quiz-option, .word-chip, .topic-chip {
   border-radius: 12px;
   padding: 7px 14px;
   margin-bottom: 10px;
-  display: inline-flex;
   width: auto;
 }
 
@@ -4723,7 +4721,7 @@ button, input, textarea, select { font-family: var(--font-eng); }
 
 /* ── Typing indicator — beautiful pulsing glow ─────────────── */
 .typing-indicator {
-  display: inline-flex !important;
+  display: inline-flex;
   align-items: center;
   gap: 10px;
   background: linear-gradient(135deg, #EBF3FF, #E0EDFF);
