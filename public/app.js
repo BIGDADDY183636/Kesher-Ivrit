@@ -1676,7 +1676,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v6.6</div>';
+    '<div class="mob-me-version">Kesher Ivrit v7.0</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -2623,17 +2623,23 @@ function parseMorahResponse(raw) {
     : raw.replace(/📚 WORDS LEARNED:.*$/s, '').replace(/\[SKIP:[^\]]*\]/gi, '').trim();
 
   // Aggressively strip ALL plain-text quiz option patterns from teach.
-  // Morah must never put options here; if she does, strip them so they
-  // never appear as unclickable text regardless of prompt compliance.
+  // The server's _rescueTextChallenge is the first layer; this is the second.
+  // Together they ensure no unclickable option text ever reaches the DOM.
   teach = teach
-    // Remove standalone lines: "A) text", "a. text", "1) text", "1. text"
-    .replace(/^[ \t]*[A-Da-d1-4][.)]\s+.+$/gm, '')
-    // Remove inline patterns: "(A) text (B) text" or "a) text b) text"
-    .replace(/\([A-Da-d]\)\s*[^()\n]{1,60}/g, '')
-    // Remove "Which is correct: a) x b) y" style
+    // Standalone letter/number option lines: "A) text", "a. text", "1) text", "1. text"
+    .replace(/^[ \t]*\*{0,2}[A-Da-d1-4][.)]\*{0,2}\s+.+$/gm, '')
+    // Colon-separated: "A: text", "1: text"
+    .replace(/^[ \t]*[A-Da-d1-4]:\s+.+$/gm, '')
+    // "Option A: / Choice B:" patterns
+    .replace(/^[ \t]*(?:option|choice)\s+[A-Da-d1-4][.):\s].+$/gim, '')
+    // Inline parenthesized: "(A) text (B) text"
+    .replace(/\([A-Da-d]\)\s*[^()\n]{1,80}/g, '')
+    // "Which is correct: a) x b) y" / "Answer: a)" lines
     .replace(/which\s+is\s+correct[^?]*\?[^\n]*/gi, '')
-    // Remove option labels after a question mark: "? a) x b) y"
+    .replace(/^[ \t]*(?:answer|correct\s+answer)\s*[:\-]\s*[A-Da-d1-4][^\n]*/gim, '')
+    // Option labels after a question mark
     .replace(/\?\s*[a-d][)]\s*\S[^\n]*/g, '?')
+    // Collapse excess blank lines
     .replace(/\n{3,}/g, '\n\n')
     .trim();
 
@@ -5838,9 +5844,9 @@ function updateMasteryForConcept(conceptId, score, reviewSession) {
   } else if (reviewSession === 2) {
     m.level = 'learning';
     if (pass) {
-      m.nextReviewDate = _dlAddDays(today, 1);
+      m.nextReviewDate = _dlAddDays(today, 3); // Passed session 2 — wait 3 days before quiz session
     } else {
-      m.sessionCount   = 1;
+      m.sessionCount   = 1;                    // Failed — redo session 2 tomorrow
       m.nextReviewDate = _dlAddDays(today, 1);
     }
   } else if (reviewSession === 3) {
@@ -5873,7 +5879,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v6.5';
+  var CURRENT_VERSION = 'v7.0';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })

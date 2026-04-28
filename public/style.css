@@ -6591,6 +6591,16 @@ html, body,
 
 /* ── My Class form ───────────────────────────────────────── */
 [data-theme="dark"] .mc-clear-btn { background: #1A1A2E !important; border-color: #2A2A40 !important; color: #A8B4D0 !important; }
+[data-theme="dark"] .mc-label     { color: #7EB3FF !important; }
+[data-theme="dark"] .mc-label-hint { color: #6878A0 !important; }
+[data-theme="dark"] .mc-input,
+[data-theme="dark"] .mc-textarea  { background: #0A0A0F !important; border-color: #2A2A40 !important; color: #E8EAFF !important; }
+[data-theme="dark"] .mc-input:focus,
+[data-theme="dark"] .mc-textarea:focus { border-color: #4F8EF7 !important; background: #12121A !important; box-shadow: 0 0 0 4px rgba(79,142,247,0.15) !important; }
+[data-theme="dark"] .mob-mc-panel,
+[data-theme="dark"] .mob-mc-header { background: #0A0A0F !important; border-color: #2A2A40 !important; }
+[data-theme="dark"] .mob-mc-title  { color: #E8EAFF !important; }
+[data-theme="dark"] .mob-mc-active-badge { background: rgba(79,142,247,0.2) !important; color: #7EB3FF !important; }
 
 /* ── Dark mode toggle button in Me tab ───────────────────── */
 .dm-toggle-btn {

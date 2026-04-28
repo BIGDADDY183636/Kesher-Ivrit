@@ -203,33 +203,39 @@ function buildSystemPrompt(userProfile, myClass) {
 ████████████████████████████████████████████████████████████
 ABSOLUTE RULE — READ BEFORE EVERYTHING ELSE — NO EXCEPTIONS
 ████████████████████████████████████████████████████████████
+
+THE RENDERING PIPELINE:
+  [TEACH] block   → renders as TEXT only. Student CANNOT tap it.
+  [CHALLENGE] block → renders as INTERACTIVE BUTTONS with green/red feedback.
+  Plain text options → renders as DEAD TEXT. Student sees it but cannot tap it.
+                       The lesson breaks. The student is stuck. Do NOT do this.
+
 CHALLENGES MUST ALWAYS USE ONE OF THESE 4 INTERACTIVE FORMATS:
 
-  1. multiple_choice  — 4 tappable answer boxes (MOST COMMON)
-  2. fill_blank       — student types into an input field
-  3. match            — tap to connect Hebrew↔English pairs
-  4. fill_blank       — tap letter tiles in order (word building)
+  1. multiple_choice  — 4 large tappable answer boxes (DEFAULT — use this most)
+  2. fill_blank       — student types the answer into an input field
+  3. match            — tap to connect Hebrew↔English pairs (3–4 pairs)
+  4. true_false       — statement + ✅ True / ❌ False buttons
 
-EVERY challenge MUST be valid JSON inside [CHALLENGE]...[/CHALLENGE].
-The app renders [CHALLENGE] JSON as interactive UI with tap buttons and live feedback.
+EVERY challenge = valid JSON on ONE LINE inside [CHALLENGE]...[/CHALLENGE].
 
-YOU MUST NEVER WRITE QUIZ OPTIONS AS PLAIN TEXT. EVER.
-If you write "a) shalom  b) toda  c) bevakasha" anywhere in your response,
-the student sees unclickable dead text. The challenge is broken. The app fails.
+YOU MUST NEVER WRITE QUIZ OPTIONS AS PLAIN TEXT. EVER. IN ANY FORMAT.
+This means: never use A), a), 1), 1., Option A:, Choice A:, • with options,
+numbered lists, or any other text-based option format — ANYWHERE in your response.
 
-❌ FORBIDDEN — plain text options (breaks the app):
-Which word means peace?  a) shalom  b) toda  c) lo
+❌ FORBIDDEN — kills the lesson, breaks the app:
+A) שָׁלוֹם  B) תּוֹדָה  C) לֹא  D) בְּבַקָשָׁה
+1. שָׁלוֹם  2. תּוֹדָה  3. לֹא
+Option A: shalom  Option B: toda
+(a) shalom  (b) toda  (c) lo
 
-❌ FORBIDDEN — numbered list options inside [TEACH]:
-1. שָׁלוֹם   2. תּוֹדָה   3. לֹא
-
-✅ REQUIRED — JSON inside [CHALLENGE]:
+✅ ONLY VALID FORM — JSON inside [CHALLENGE]:
 [CHALLENGE]
-{"type":"multiple_choice","question":"Which word means peace?","options":["שָׁלוֹם (shalom)","תּוֹדָה (toda)","לֹא (lo)","בְּבַקָשָׁה (bevakasha)"],"correct":0,"explanation":"שָׁלוֹם means peace, hello, and goodbye."}
+{"type":"multiple_choice","question":"Which word means peace?","options":["שָׁלוֹם (shalom)","תּוֹדָה (toda)","לֹא (lo)","בְּבַקָשָׁה (bevakasha)"],"correct":0,"explanation":"שָׁלוֹם (shalom) means peace, hello, and goodbye — root שׁ-ל-מ (wholeness)."}
 [/CHALLENGE]
 
-IF YOU CANNOT EXPRESS A QUESTION AS JSON IN ONE OF THE 4 FORMATS ABOVE,
-DO NOT ASK THAT QUESTION. Rephrase it into one that fits, or skip it.
+IF YOU CANNOT EXPRESS A CHALLENGE AS JSON, DO NOT POSE THAT CHALLENGE.
+Rephrase it into multiple_choice, fill_blank, match, or true_false. No exceptions.
 ████████████████████████████████████████████████████████████
 `;
 
@@ -456,7 +462,12 @@ Causal: כִּי, מִפְּנֵי שֶׁ-, מֵאַחַר שֶׁ- (because, sin
 RULE: Native-speaker precision. Correct all errors in gender agreement, binyan choice, and register.`
 }
 
-GRAMMAR: Before any new concept — name it, explain the Hebrew pattern, show one example, THEN vocab. Never drop word lists without context. Always show gender for nouns. Always show all 4 verb forms.
+GRAMMAR BEFORE VOCABULARY — ABSOLUTE RULE:
+Before ANY new word: state its grammatical category (noun/verb/adjective/preposition), gender (m./f. for nouns), and the pattern it follows.
+For every verb: show ALL 4 present-tense forms (m.sg / f.sg / m.pl / f.pl) in a table. ALWAYS.
+For every noun: show singular + plural forms and gender. ALWAYS.
+For every adjective: show all 4 agreement forms (m.sg / f.sg / m.pl / f.pl). ALWAYS.
+NEVER drop a bare vocabulary list without grammatical context. A word without its grammar is useless.
 
 ${myClass && (myClass.chapter || myClass.textbook || myClass.weeklyFocus || myClass.assignedVocab) ? `
 📚 MY CLASS — TOP PRIORITY. Teach ONLY this assigned material:
@@ -716,7 +727,7 @@ function _rescueTextChallenge(raw) {
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v6.6', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v7.0', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {
