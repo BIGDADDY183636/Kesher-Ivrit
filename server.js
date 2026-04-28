@@ -641,9 +641,82 @@ ${
 }`;
 }
 
+// ── Safety net: convert plain-text quiz options to [CHALLENGE] JSON ──────────
+// Called on every /api/chat response before sending to the client.
+// Returns the original string unchanged if a [CHALLENGE] block already exists
+// or if no 3+ consecutive option lines are detected.
+function _rescueTextChallenge(raw) {
+  if (/\[CHALLENGE\]/.test(raw)) return raw;
+
+  const lines    = raw.split('\n');
+  const OPTION_RE = /^[ \t]*\(?[ \t]*([A-Da-d1-4])[ \t]*[.)]\s*(.+)$/;
+
+  // Find a run of 3+ consecutive option lines
+  let blockStart = -1, blockEnd = -1, runLen = 0;
+  for (let i = 0; i < lines.length; i++) {
+    if (OPTION_RE.test(lines[i])) {
+      if (runLen === 0) blockStart = i;
+      runLen++;
+      blockEnd = i;
+    } else {
+      if (runLen >= 3) break;
+      runLen = 0; blockStart = -1; blockEnd = -1;
+    }
+  }
+  if (runLen < 3 || blockStart === -1) return raw;
+
+  // Extract question from last non-empty line before the block
+  let question = 'Choose the correct answer:';
+  for (let i = blockStart - 1; i >= 0; i--) {
+    const t = lines[i].trim();
+    if (t) { question = t.replace(/^\*+|\*+$/g, '').trim(); break; }
+  }
+
+  // Extract up to 4 options
+  const options = [];
+  for (let i = blockStart; i <= blockEnd && options.length < 4; i++) {
+    const m = OPTION_RE.exec(lines[i]);
+    if (m) options.push(m[2].trim());
+  }
+  if (options.length < 2) return raw;
+
+  // Detect correct answer from text after options block
+  let correct = 0;
+  const afterText = lines.slice(blockEnd + 1).join('\n');
+  const cm = afterText.match(/(?:correct(?:\s+answer)?|answer)\s*[:\-]?\s*([A-Da-d1-4])/i);
+  if (cm) {
+    const k = cm[1].toLowerCase();
+    correct = /[a1]/.test(k) ? 0 : /[b2]/.test(k) ? 1 : /[c3]/.test(k) ? 2 : 3;
+  }
+
+  const challengeJSON = JSON.stringify({
+    type: 'multiple_choice', question, options, correct,
+    explanation: options[correct] || ''
+  });
+
+  // Rebuild: content before question + [CHALLENGE] block + content after options
+  const linesBefore  = lines.slice(0, Math.max(0, blockStart - 1));
+  const linesAfter   = lines.slice(blockEnd + 1)
+    .filter(l => !/(?:correct(?:\s+answer)?|answer)\s*[:\-]?\s*[A-Da-d1-4]/i.test(l));
+
+  const teachContent = linesBefore.join('\n').trim();
+  const afterContent = linesAfter.join('\n').trim();
+
+  const parts = [];
+  if (teachContent) {
+    parts.push(/^\[TEACH\]/.test(teachContent)
+      ? teachContent
+      : `[TEACH]\n${teachContent}\n[/TEACH]`);
+  }
+  parts.push(`[CHALLENGE]\n${challengeJSON}\n[/CHALLENGE]`);
+  if (afterContent) parts.push(afterContent);
+
+  return parts.join('\n');
+}
+
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v6.5', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v6.6', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {
@@ -680,7 +753,9 @@ app.post('/api/chat', async (req, res) => {
   console.log(`[API] provider=${provider} level=${userProfile.level} qaMode=${!!userProfile.qaMode} msgs=${messages.length} topic=${userProfile.currentTopic||'none'}`);
 
   try {
-    const content = await callAI(provider, systemPrompt, msgList, 500);
+    const raw     = await callAI(provider, systemPrompt, msgList, 500);
+    const content = _rescueTextChallenge(raw);
+    if (content !== raw) console.log('[API] Rescued text-based options → interactive [CHALLENGE]');
     res.json({ content });
   } catch (error) {
     const status = error.status === 429 ? 429 : 500;

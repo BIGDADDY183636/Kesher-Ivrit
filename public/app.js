@@ -1088,7 +1088,7 @@ function _updateMyClassBadge() {
 // ═══════════════════════════════════════════════════════════
 const OB_KEY    = 'kesher_intro_done';
 var   _obIdx    = 0;
-const _obTotal  = 6;
+const _obTotal  = 7;
 
 function _obShow() {
   var el = document.getElementById('ob-overlay');
@@ -1676,7 +1676,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v6.5</div>';
+    '<div class="mob-me-version">Kesher Ivrit v6.6</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
