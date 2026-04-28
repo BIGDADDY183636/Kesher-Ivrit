@@ -1645,7 +1645,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v5.9</div>';
+    '<div class="mob-me-version">Kesher Ivrit v5.10</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -2180,9 +2180,9 @@ async function startLesson() {
   var level = state.userProfile && state.userProfile.level;
   var firstMsg;
   if (level === 'intermediate') {
-    firstMsg = "Start our lesson now. I'm an intermediate Hebrew learner — open immediately with past tense Pa'al conjugations. Show the full paradigm with a concrete verb. Do NOT say shalom or teach greetings.";
+    firstMsg = "DO NOT say shalom. DO NOT teach greetings. I am Intermediate level. Start IMMEDIATELY with past tense Pa'al. First word: הָלַךְ conjugated in all 9 forms.";
   } else if (level === 'advanced') {
-    firstMsg = "Start our lesson now. I'm an advanced Hebrew learner — open immediately with a binyan, complex idiom, or advanced grammar concept. No warmup, no basics whatsoever.";
+    firstMsg = "DO NOT say shalom. DO NOT teach greetings or basics. I am Advanced level. Start IMMEDIATELY with a binyan, idiom, or complex grammar. Go.";
   } else {
     firstMsg = "Please start our lesson!";
   }

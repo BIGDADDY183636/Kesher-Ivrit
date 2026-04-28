@@ -325,7 +325,7 @@ WORDS LEARNED after [/CHALLENGE] for every new word. Category = verb/noun/adject
 
 ${timeAvail === '5 minutes' ? '⚡ 5 MIN: Max 2 sentences in [TEACH]. One word per message. Flashcard speed.' : ''}
 
-Start: half-line greeting to ${name}, then immediately teach.`;
+${userProfile.level === "intermediate" ? "🔴 FIRST MESSAGE MANDATORY: NO greeting. NO shalom. Open [TEACH] immediately — conjugate הָלַךְ in all 9 past tense forms. Then [CHALLENGE]." : userProfile.level === "advanced" ? "🔴 FIRST MESSAGE MANDATORY: NO greeting. Open [TEACH] immediately with an advanced binyan or idiom." : "Start: one warm half-line to greet " + name + ", then [TEACH]."}`;
 }
 
 app.post('/api/chat', async (req, res) => {
@@ -354,6 +354,11 @@ app.post('/api/chat', async (req, res) => {
     console.error('[API] buildSystemPrompt threw:', promptErr.message);
     return res.status(500).json({ error: 'server_error', message: 'Failed to build system prompt: ' + promptErr.message });
   }
+
+  // Debug log so we can verify level and first-message instruction in Vercel logs
+  console.log(`[API] Chat request — level: ${userProfile.level} | qaMode: ${!!userProfile.qaMode} | msgs: ${messages.length} | topic: ${userProfile.currentTopic || 'none'}`);
+  const lastLine = systemPrompt.split('\n').filter(l => l.trim()).pop();
+  console.log(`[API] Prompt last line: ${lastLine}`);
 
   try {
     // Single attempt — client handles retries. No server-side delay loops that
