@@ -537,7 +537,8 @@ ${(() => {
   if (s.wordsThisSession && s.wordsThisSession.length > 0) parts.push('Already taught: ' + s.wordsThisSession.join(', ') + ' — build on these.');
   if (s.consecutiveCorrect >= 3) parts.push(s.consecutiveCorrect + ' correct in a row — increase difficulty.');
   else if (s.consecutiveWrong >= 2) parts.push(s.consecutiveWrong + ' wrong in a row — slow down, re-teach differently.');
-  if (s.skipList && s.skipList.length > 0) parts.push('SKIP (student deferred to teacher): ' + s.skipList.join(', '));
+  if (s.skipList    && s.skipList.length    > 0) parts.push('SKIP (student deferred to teacher): ' + s.skipList.join(', '));
+  if (s.reviewItems && s.reviewItems.length > 0) parts.push('⚠️ QUIZ MISTAKES — student got these wrong in their last quiz, address them this lesson: ' + s.reviewItems.join(' | '));
   return parts.join(' | ');
 })()}
 
@@ -642,7 +643,7 @@ ${
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v6.4', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v6.5', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {
@@ -692,6 +693,77 @@ app.post('/api/chat', async (req, res) => {
 
 app.post('/api/feedback', async (req, res) => {
   res.json({ success: true, message: 'Todah rabah! Thank you for your feedback!' });
+});
+
+// ── POST /api/quiz — generate 10 interactive quiz questions ──────────────────
+app.post('/api/quiz', async (req, res) => {
+  const { topic, level, wordsLearned } = req.body || {};
+  if (!process.env.GROQ_API_KEY) return res.status(401).json({ error: 'NO_API_KEY' });
+
+  const topicLabel = {
+    vocabulary:   'Hebrew vocabulary — meaning of words, Hebrew↔English translation',
+    verbs:        "Hebrew verbs — present tense all 4 forms (m.sg / f.sg / m.pl / f.pl)",
+    past_tense:   "Hebrew Pa'al past tense — full 9-form suffix paradigm",
+    future_tense: "Hebrew Pa'al future tense — prefix system, all forms",
+    binyanim:     'Hebrew binyanim — identifying and using all 7 verb patterns',
+    random:       'Mixed Hebrew — vocabulary, verbs, grammar, sentence structure'
+  }[topic] || 'Hebrew vocabulary';
+
+  const levelGuide = {
+    complete_beginner: 'aleph-bet, שָׁלוֹם תּוֹדָה כֵּן לֹא, numbers 1–5',
+    some_exposure:     'pronouns (אֲנִי אַתָּה הוּא הִיא), present tense basics, family words',
+    basic:             'present tense all 4 forms, basic past tense, adjectives, prepositions',
+    intermediate:      'full past + future conjugations, binyanim identification, negation',
+    advanced:          'all 7 binyanim, construct state, idioms, register differences'
+  }[level] || 'basic Hebrew';
+
+  const wordList = (wordsLearned || []).slice(0, 20).join(', ');
+
+  const prompt = `You are a Hebrew quiz generator for the Kesher Ivrit app.
+Generate exactly 10 quiz questions as a JSON array.
+
+Student level: ${level || 'basic'} — appropriate content: ${levelGuide}
+Topic: ${topicLabel}
+${wordList ? `Words the student has learned (use these where possible): ${wordList}` : ''}
+
+CRITICAL OUTPUT RULES:
+- Return ONLY a valid JSON array — no markdown, no code fences, no text outside the brackets
+- Array must contain exactly 10 objects
+- Mix: at least 5 multiple_choice + at least 2 fill_blank + at least 1 match (3 pairs)
+- Questions test knowledge only — no teaching, no hints in the question itself
+- Explanation: 1 short sentence revealing the answer with Hebrew + transliteration
+
+Exact schemas to use:
+{"type":"multiple_choice","question":"What does אָב mean?","options":["Father","Mother","Brother","Son"],"correct":0,"explanation":"אָב (av) = father, a core family noun (masculine)"}
+{"type":"fill_blank","question":"Write 'she wrote' in Hebrew (Pa'al past, root כ-ת-ב)","answer":"כָּתְבָה","hint":"3rd person feminine singular","explanation":"כָּתְבָה (katva) = she wrote — Pa'al past 3f.sg suffix is ָה-"}
+{"type":"match","instruction":"Match each Hebrew word to its English meaning","pairs":[{"heb":"אָב","eng":"father"},{"heb":"אֵם","eng":"mother"},{"heb":"אָח","eng":"brother"}]}
+
+Generate 10 high-quality, linguistically accurate questions. Return ONLY the JSON array, starting with [ and ending with ].`;
+
+  try {
+    const r = await groq.chat.completions.create({
+      model:       'llama-3.3-70b-versatile',
+      max_tokens:  2000,
+      temperature: 0.3,
+      messages:    [{ role: 'user', content: prompt }]
+    });
+
+    const raw = r.choices[0].message.content.trim();
+    const match = raw.match(/\[[\s\S]*\]/);
+    if (!match) throw new Error('No JSON array in response');
+
+    let questions = JSON.parse(match[0]);
+    if (!Array.isArray(questions) || questions.length === 0) throw new Error('Invalid questions array');
+
+    // Normalise and validate each question
+    questions = questions.slice(0, 10).filter(q => q && q.type && (q.question || q.instruction));
+
+    console.log(`[Quiz] Generated ${questions.length} questions for topic=${topic} level=${level}`);
+    res.json({ questions });
+  } catch (e) {
+    console.error('[Quiz] Generation error:', e.message);
+    res.status(500).json({ error: 'Quiz generation failed', message: e.message });
+  }
 });
 
 app.post('/api/tooltip', async (req, res) => {

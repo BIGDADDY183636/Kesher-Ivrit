@@ -1676,7 +1676,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v6.4</div>';
+    '<div class="mob-me-version">Kesher Ivrit v6.5</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -2256,6 +2256,17 @@ function renderWordsList() {
 async function startLesson() {
   state.messages = [];
   state.session = { wordsThisSession: [], skipList: [], consecutiveCorrect: 0, consecutiveWrong: 0, totalCorrect: 0, totalWrong: 0 };
+
+  // Load quiz wrong-answer review list into session so Morah addresses them
+  try {
+    var qReview = JSON.parse(localStorage.getItem('kesher_review') || '[]');
+    if (qReview.length > 0) {
+      state.session.reviewItems = qReview.slice(-5).map(function(w) {
+        return w.question + ' (correct: ' + w.correct_answer + ')';
+      });
+      localStorage.removeItem('kesher_review');
+    }
+  } catch(e) {}
   document.getElementById('chat-messages').innerHTML = '';
   setMorahStatus('Starting your lesson...');
 
@@ -5862,7 +5873,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v6.4';
+  var CURRENT_VERSION = 'v6.5';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
@@ -5875,3 +5886,393 @@ function _dlAddDays(dateStr, days) {
     })
     .catch(function() {});
 })();
+
+// ═══════════════════════════════════════════════════════════════════════════
+//  QUIZ MODE — standalone 10-question exam with interactive challenges
+// ═══════════════════════════════════════════════════════════════════════════
+
+var _QM_TOPICS = [
+  { id:'vocabulary',   label:'Vocabulary',   icon:'📖', desc:'Word meanings & translation' },
+  { id:'verbs',        label:'Verbs',         icon:'⚡', desc:'Present tense all 4 forms' },
+  { id:'past_tense',   label:'Past Tense',    icon:'⏪', desc:'עָבָר — Pa\'al paradigm' },
+  { id:'future_tense', label:'Future Tense',  icon:'⏩', desc:'עָתִיד — prefix system' },
+  { id:'binyanim',     label:'Binyanim',      icon:'🏗️', desc:'All 7 verb patterns' },
+  { id:'random',       label:'Random Mix',    icon:'🎲', desc:'Surprise me!' },
+];
+
+var _qm = {
+  active:false, topic:null, questions:[], idx:0,
+  answers:[], score:0, startTime:null, timerInterval:null, wrongAnswers:[]
+};
+var _qmMatchSelH = null, _qmMatchSelE = null;
+
+// ── Open / Close ──────────────────────────────────────────────────────────────
+function openQuizMode() {
+  var overlay = document.getElementById('quiz-mode-overlay');
+  if (!overlay) return;
+  _qm = { active:true, topic:null, questions:[], idx:0, answers:[], score:0, startTime:null, timerInterval:null, wrongAnswers:[] };
+  _qmMatchSelH = null; _qmMatchSelE = null;
+
+  var grid = document.getElementById('qm-topic-grid');
+  if (grid) {
+    grid.innerHTML = _QM_TOPICS.map(function(t) {
+      return '<button class="qm-topic-btn" onclick="startQuizMode(\'' + t.id + '\')">' +
+        '<span class="qm-topic-icon">' + t.icon + '</span>' +
+        '<span class="qm-topic-label">' + t.label + '</span>' +
+        '<span class="qm-topic-desc">' + t.desc + '</span>' +
+      '</button>';
+    }).join('');
+  }
+
+  _qmShow('qm-topic-select');
+  overlay.style.display = 'flex';
+}
+
+function closeQuizMode() {
+  _qmFlushWrong();
+  _qm.active = false;
+  if (_qm.timerInterval) { clearInterval(_qm.timerInterval); _qm.timerInterval = null; }
+  var overlay = document.getElementById('quiz-mode-overlay');
+  if (overlay) overlay.style.display = 'none';
+}
+
+function _qmShow(paneId) {
+  ['qm-loading','qm-topic-select','qm-quiz-screen','qm-results-screen'].forEach(function(id) {
+    var el = document.getElementById(id);
+    if (el) el.style.display = id === paneId ? 'flex' : 'none';
+  });
+}
+
+// ── Fetch & Start ─────────────────────────────────────────────────────────────
+async function startQuizMode(topicId) {
+  _qm.topic = topicId; _qm.questions = []; _qm.idx = 0;
+  _qm.answers = []; _qm.score = 0; _qm.wrongAnswers = [];
+  _qmMatchSelH = null; _qmMatchSelE = null;
+  _qmShow('qm-loading');
+
+  try {
+    var level = (state.userProfile && state.userProfile.level) || 'basic';
+    var words = (state.progress.wordsLearned || []).slice(-25).map(function(w) {
+      return w.hebrew + ' (' + w.english + ')';
+    });
+
+    var resp = await fetch('/api/quiz', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ topic: topicId, level: level, wordsLearned: words })
+    });
+    if (!resp.ok) throw new Error('server ' + resp.status);
+    var data = await resp.json();
+    if (!data.questions || !data.questions.length) throw new Error('empty');
+
+    _qm.questions = data.questions;
+    _qm.startTime = Date.now();
+    _qm.timerInterval = setInterval(_qmTick, 1000);
+
+    _qmShow('qm-quiz-screen');
+    _qmRenderQ(0);
+  } catch(e) {
+    console.error('[Quiz]', e.message);
+    _qmShow('qm-topic-select');
+    showToast('Could not generate quiz — please try again!');
+  }
+}
+
+function _qmTick() {
+  if (!_qm.startTime) return;
+  var s = Math.floor((Date.now() - _qm.startTime) / 1000);
+  var el = document.getElementById('qm-timer');
+  if (el) el.textContent = Math.floor(s/60) + ':' + (s%60 < 10 ? '0' : '') + (s%60);
+}
+
+// ── Render a question ─────────────────────────────────────────────────────────
+function _qmRenderQ(idx) {
+  var total = _qm.questions.length;
+  var q = _qm.questions[idx];
+  if (!q) { _qmShowResults(); return; }
+
+  // Progress bar + dots
+  var pct = (idx / total) * 100;
+  var pb = document.getElementById('qm-progress-bar');
+  if (pb) pb.style.width = pct + '%';
+
+  var dotsEl = document.getElementById('qm-dots');
+  if (dotsEl) {
+    dotsEl.innerHTML = _qm.questions.map(function(_, i) {
+      var cls = 'qm-dot';
+      if      (i === idx)                                cls += ' qm-dot-cur';
+      else if (_qm.answers[i] && _qm.answers[i].correct) cls += ' qm-dot-ok';
+      else if (_qm.answers[i])                            cls += ' qm-dot-bad';
+      return '<span class="' + cls + '"></span>';
+    }).join('');
+  }
+
+  var qEl = document.getElementById('qm-q-count');
+  if (qEl) qEl.textContent = 'Q ' + (idx+1) + ' / ' + total;
+  var sEl = document.getElementById('qm-score-display');
+  if (sEl) sEl.textContent = _qm.score + ' correct';
+
+  // Render question widget
+  var area = document.getElementById('qm-question-area');
+  if (!area) return;
+  var wrap = document.createElement('div');
+  wrap.className = 'qm-card';
+  wrap.id = 'qm-card-' + idx;
+  area.innerHTML = '';
+  area.appendChild(wrap);
+
+  switch (q.type) {
+    case 'fill_blank':  _qmMakeFill(q, idx, wrap);  break;
+    case 'match':       _qmMakeMatch(q, idx, wrap);  break;
+    default:            _qmMakeMC(q, idx, wrap);     break;
+  }
+  area.scrollTop = 0;
+}
+
+// ── Multiple Choice ───────────────────────────────────────────────────────────
+function _qmMakeMC(q, idx, wrap) {
+  var heb = (q.question || '').match(/[א-תיִ-פֿ][א-תיִ-פְֿ-ׇ ]*/);
+  wrap.innerHTML =
+    (heb ? '<div class="qm-heb-word">' + escapeHtml(heb[0].trim()) + '</div>' : '') +
+    '<div class="qm-q-text">' + escapeHtml(q.question || '') + '</div>' +
+    '<div class="qm-mc-grid">' +
+      (q.options || []).map(function(opt, i) {
+        return '<button class="qm-mc-btn" onclick="_qmAnswerMC(' + idx + ',' + i + ')">' + escapeHtml(opt) + '</button>';
+      }).join('') +
+    '</div>' +
+    '<div class="qm-fb" id="qm-fb-' + idx + '"></div>';
+}
+
+function _qmAnswerMC(idx, sel) {
+  if (_qm.answers[idx]) return;
+  var q = _qm.questions[idx];
+  var correct = sel === q.correct;
+  document.querySelectorAll('#qm-card-' + idx + ' .qm-mc-btn').forEach(function(b, i) {
+    b.disabled = true;
+    if (i === q.correct) b.classList.add('qm-mc-correct');
+    else if (i === sel && !correct) b.classList.add('qm-mc-wrong');
+  });
+  _qmRecord(correct, idx, q.options ? q.options[sel] : '', q);
+}
+
+// ── Fill in Blank ─────────────────────────────────────────────────────────────
+function _qmMakeFill(q, idx, wrap) {
+  wrap.innerHTML =
+    '<div class="qm-q-text">' + escapeHtml(q.question || '') + '</div>' +
+    (q.hint ? '<div class="qm-hint">💡 ' + escapeHtml(q.hint) + '</div>' : '') +
+    '<div class="fill-row">' +
+      '<input class="fill-input" id="qm-inp-' + idx + '" placeholder="Type your answer…" autocomplete="off" ' +
+        'onkeydown="if(event.key===\'Enter\')_qmAnswerFill(' + idx + ')" />' +
+      '<button class="fill-submit" onclick="_qmAnswerFill(' + idx + ')">Check →</button>' +
+    '</div>' +
+    '<div class="qm-fb" id="qm-fb-' + idx + '"></div>';
+  setTimeout(function() { var i = document.getElementById('qm-inp-'+idx); if(i) i.focus(); }, 120);
+}
+
+function _qmAnswerFill(idx) {
+  if (_qm.answers[idx]) return;
+  var inp = document.getElementById('qm-inp-' + idx);
+  if (!inp) return;
+  var val = inp.value.trim();
+  if (!val) return;
+  var q = _qm.questions[idx];
+  var correct = q.answer && (val.toLowerCase() === q.answer.toLowerCase() || _translitMatch(val, q.answer));
+  inp.disabled = true;
+  inp.classList.add(correct ? 'fill-correct' : 'fill-wrong');
+  document.querySelector('#qm-card-' + idx + ' .fill-submit').disabled = true;
+  _qmRecord(correct, idx, val, q);
+}
+
+// ── Match ─────────────────────────────────────────────────────────────────────
+function _qmMakeMatch(q, idx, wrap) {
+  var pairs = q.pairs || [];
+  var engShuf = pairs.slice().sort(function() { return Math.random() - 0.5; });
+  wrap.dataset.matched = '0';
+  wrap.dataset.total   = pairs.length;
+  wrap.innerHTML =
+    '<div class="qm-q-text">' + escapeHtml(q.instruction || 'Match the Hebrew to its meaning') + '</div>' +
+    '<div class="match-grid">' +
+      '<div class="match-col">' +
+        pairs.map(function(p, i) {
+          return '<button class="match-btn" id="qm-mh-' + idx + '-' + i + '" onclick="_qmMatchTap(' + idx + ',\'h\',' + i + ')">' +
+            '<span class="match-heb-word">' + escapeHtml(p.heb) + '</span></button>';
+        }).join('') +
+      '</div>' +
+      '<div class="match-col">' +
+        engShuf.map(function(p, i) {
+          var orig = pairs.indexOf(p);
+          return '<button class="match-btn" id="qm-me-' + idx + '-' + i + '" data-orig="' + orig + '" onclick="_qmMatchTap(' + idx + ',\'e\',' + i + ')">' +
+            escapeHtml(p.eng) + '</button>';
+        }).join('') +
+      '</div>' +
+    '</div>' +
+    '<div class="qm-fb" id="qm-fb-' + idx + '"></div>';
+}
+
+function _qmMatchTap(idx, side, i) {
+  if (_qm.answers[idx]) return;
+  if (side === 'h') {
+    if (_qmMatchSelH !== null) document.getElementById('qm-mh-'+idx+'-'+_qmMatchSelH).classList.remove('match-selected');
+    _qmMatchSelH = i;
+    document.getElementById('qm-mh-'+idx+'-'+i).classList.add('match-selected');
+  } else {
+    _qmMatchSelE = i;
+  }
+  if (_qmMatchSelH === null || _qmMatchSelE === null) return;
+
+  var hIdx = _qmMatchSelH, eIdx = _qmMatchSelE;
+  _qmMatchSelH = null; _qmMatchSelE = null;
+
+  var hBtn = document.getElementById('qm-mh-'+idx+'-'+hIdx);
+  var eBtn = document.getElementById('qm-me-'+idx+'-'+eIdx);
+  var origE = parseInt(eBtn.dataset.orig);
+  var hit = hIdx === origE;
+
+  hBtn.classList.remove('match-selected');
+  if (hit) {
+    hBtn.classList.add('match-done-correct'); hBtn.disabled = true;
+    eBtn.classList.add('match-done-correct'); eBtn.disabled = true;
+    var wrap = document.getElementById('qm-card-' + idx);
+    var done = parseInt(wrap.dataset.matched || '0') + 1;
+    wrap.dataset.matched = done;
+    if (done >= parseInt(wrap.dataset.total || '0')) {
+      _qmRecord(true, idx, 'all matched', _qm.questions[idx]);
+    }
+  } else {
+    hBtn.classList.add('match-flash-wrong'); eBtn.classList.add('match-flash-wrong');
+    setTimeout(function() {
+      hBtn.classList.remove('match-flash-wrong', 'match-selected');
+      eBtn.classList.remove('match-flash-wrong');
+    }, 600);
+  }
+}
+
+// ── Record answer + feedback + advance ────────────────────────────────────────
+function _qmRecord(correct, idx, chosen, q) {
+  if (_qm.answers[idx]) return;
+  _qm.answers[idx] = { correct:correct, chosen:chosen };
+  if (correct) _qm.score++;
+
+  var correctAns = q.answer || (q.options && q.options[q.correct]) || '';
+  if (!correct) {
+    _qm.wrongAnswers.push({
+      question:       q.question || q.instruction || '',
+      correct_answer: correctAns,
+      student_answer: chosen,
+      topic:          _qm.topic
+    });
+  }
+
+  // Feedback banner
+  var fb = document.getElementById('qm-fb-' + idx);
+  if (fb) {
+    fb.className = 'qm-fb ' + (correct ? 'qm-fb-ok' : 'qm-fb-bad');
+    fb.innerHTML = correct
+      ? '<span>✅</span> ' + escapeHtml(q.explanation || 'Correct!')
+      : '<span>❌</span> ' + escapeHtml(q.explanation || ('Correct: ' + correctAns));
+    fb.style.display = 'flex';
+  }
+
+  // Update dot
+  var dots = document.querySelectorAll('.qm-dot');
+  if (dots[idx]) {
+    dots[idx].className = 'qm-dot ' + (correct ? 'qm-dot-ok' : 'qm-dot-bad');
+  }
+
+  var sEl = document.getElementById('qm-score-display');
+  if (sEl) sEl.textContent = _qm.score + ' correct';
+
+  setTimeout(function() {
+    if (idx + 1 < _qm.questions.length) _qmRenderQ(idx + 1);
+    else _qmShowResults();
+  }, 1600);
+}
+
+// ── Results Screen ────────────────────────────────────────────────────────────
+function _qmShowResults() {
+  if (_qm.timerInterval) { clearInterval(_qm.timerInterval); _qm.timerInterval = null; }
+
+  var elapsed = Math.floor((Date.now() - (_qm.startTime || Date.now())) / 1000);
+  var m = Math.floor(elapsed/60), s = elapsed%60;
+  var timeStr = m + ':' + (s < 10 ? '0' : '') + s;
+
+  var total = _qm.questions.length, score = _qm.score;
+  var pct   = total ? Math.round((score/total)*100) : 0;
+  var pts   = score * 10;
+
+  state.progress.points += pts;
+  saveProgress();
+  _qmFlushWrong();
+
+  var emoji = pct >= 90 ? '🏆' : pct >= 70 ? '⭐' : pct >= 50 ? '👍' : '💪';
+  var msg   = pct >= 90 ? 'Metzuyan! Near-perfect — incredible!' :
+              pct >= 70 ? 'Great work! A few things to review.' :
+              pct >= 50 ? 'Good effort! Morah will focus on the mistakes.' :
+                          'Keep going — Morah will drill these in your next lesson!';
+
+  var wrongHtml = '';
+  if (_qm.wrongAnswers.length) {
+    wrongHtml = '<div class="qm-wrong-box">' +
+      '<div class="qm-wrong-hdr">❌ Review These</div>' +
+      _qm.wrongAnswers.map(function(w) {
+        return '<div class="qm-wrong-row">' +
+          '<div class="qm-wrong-q">' + escapeHtml((w.question || '').slice(0, 70)) + '</div>' +
+          '<div class="qm-wrong-a">✓ ' + escapeHtml(w.correct_answer || '') + '</div>' +
+        '</div>';
+      }).join('') +
+    '</div>';
+  }
+
+  var res = document.getElementById('qm-results-screen');
+  if (!res) return;
+  res.innerHTML =
+    '<div class="qm-res-wrap">' +
+      '<div class="qm-res-emoji">' + emoji + '</div>' +
+      '<div class="qm-res-title">Quiz Complete!</div>' +
+      '<div class="qm-res-msg">' + escapeHtml(msg) + '</div>' +
+      '<div class="qm-res-stats">' +
+        '<div class="qm-res-stat"><div class="qm-rs-val">' + score + '/' + total + '</div><div class="qm-rs-lbl">Score</div></div>' +
+        '<div class="qm-res-stat"><div class="qm-rs-val">' + timeStr + '</div><div class="qm-rs-lbl">Time</div></div>' +
+        '<div class="qm-res-stat"><div class="qm-rs-val">+' + pts + '</div><div class="qm-rs-lbl">Points</div></div>' +
+      '</div>' +
+      '<div class="qm-res-bar-bg"><div class="qm-res-bar" data-pct="' + pct + '" style="width:0%"></div></div>' +
+      wrongHtml +
+      '<div class="qm-res-actions">' +
+        '<button class="qm-btn-primary" onclick="startQuizMode(\'' + _qm.topic + '\')">Try Again →</button>' +
+        (_qm.wrongAnswers.length ? '<button class="qm-btn-secondary" onclick="_qmReviewMorah()">Review Mistakes with Morah</button>' : '') +
+        '<button class="qm-btn-ghost" onclick="closeQuizMode()">Done</button>' +
+      '</div>' +
+    '</div>';
+
+  _qmShow('qm-results-screen');
+
+  requestAnimationFrame(function() {
+    requestAnimationFrame(function() {
+      var bar = res.querySelector('.qm-res-bar');
+      if (bar) bar.style.width = bar.dataset.pct + '%';
+    });
+  });
+}
+
+// ── Helpers ───────────────────────────────────────────────────────────────────
+function _qmFlushWrong() {
+  if (!_qm.wrongAnswers || !_qm.wrongAnswers.length) return;
+  // Save to localStorage so next lesson injects them
+  try {
+    var stored = JSON.parse(localStorage.getItem('kesher_review') || '[]');
+    _qm.wrongAnswers.forEach(function(w) { stored.push(w); });
+    localStorage.setItem('kesher_review', JSON.stringify(stored.slice(-20)));
+  } catch(e) {}
+  // Inject into current session for immediate use
+  if (state.session) {
+    state.session.reviewItems = _qm.wrongAnswers.slice(0, 5).map(function(w) {
+      return w.question + ' (correct: ' + w.correct_answer + ')';
+    });
+  }
+}
+
+function _qmReviewMorah() {
+  closeQuizMode();
+  showToast('Morah will focus on your quiz mistakes this lesson!');
+  continueLearning();
+}
