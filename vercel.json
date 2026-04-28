@@ -1,6 +1,5 @@
 {
   "version": 2,
-  "_comment": "v6.0 — SW kesher-v5, force redeploy — 2026-04-27T3",
   "builds": [
     {
       "src": "server.js",
