@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kesher Ivrit v5.4 | קשר עברית</title>
+  <title>Kesher Ivrit v5.5 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=128" />
+  <link rel="stylesheet" href="style.css?v=129" />
 </head>
 <body>
 
@@ -344,38 +344,11 @@
 
     <!-- Main chat area -->
     <main class="chat-area">
-      <div class="chat-header">
-        <div class="morah-info">
-          <div class="morah-avatar">👩‍🏫</div>
-          <div>
-            <div class="morah-name">Morah <span class="heb-small">מורה</span> <span class="build-tag">v5.4</span></div>
-            <div class="morah-status" id="morah-status">Ready to teach! 🇮🇱</div>
-            <button id="myclass-badge" class="myclass-badge" style="display:none;" onclick="showMyClass()">
-              📚 <span id="myclass-badge-text">Chapter 3</span>
-            </button>
-          </div>
-        </div>
-        <div class="chat-header-actions">
-          <div id="lesson-user-badge" class="lesson-user-badge" style="display:none;">
-            <span class="lub-avatar" id="lub-avatar">👤</span>
-            <div class="lub-info">
-              <div class="lub-name" id="lub-name"></div>
-              <div class="lub-school" id="lub-school"></div>
-            </div>
-          </div>
-          <select id="topic-select" class="topic-select" onchange="selectTopic(this.value)">
-            <option value="Greetings">Greetings</option>
-            <option value="Verbs">Verbs</option>
-            <option value="Infinitives">Infinitives</option>
-            <option value="Nouns">Nouns</option>
-            <option value="Adjectives">Adjectives</option>
-            <option value="Numbers">Numbers</option>
-          </select>
-          <button class="btn-lesson-path-header" onclick="showCurriculumMap()" title="Lesson Path">🗺️ Lesson Path</button>
-          <button class="btn-speed-round" onclick="startSpeedRound()" title="Speed Round">⚡ Speed Round</button>
-          <button class="btn-icon" onclick="newLesson()" title="New Lesson">🔄 Restart</button>
-        </div>
-      </div>
+      <!-- hidden status element kept for JS compatibility -->
+      <span id="morah-status" style="display:none;"></span>
+      <span id="myclass-badge-text" style="display:none;"></span>
+      <div id="myclass-badge" style="display:none;"></div>
+      <div id="lesson-user-badge" style="display:none;"><span id="lub-avatar"></span><span id="lub-name"></span><span id="lub-school"></span></div>
 
       <div class="chat-messages" id="chat-messages">
         <!-- Messages rendered by JS -->
@@ -416,15 +389,19 @@
           <button class="mic-lang-toggle" id="mic-lang-toggle" onclick="toggleMicLang()">עב / EN</button>
         </div>
         <div id="qa-mode-banner" class="qa-mode-banner" style="display:none;">
-          <span class="qa-mode-icon">❓</span>
-          <span class="qa-mode-text"><strong>Ask Anything Mode</strong> — Hebrew · Torah · Israel · Jewish History · Zionism</span>
-          <button class="qa-mode-exit" onclick="exitQAMode()">✕ Back to Lesson</button>
+          <span class="qa-mode-text">Ask Anything — Hebrew · Torah · Israel · Jewish History</span>
+          <button class="qa-mode-exit" onclick="exitQAMode()">Back to Lesson</button>
         </div>
-        <div class="quick-prompts">
-          <button class="quick-btn quick-btn-qa" onclick="enterQAMode()">❓ Ask Anything</button>
-          <button class="quick-btn" onclick="sendQuick('Teach me something new today!')">🆕 Teach me something</button>
-          <button class="quick-btn" onclick="sendQuick('Quiz me on what I\'ve learned!')">🎯 Quiz me!</button>
-          <button class="quick-btn" onclick="sendQuick('Tell me about Israeli culture or a Jewish holiday')">🇮🇱 Israeli culture</button>
+        <div class="topic-selector" id="topic-selector">
+          <button class="topic-pill topic-pill-primary" onclick="sendTopic('new-topic')">Teach me something</button>
+          <button class="topic-pill" onclick="sendTopic('verbs')">Verbs</button>
+          <button class="topic-pill" onclick="sendTopic('nouns')">Nouns</button>
+          <button class="topic-pill" onclick="sendTopic('past-tense')">Past Tense</button>
+          <button class="topic-pill" onclick="sendTopic('future-tense')">Future Tense</button>
+          <button class="topic-pill" onclick="sendTopic('binyanim')">Binyanim</button>
+          <button class="topic-pill" onclick="sendTopic('vocabulary')">New Words</button>
+          <button class="topic-pill" onclick="sendTopic('grammar')">Grammar</button>
+          <button class="topic-pill topic-pill-ask" onclick="enterQAMode()">Ask Anything</button>
         </div>
       </div>
     </main>
@@ -441,7 +418,7 @@
 
   <div id="mob-games" class="mob-panel">
     <div class="gp-header">
-      <div class="gp-title">Games <span class="gp-ver">v2.0</span></div>
+      <div class="gp-title">Games</div>
       <div class="gp-sub">Test your Hebrew skills</div>
     </div>
     <div class="gp-scroll">
@@ -971,7 +948,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=128"></script>
+<script src="app.js?v=129"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">

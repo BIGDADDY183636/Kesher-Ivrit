@@ -7504,3 +7504,335 @@ body { background: var(--s-bg) !important; font-weight: 400; }
 [data-theme="dark"] .mob-panel-title { color: #F9FAFB !important; -webkit-text-fill-color: #F9FAFB !important; }
 [data-theme="dark"] .chat-header { background: var(--s-card) !important; }
 [data-theme="dark"] .morah-name { -webkit-text-fill-color: unset !important; }
+
+/* ══════════════════════════════════════════════════════════════
+   KESHER IVRIT — DESIGN SYSTEM v5.5
+   Three colors only: white · #003399 · #1A1A2E
+   Calm, focused, minimal — content is the interface.
+   ══════════════════════════════════════════════════════════════ */
+
+/* ── 1. Color restriction ──────────────────────────────────── */
+:root {
+  --ui-blue:   #003399;
+  --ui-text:   #1A1A2E;
+  --ui-muted:  #6B7280;
+  --ui-border: #E5E7EB;
+  --ui-bg:     #FAFAFA;
+  --ui-card:   #FFFFFF;
+}
+
+/* ── 2. Body + base ────────────────────────────────────────── */
+body { background: var(--ui-bg) !important; color: var(--ui-text) !important; }
+
+/* ── 3. No gradients in the main shell ─────────────────────── */
+.gp-header         { background: var(--ui-text) !important; }
+.progress-header   { background: var(--ui-text) !important; }
+.lb-header         {
+  background: var(--ui-card) !important;
+  border-bottom: 1px solid var(--ui-border) !important;
+  box-shadow: none !important;
+}
+.lb-header-title   { color: var(--ui-text) !important; }
+.lb-header-sub     { color: var(--ui-muted) !important; }
+.lb-close-btn      { border-color: var(--ui-border) !important; background: var(--ui-bg) !important; color: var(--ui-text) !important; }
+
+.mob-me-hero {
+  background: var(--ui-bg) !important;
+  border-bottom: 1px solid var(--ui-border) !important;
+  padding: 28px 20px 20px !important;
+}
+.mob-me-avatar { font-size: 2.4rem !important; }
+.mob-me-name   { color: var(--ui-text) !important; font-size: 1.3rem !important; font-weight: 700 !important; }
+.mob-me-school { color: var(--ui-muted) !important; }
+.mob-me-level  { color: var(--ui-muted) !important; }
+
+/* ── 4. All nav active states → blue only ───────────────────── */
+.nav-btn[data-panel="learn"].active,
+.nav-btn[data-panel="path"].active,
+.nav-btn[data-panel="games"].active,
+.nav-btn[data-panel="me"].active   { color: var(--ui-blue) !important; }
+
+/* ── 5. Primary buttons → solid blue ────────────────────────── */
+.btn-send, .btn-quiz-next, .mob-progress-btn,
+.btn-feedback-submit, .reconnect-btn, .fill-submit,
+.pwa-banner-install, .lb-share-btn {
+  background: var(--ui-blue) !important;
+  color: #fff !important;
+  box-shadow: none !important;
+}
+.btn-send:hover:not(:disabled), .btn-quiz-next:hover,
+.mob-progress-btn:hover { background: #0044CC !important; transform: none !important; }
+
+/* ── 6. Action buttons & stats ──────────────────────────────── */
+.mob-lb-open-btn {
+  background: var(--ui-card) !important;
+  border: 1.5px solid var(--ui-blue) !important;
+  color: var(--ui-blue) !important;
+  box-shadow: none !important;
+}
+.mob-share-btn {
+  background: var(--ui-card) !important;
+  border: 1.5px solid var(--ui-border) !important;
+  color: var(--ui-text) !important;
+  box-shadow: none !important;
+}
+.mob-stat-val {
+  color: var(--ui-blue) !important;
+  -webkit-text-fill-color: var(--ui-blue) !important;
+}
+.mob-score-msg { border-left-color: var(--ui-blue) !important; }
+
+/* ── 7. Leaderboard ─────────────────────────────────────────── */
+.lb-my-rank-card { background: var(--ui-blue) !important; }
+.lb-row-pts      { color: var(--ui-blue) !important; }
+.lb-row-me       { background: #EEF2FF !important; }
+
+/* ── 8. Progress screen ──────────────────────────────────────── */
+.prog-card-streak { background: var(--ui-text) !important; }
+.prog-bar-fill    { background: var(--ui-blue) !important; }
+.prog-bar-track   { background: #EEF2FF !important; }
+.prog-level-pct   { color: var(--ui-blue) !important; }
+.prog-section-count { color: var(--ui-blue) !important; }
+.prog-day-on .prog-day-dot { background: var(--ui-blue) !important; border-color: var(--ui-blue) !important; }
+.prog-topic-bar   { background: var(--ui-blue) !important; }
+.prog-pill-done   { background: #EEF2FF !important; color: var(--ui-blue) !important; border-color: #C7D2FE !important; }
+
+/* ── 9. Lesson path nodes ────────────────────────────────────── */
+.node-current .path-node-icon { background: var(--ui-blue) !important; border-color: var(--ui-blue) !important; box-shadow: none !important; }
+.node-done    .path-node-icon { background: #059669 !important; border-color: #059669 !important; box-shadow: none !important; animation: none !important; }
+.path-line-done               { background: #059669 !important; }
+
+/* ── 10. Chat area ───────────────────────────────────────────── */
+.chat-area    { background: var(--ui-bg) !important; }
+.chat-header  { display: none !important; }
+.chat-messages {
+  padding: 28px 32px !important;
+  background: none !important;
+}
+@media (max-width: 768px) {
+  .chat-messages { padding: 16px 16px !important; }
+}
+
+/* ── 11. Message bubbles ─────────────────────────────────────── */
+.message.morah .msg-bubble {
+  background: var(--ui-card) !important;
+  border: 1px solid var(--ui-border) !important;
+  border-left: 3px solid var(--ui-blue) !important;
+  box-shadow: none !important;
+  font-size: 0.96rem !important;
+  line-height: 1.7 !important;
+}
+.message.user .msg-bubble {
+  background: var(--ui-blue) !important;
+  box-shadow: none !important;
+  border: none !important;
+}
+.message.morah .msg-avatar {
+  background: #EEF2FF !important;
+  border: 1px solid #C7D2FE !important;
+  box-shadow: none !important;
+  animation: none !important;
+}
+.message.user .msg-avatar {
+  background: #EEF2FF !important;
+  border: 1px solid #C7D2FE !important;
+  box-shadow: none !important;
+}
+
+/* ── 12. Input area ──────────────────────────────────────────── */
+.chat-input-area {
+  background: var(--ui-card) !important;
+  border-top: 1px solid var(--ui-border) !important;
+  box-shadow: none !important;
+  padding: 14px 20px 16px !important;
+}
+
+/* ── 13. Topic selector ──────────────────────────────────────── */
+.topic-selector {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0 2px;
+}
+.topic-pill {
+  background: none;
+  border: 1.5px solid var(--ui-border);
+  color: var(--ui-muted);
+  padding: 5px 13px;
+  border-radius: 6px;
+  font-size: 0.78rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-eng);
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+}
+.topic-pill:hover {
+  background: var(--ui-blue);
+  border-color: var(--ui-blue);
+  color: #fff;
+}
+.topic-pill-primary {
+  border-color: var(--ui-blue);
+  color: var(--ui-blue);
+  font-weight: 700;
+}
+.topic-pill-ask {
+  border-color: var(--ui-border);
+  color: var(--ui-muted);
+}
+@media (max-width: 768px) {
+  .topic-pill { font-size: 0.75rem; padding: 5px 10px; }
+  .topic-selector { gap: 5px; }
+}
+
+/* ── 14. QA mode banner ──────────────────────────────────────── */
+.qa-mode-banner {
+  background: #EEF2FF !important;
+  border: 1px solid #C7D2FE !important;
+  border-radius: 8px !important;
+  padding: 8px 14px !important;
+  font-size: 0.82rem !important;
+  margin-bottom: 8px !important;
+}
+.qa-mode-text  { color: var(--ui-blue) !important; font-weight: 600; }
+.qa-mode-exit  {
+  background: none !important;
+  border: 1px solid #C7D2FE !important;
+  color: var(--ui-blue) !important;
+  border-radius: 5px !important;
+  padding: 3px 10px !important;
+  font-size: 0.75rem !important;
+  font-weight: 600 !important;
+  cursor: pointer;
+}
+.qa-mode-icon { display: none !important; }
+
+/* ── 15. Games panel ─────────────────────────────────────────── */
+.gp-title { color: #fff !important; font-size: 1.1rem !important; font-weight: 700 !important; letter-spacing: 0 !important; }
+.gp-sub   { color: rgba(255,255,255,0.65) !important; font-size: 0.8rem !important; }
+.gp-ver   { display: none !important; }
+
+/* ── 16. Me tab version line ─────────────────────────────────── */
+.mob-me-version {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--ui-border);
+  padding: 20px 0 8px;
+  letter-spacing: 0.04em;
+}
+
+/* ── 17. Sidebar ─────────────────────────────────────────────── */
+.sidebar { background: #0F172A !important; box-shadow: none !important; }
+
+/* ── 18. Quiz screen ─────────────────────────────────────────── */
+.quiz-header { background: var(--ui-blue) !important; }
+.btn-quiz-next { background: var(--ui-blue) !important; box-shadow: none !important; }
+.btn-quiz-next:hover { background: #0044CC !important; transform: none !important; box-shadow: none !important; }
+
+/* ── 19. Home screen ─────────────────────────────────────────── */
+#screen-home, #screen-register {
+  background: linear-gradient(160deg, #001166 0%, #003399 60%, #1155CC 100%) !important;
+}
+.btn-start { background: #fff !important; color: var(--ui-blue) !important; box-shadow: none !important; }
+.btn-start:hover { background: #F0F4FF !important; transform: none !important; }
+.tagline { font-size: 1.1rem !important; font-weight: 400 !important; color: rgba(255,255,255,0.82) !important; letter-spacing: 0 !important; }
+
+/* ── 20. Panel headers ────────────────────────────────────────── */
+.mob-panel-hdr {
+  background: var(--ui-card) !important;
+  border-bottom: 1px solid var(--ui-border) !important;
+  box-shadow: none !important;
+  padding: 18px 20px 14px !important;
+}
+.mob-panel-title { color: var(--ui-text) !important; -webkit-text-fill-color: var(--ui-text) !important; font-size: 1.15rem !important; font-weight: 700 !important; }
+.mob-panel-sub   { color: var(--ui-muted) !important; font-size: 0.8rem !important; }
+
+/* ── 21. Build tag ────────────────────────────────────────────── */
+.build-tag {
+  background: transparent !important;
+  color: var(--ui-muted) !important;
+  -webkit-text-fill-color: var(--ui-muted) !important;
+  font-weight: 500 !important;
+  font-size: 0.6rem !important;
+  border: none !important;
+  padding: 0 !important;
+}
+
+/* ── 22. MC buttons ───────────────────────────────────────────── */
+.mc-btn {
+  border: 1.5px solid var(--ui-border) !important;
+  border-radius: 8px !important;
+  box-shadow: none !important;
+  font-weight: 600 !important;
+  font-size: 0.92rem !important;
+}
+.mc-btn:hover:not(:disabled) {
+  border-color: var(--ui-blue) !important;
+  background: #EEF2FF !important;
+  color: var(--ui-blue) !important;
+  transform: none !important;
+  box-shadow: none !important;
+}
+
+/* ── 23. Toast ────────────────────────────────────────────────── */
+.toast { background: var(--ui-text) !important; box-shadow: none !important; border: none !important; }
+
+/* ── 24. Notebook ─────────────────────────────────────────────── */
+.notebook-header { background: var(--ui-blue) !important; }
+
+/* ── 25. Remove all decorative animations from shell ──────────── */
+.screen.active { animation: none !important; }
+.message { animation: msgFadeIn 0.18s ease both !important; }
+@keyframes msgFadeIn { from { opacity: 0; } to { opacity: 1; } }
+.typing-indicator { animation: none !important; }
+.typing-avatar    { animation: none !important; }
+.typing-text      { animation: none !important; background: none !important; -webkit-text-fill-color: var(--ui-blue) !important; }
+.heb-pill         { animation: none !important; }
+.word-badge       { animation: none !important; }
+
+/* ── 26. Spacing & breathing room ─────────────────────────────── */
+.mob-me-body { gap: 12px !important; padding: 0 0 24px !important; }
+.mob-action-btn { padding: 16px !important; }
+.mob-stats-grid { padding: 16px 20px !important; gap: 12px !important; }
+.mob-stat { padding: 18px 12px !important; border-radius: 12px !important; }
+
+/* ── 27. Suppress leftover gold / purple from decorative usage ── */
+.stat-value { background: none !important; -webkit-text-fill-color: #fff !important; }
+.points-pop { color: var(--ui-blue) !important; text-shadow: none !important; }
+.word-badge { background: var(--ui-blue) !important; box-shadow: none !important; }
+.correct-burst { background: #059669 !important; box-shadow: none !important; }
+
+/* ── 28. Speed round button (orange is fine as game-specific) ─── */
+.btn-speed-round { display: none !important; } /* moved to Me tab, hidden from header */
+
+/* ── 29. Scrollbar ─────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 3px; height: 3px; }
+::-webkit-scrollbar-thumb { background: var(--ui-border); border-radius: 3px; }
+
+/* ── 30. heb-pill simplification ──────────────────────────────── */
+.heb-pill {
+  background: none !important;
+  color: var(--ui-blue) !important;
+  font-family: var(--font-heb) !important;
+  font-size: 1.1em !important;
+  font-weight: 700 !important;
+  padding: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+  margin: 0 2px !important;
+  display: inline !important;
+}
+
+/* ── 31. Dark mode override for v5.5 ──────────────────────────── */
+[data-theme="dark"] body { background: #0A0A0F !important; }
+[data-theme="dark"] .chat-input-area { background: #12121A !important; border-color: #2A2A40 !important; }
+[data-theme="dark"] .mob-me-hero { background: #12121A !important; border-color: #2A2A40 !important; }
+[data-theme="dark"] .mob-panel-hdr { background: #12121A !important; border-color: #2A2A40 !important; }
+[data-theme="dark"] .mob-panel-title { color: #F9FAFB !important; -webkit-text-fill-color: #F9FAFB !important; }
+[data-theme="dark"] .topic-pill { border-color: #2A2A40; color: #9CA3AF; }
+[data-theme="dark"] .lb-header { background: #12121A !important; border-color: #2A2A40 !important; }
+[data-theme="dark"] .lb-header-title { color: #F9FAFB !important; }
+[data-theme="dark"] .mob-me-name { color: #F9FAFB !important; }
+[data-theme="dark"] .mob-me-version { color: #374151 !important; }

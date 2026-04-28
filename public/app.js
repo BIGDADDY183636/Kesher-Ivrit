@@ -685,12 +685,10 @@ const PT_LEVELS = {
 
 function _ptLevelFromScore(score) {
   if (score <= 1)  return PT_LEVELS.newLvl;
-  if (score <= 3)  return PT_LEVELS.basic;
-  if (score <= 5)  return PT_LEVELS.elementary;
-  if (score <= 7)  return PT_LEVELS.inter;
-  if (score <= 9)  return PT_LEVELS.adv;
-  if (score <= 11) return PT_LEVELS.nearFluent;
-  return PT_LEVELS.expert;  // 12
+  if (score <= 4)  return PT_LEVELS.basic;
+  if (score <= 7)  return PT_LEVELS.elementary;
+  if (score <= 10) return PT_LEVELS.inter;      // 8+ = Intermediate
+  return PT_LEVELS.adv;                         // 11-12 = Advanced
 }
 
 var _pt = { idx: 0, score: 0, answered: false, detectedLevel: null };
@@ -1628,7 +1626,11 @@ function renderMobileProfile() {
       '</button>' +
       '<button class="mob-action-btn" onclick="goHome();switchTab(' + "'learn'" + ')">' +
         '<span class="mob-action-icon">🏠</span>' +
-        '<div><div class="mob-action-title">Home</div><div class="mob-action-sub">Word of the Day &amp; settings</div></div>' +
+        '<div><div class="mob-action-title">Home</div><div class="mob-action-sub">Return to the home screen</div></div>' +
+      '</button>' +
+      '<button class="mob-action-btn" onclick="newLesson();switchTab(' + "'learn'" + ')">' +
+        '<span class="mob-action-icon">↺</span>' +
+        '<div><div class="mob-action-title">Restart Lesson</div><div class="mob-action-sub">Start a fresh conversation with Morah</div></div>' +
       '</button>' +
       (function() {
         var dark = document.documentElement.getAttribute('data-theme') === 'dark';
@@ -1643,7 +1645,8 @@ function renderMobileProfile() {
           '</span>' +
         '</button>';
       })() +
-    '</div>';
+    '</div>' +
+    '<div class="mob-me-version">Kesher Ivrit v5.5</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -3187,7 +3190,23 @@ function _buildMsgTable(lines) {
 
 // ─── UI HELPERS ───────────────────────────────────────────
 function setMorahStatus(text) {
-  document.getElementById('morah-status').textContent = text;
+  var el = document.getElementById('morah-status');
+  if (el) el.textContent = text;
+}
+
+function sendTopic(topic) {
+  var map = {
+    'new-topic':    "Teach me something new in Hebrew today — a word, phrase, or grammar point suited to my level.",
+    'verbs':        "Teach me a Hebrew verb at my level — show me the root, all present-tense forms, and one example sentence.",
+    'nouns':        "Teach me some Hebrew nouns — include the gender, plural form, and a short example for each.",
+    'past-tense':   "Explain the Hebrew past tense clearly. Show me the verb pattern with a common verb and example sentences.",
+    'future-tense': "Teach me the Hebrew future tense. Walk me through the pattern with a clear example verb.",
+    'binyanim':     "Explain the Hebrew binyan system at my level. Focus on the most important pattern I should know right now.",
+    'vocabulary':   "Give me five Hebrew words I should know at my level. For each: the word, pronunciation, and a short example.",
+    'grammar':      "Teach me one Hebrew grammar rule that matters at my level — explain it clearly with two or three examples.",
+  };
+  exitQAMode();
+  sendQuick(map[topic] || "Teach me something new in Hebrew.");
 }
 
 var _toastTimer = null;
