@@ -1,7 +1,8 @@
 ﻿require('dotenv').config();
-const express   = require('express');
-const Anthropic = require('@anthropic-ai/sdk');
-const path      = require('path');
+const express    = require('express');
+const Groq       = require('groq-sdk');
+const Anthropic  = require('@anthropic-ai/sdk');
+const path       = require('path');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -34,7 +35,40 @@ app.use(express.static(path.join(__dirname, 'public'), {
   }
 }));
 
-const anthropic = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+const groq      = new Groq({ apiKey: process.env.GROQ_API_KEY });
+const anthropic  = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
+
+// ── Provider routing ──────────────────────────────────────────────────────────
+// Anthropic (claude-sonnet-4-6): QA mode, bar/bat mitzvah, Bible, prayer
+// Groq (llama3-70b-8192):        all standard Hebrew lessons
+const ANTHROPIC_GOALS = new Set(['bar_mitzvah', 'bible', 'prayer']);
+
+function selectProvider(userProfile) {
+  if (userProfile.qaMode) return 'anthropic';
+  const goals = Array.isArray(userProfile.goal)
+    ? userProfile.goal
+    : userProfile.goal ? [userProfile.goal] : [];
+  if (goals.some(g => ANTHROPIC_GOALS.has(g))) return 'anthropic';
+  return 'groq';
+}
+
+async function callAI(provider, systemPrompt, messages, maxTokens) {
+  if (provider === 'anthropic') {
+    const r = await anthropic.messages.create({
+      model:      'claude-sonnet-4-6',
+      max_tokens: maxTokens,
+      system:     systemPrompt,
+      messages:   messages
+    });
+    return r.content[0].text;
+  }
+  const r = await groq.chat.completions.create({
+    model:      'llama3-70b-8192',
+    max_tokens: maxTokens,
+    messages:   [{ role: 'system', content: systemPrompt }, ...messages]
+  });
+  return r.choices[0].message.content;
+}
 
 // ── Supabase client (optional — app works without it) ────────────────────────
 let supabase = null;
@@ -385,27 +419,23 @@ ${userProfile.level === "intermediate" ? "🔴 FIRST MESSAGE MANDATORY: NO greet
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v6.0', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v6.1', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {
   const { messages, userProfile, myClass } = req.body;
-  const apiKey = process.env.ANTHROPIC_API_KEY || req.headers['x-api-key'];
 
-  if (!apiKey) {
-    console.error('[API] No API key — set ANTHROPIC_API_KEY in Vercel environment variables');
-    return res.status(401).json({ error: 'NO_API_KEY' });
-  }
-
-  // Guard: userProfile must exist to build the system prompt
   if (!userProfile || typeof userProfile !== 'object') {
     console.error('[API] Missing or invalid userProfile in request body');
     return res.status(400).json({ error: 'bad_request', message: 'userProfile is required' });
   }
 
-  const client = apiKey === process.env.ANTHROPIC_API_KEY
-    ? anthropic
-    : new Anthropic({ apiKey });
+  const provider = selectProvider(userProfile);
+  const envKey   = provider === 'anthropic' ? process.env.ANTHROPIC_API_KEY : process.env.GROQ_API_KEY;
+  if (!envKey) {
+    console.error(`[API] No API key for provider "${provider}"`);
+    return res.status(401).json({ error: 'NO_API_KEY' });
+  }
 
   // Normalise level — guard against null/undefined/stale values from old localStorage
   const VALID_LEVELS = ['complete_beginner','some_exposure','basic','intermediate','advanced'];
@@ -422,30 +452,17 @@ app.post('/api/chat', async (req, res) => {
     return res.status(500).json({ error: 'server_error', message: 'Failed to build system prompt: ' + promptErr.message });
   }
 
-  // ── FULL DIAGNOSTIC LOG — visible in Vercel Functions logs ──────────────────
-  console.log(`[API] level=${userProfile.level} qaMode=${!!userProfile.qaMode} msgs=${messages.length} topic=${userProfile.currentTopic||'none'}`);
-  console.log(`[API] PROMPT FIRST 400: ${systemPrompt.slice(0, 400)}`);
-  console.log(`[API] PROMPT LAST LINE: ${systemPrompt.split('\n').filter(l=>l.trim()).pop()}`);
-  console.log(`[API] FIRST USER MSG: ${(messages[0]||{}).content||'(none)'}`);
-  // ────────────────────────────────────────────────────────────────────────────
+  const msgList = messages.map(m => ({ role: m.role, content: m.content }));
+  console.log(`[API] provider=${provider} level=${userProfile.level} qaMode=${!!userProfile.qaMode} msgs=${messages.length} topic=${userProfile.currentTopic||'none'}`);
 
   try {
-    // Single attempt — client handles retries. No server-side delay loops that
-    // would burn Vercel's function timeout budget before a response arrives.
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
-      max_tokens: 500,    // 500 covers [TEACH]+[CHALLENGE]+WORDS LEARNED without runaway verbosity
-      system: systemPrompt,
-      messages: messages.map(m => ({ role: m.role, content: m.content }))
-    });
-
-    res.json({ content: response.content[0].text });
-
+    const content = await callAI(provider, systemPrompt, msgList, 500);
+    res.json({ content });
   } catch (error) {
-    const status  = error.status === 429 ? 429 : 500;
-    const code    = error.status === 429 ? 'rate_limit' : 'server_error';
-    const detail  = error.message || String(error);
-    console.error(`[API] Anthropic error (status=${error.status}): ${detail}`);
+    const status = error.status === 429 ? 429 : 500;
+    const code   = error.status === 429 ? 'rate_limit' : 'server_error';
+    const detail = error.message || String(error);
+    console.error(`[API] ${provider} error (status=${error.status}): ${detail}`);
     res.status(status).json({ error: code, message: detail });
   }
 });
@@ -456,21 +473,21 @@ app.post('/api/feedback', async (req, res) => {
 
 app.post('/api/tooltip', async (req, res) => {
   const { word } = req.body;
-  const apiKey = process.env.ANTHROPIC_API_KEY || req.headers['x-api-key'];
+  const apiKey = process.env.GROQ_API_KEY || req.headers['x-api-key'];
   if (!apiKey) return res.status(401).json({ error: 'NO_API_KEY' });
   if (!word || word.trim().length === 0 || word.length > 60) return res.status(400).json({ error: 'Invalid word' });
 
   try {
-    const client = apiKey === process.env.ANTHROPIC_API_KEY ? anthropic : new Anthropic({ apiKey });
-    const response = await client.messages.create({
-      model: 'claude-sonnet-4-6',
+    const client = apiKey === process.env.GROQ_API_KEY ? groq : new Groq({ apiKey });
+    const response = await client.chat.completions.create({
+      model:      'llama3-70b-8192',
       max_tokens: 80,
       messages: [{
         role: 'user',
         content: `Hebrew word or phrase: "${word.trim()}"\nReply with ONLY a JSON object, no other text:\n{"transliteration":"...","english":"...","partOfSpeech":"noun/verb/adjective/phrase/etc"}`
       }]
     });
-    const raw = response.content[0].text;
+    const raw = response.choices[0].message.content;
     const match = raw.match(/\{[\s\S]*\}/);
     if (!match) return res.status(500).json({ error: 'Parse error' });
     res.json(JSON.parse(match[0]));
@@ -480,13 +497,15 @@ app.post('/api/tooltip', async (req, res) => {
 });
 
 app.get('/api/status', (req, res) => {
-  const key = process.env.ANTHROPIC_API_KEY || '';
+  const groqKey      = process.env.GROQ_API_KEY      || '';
+  const anthropicKey = process.env.ANTHROPIC_API_KEY || '';
   res.json({
-    configured:   !!key,
-    keyPrefix:    key ? key.slice(0, 7) + '…' : '(not set)',
-    nodeVersion:  process.version,
-    environment:  process.env.VERCEL ? 'vercel' : 'local',
-    timestamp:    new Date().toISOString()
+    configured:       !!(groqKey || anthropicKey),
+    groq:             { configured: !!groqKey,      model: 'llama3-70b-8192',    routes: 'standard lessons' },
+    anthropic:        { configured: !!anthropicKey, model: 'claude-sonnet-4-6',  routes: 'QA mode, bar_mitzvah, bible, prayer' },
+    nodeVersion:      process.version,
+    environment:      process.env.VERCEL ? 'vercel' : 'local',
+    timestamp:        new Date().toISOString()
   });
 });
 
