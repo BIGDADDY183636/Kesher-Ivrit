@@ -1084,6 +1084,91 @@ function _updateMyClassBadge() {
 }
 
 // ═══════════════════════════════════════════════════════════
+//  BAR/BAT MITZVAH — PARASHA SELECTOR
+//  Interactive overlay that fires before the first BM lesson
+//  when the student hasn't set their parasha yet.
+// ═══════════════════════════════════════════════════════════
+
+const BM_PARASHA_SEFARIM = [
+  {
+    sefer: 'בְּרֵאשִׁית', label: 'Bereishit · Genesis', color: '#1B4FBA',
+    portions: ['Bereishit','Noach','Lech Lecha','Vayera','Chayei Sarah','Toldot',
+               'Vayetzei','Vayishlach','Vayeshev','Miketz','Vayigash','Vayechi']
+  },
+  {
+    sefer: 'שְׁמוֹת', label: 'Shemot · Exodus', color: '#065F46',
+    portions: ['Shemot','Vaera','Bo','Beshalach','Yitro','Mishpatim',
+               'Terumah','Tetzaveh','Ki Tisa','Vayakhel','Pekudei']
+  },
+  {
+    sefer: 'וַיִּקְרָא', label: 'Vayikra · Leviticus', color: '#7C2D12',
+    portions: ['Vayikra','Tzav','Shemini','Tazria','Metzora',
+               'Acharei Mot','Kedoshim','Emor','Behar','Bechukotai']
+  },
+  {
+    sefer: 'בְּמִדְבַּר', label: 'Bamidbar · Numbers', color: '#4C1D95',
+    portions: ["Bamidbar","Nasso","Beha'alotcha","Shelach","Korach",
+               "Chukat","Balak","Pinchas","Matot","Masei"]
+  },
+  {
+    sefer: 'דְּבָרִים', label: 'Devarim · Deuteronomy', color: '#92400E',
+    portions: ["Devarim","Vaetchanan","Eikev","Re'eh","Shoftim",
+               "Ki Teitzei","Ki Tavo","Nitzavim","Vayeilech","Haazinu","Vezot HaBerachah"]
+  }
+];
+
+function buildParashaOverlay() {
+  var body = document.getElementById('bm-po-books');
+  if (!body) return;
+  var html = '';
+  BM_PARASHA_SEFARIM.forEach(function(book) {
+    html += '<div class="bm-book">';
+    html += '<div class="bm-book-hdr" style="background:' + book.color + '">';
+    html += '<span class="bm-book-heb">' + book.sefer + '</span>';
+    html += '<span class="bm-book-eng">' + book.label + '</span>';
+    html += '</div><div class="bm-book-portions">';
+    book.portions.forEach(function(p) {
+      var safe = p.replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+      html += '<button class="bm-pars-btn" onclick="selectParasha(\'' + safe + '\')">' + p + '</button>';
+    });
+    html += '</div></div>';
+  });
+  body.innerHTML = html;
+}
+
+function showParashaOverlay() {
+  buildParashaOverlay();
+  var el = document.getElementById('bm-parasha-overlay');
+  if (el) el.style.display = 'flex';
+  document.getElementById('chat-messages').innerHTML = '';
+  setMorahStatus && setMorahStatus('Choose your parasha to begin…');
+}
+
+function hideParashaOverlay() {
+  var el = document.getElementById('bm-parasha-overlay');
+  if (el) el.style.display = 'none';
+}
+
+function selectParasha(name) {
+  // Persist parasha into myClass
+  myClass = myClass || {};
+  myClass.parasha = name;
+  try { localStorage.setItem(MC_KEY, JSON.stringify(myClass)); } catch(e) {}
+  if (typeof _updateMyClassBadge === 'function') _updateMyClassBadge();
+
+  hideParashaOverlay();
+  showToast && showToast('📖 Parasha: ' + name + ' — let\'s get you ready for the bimah!', 3500);
+
+  // Fire the first real lesson message with the parasha now set
+  var firstMsg = 'My parasha is ' + name + '. Start Phase 1: teach me what "' + name +
+    '" means in Hebrew, its root and etymology, and break down the opening verse word by word.';
+  state.messages = [];
+  state.messages.push({ role: 'user', content: firstMsg });
+  appendMessage('user', firstMsg);
+  sendToMorah(state.messages);
+}
+
+// ═══════════════════════════════════════════════════════════
 //  ONBOARDING INTRO — shown once to first-time visitors
 // ═══════════════════════════════════════════════════════════
 const OB_KEY    = 'kesher_intro_done';
@@ -1676,7 +1761,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v7.0</div>';
+    '<div class="mob-me-version">Kesher Ivrit v7.1</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -2295,9 +2380,14 @@ async function startLesson() {
       firstMsg = "Mastery check for \"" + dl.conceptTitle + "\"! Quiz me hard on everything — I need to show I've mastered it.";
     }
   } else if (isBM) {
-    firstMsg = myParasha
-      ? "Start my Bar/Bat Mitzvah preparation. My parasha is " + myParasha + ". Teach me the vocabulary, trope concepts, and brachot for my portion."
-      : "Start my Bar/Bat Mitzvah preparation. I don't know my parasha yet — please ask me, then begin teaching me the Hebrew concepts I need for my ceremony.";
+    if (!myParasha) {
+      // No parasha set — show the interactive selector overlay.
+      // selectParasha() will fire the first message after the student picks.
+      showParashaOverlay();
+      return;
+    }
+    firstMsg = 'My parasha is ' + myParasha + '. Start Phase 1: teach me what "' + myParasha +
+      '" means in Hebrew, its root and etymology, and break down the opening verse word by word.';
   } else if (isBible) {
     firstMsg = "Start my Biblical Hebrew lesson. Focus on Torah vocabulary, vav-consecutive narrative, and construct state. I want to read and understand the actual Torah text.";
   } else if (isPrayer) {
@@ -5879,7 +5969,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v7.0';
+  var CURRENT_VERSION = 'v7.1';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
