@@ -3,7 +3,7 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Kesher Ivrit v5.5 | קשר עברית</title>
+  <title>Kesher Ivrit v5.6 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -21,7 +21,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=129" />
+  <link rel="stylesheet" href="style.css?v=130" />
 </head>
 <body>
 
@@ -234,6 +234,8 @@
         Start Learning — <span class="hebrew-inline">בּוֹא נִלְמַד!</span>
       </button>
 
+      <button class="btn-myclass-home" onclick="showMyClass()">My Class</button>
+
       <div id="returning-user-section" style="display:none;">
         <div class="divider-or">— or —</div>
         <div class="returning-card" onclick="continueLearning()">
@@ -344,11 +346,20 @@
 
     <!-- Main chat area -->
     <main class="chat-area">
-      <!-- hidden status element kept for JS compatibility -->
+      <!-- hidden compat elements -->
       <span id="morah-status" style="display:none;"></span>
       <span id="myclass-badge-text" style="display:none;"></span>
       <div id="myclass-badge" style="display:none;"></div>
       <div id="lesson-user-badge" style="display:none;"><span id="lub-avatar"></span><span id="lub-name"></span><span id="lub-school"></span></div>
+
+      <!-- visible chat user bar -->
+      <div class="chat-user-bar" id="chat-user-bar" style="display:none;">
+        <div class="cub-info">
+          <span class="cub-name" id="cub-name"></span>
+          <span class="cub-school" id="cub-school"></span>
+        </div>
+        <button class="cub-restart-btn" onclick="newLesson()" title="New conversation">↺</button>
+      </div>
 
       <div class="chat-messages" id="chat-messages">
         <!-- Messages rendered by JS -->
@@ -393,15 +404,17 @@
           <button class="qa-mode-exit" onclick="exitQAMode()">Back to Lesson</button>
         </div>
         <div class="topic-selector" id="topic-selector">
-          <button class="topic-pill topic-pill-primary" onclick="sendTopic('new-topic')">Teach me something</button>
-          <button class="topic-pill" onclick="sendTopic('verbs')">Verbs</button>
-          <button class="topic-pill" onclick="sendTopic('nouns')">Nouns</button>
-          <button class="topic-pill" onclick="sendTopic('past-tense')">Past Tense</button>
-          <button class="topic-pill" onclick="sendTopic('future-tense')">Future Tense</button>
-          <button class="topic-pill" onclick="sendTopic('binyanim')">Binyanim</button>
-          <button class="topic-pill" onclick="sendTopic('vocabulary')">New Words</button>
-          <button class="topic-pill" onclick="sendTopic('grammar')">Grammar</button>
-          <button class="topic-pill topic-pill-ask" onclick="enterQAMode()">Ask Anything</button>
+          <div class="topic-pills-row">
+            <button class="topic-pill topic-pill-primary" onclick="sendTopic('new-topic')">Teach me</button>
+            <button class="topic-pill" onclick="sendTopic('verbs')">Verbs</button>
+            <button class="topic-pill" onclick="sendTopic('nouns')">Nouns</button>
+            <button class="topic-pill" onclick="sendTopic('past-tense')">Past Tense</button>
+            <button class="topic-pill" onclick="sendTopic('future-tense')">Future Tense</button>
+            <button class="topic-pill" onclick="sendTopic('binyanim')">Binyanim</button>
+            <button class="topic-pill" onclick="sendTopic('vocabulary')">New Words</button>
+            <button class="topic-pill" onclick="sendTopic('grammar')">Grammar</button>
+          </div>
+          <button class="topic-ask-btn" onclick="enterQAMode()">Ask Anything</button>
         </div>
       </div>
     </main>
@@ -948,7 +961,7 @@
 </div>
 <div id="curriculum-overlay" class="curriculum-overlay" onclick="closeCurriculumMap()" style="display:none;"></div>
 
-<script src="app.js?v=129"></script>
+<script src="app.js?v=130"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">

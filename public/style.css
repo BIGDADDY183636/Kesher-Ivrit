@@ -7825,7 +7825,159 @@ body { background: var(--ui-bg) !important; color: var(--ui-text) !important; }
   display: inline !important;
 }
 
-/* ── 31. Dark mode override for v5.5 ──────────────────────────── */
+/* ── 31. My Class home button ─────────────────────────────────── */
+.btn-myclass-home {
+  display: block;
+  margin: 12px auto 0;
+  background: rgba(255,255,255,0.12);
+  border: 1.5px solid rgba(255,255,255,0.35);
+  color: rgba(255,255,255,0.9);
+  padding: 11px 32px;
+  border-radius: 8px;
+  font-size: 0.9rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-eng);
+  letter-spacing: 0.01em;
+  transition: background 0.15s, border-color 0.15s;
+}
+.btn-myclass-home:hover {
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.55);
+}
+
+/* ── 32. Chat user bar ───────────────────────────────────────── */
+.chat-user-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 32px 4px;
+  flex-shrink: 0;
+  border-bottom: 1px solid var(--ui-border);
+}
+.cub-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.cub-name {
+  font-size: 0.9rem;
+  font-weight: 700;
+  color: var(--ui-text);
+  letter-spacing: -0.01em;
+}
+.cub-school {
+  font-size: 0.72rem;
+  color: var(--ui-muted);
+  font-weight: 400;
+}
+.cub-restart-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 1.5px solid var(--ui-border);
+  background: none;
+  color: var(--ui-muted);
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: border-color 0.12s, color 0.12s, background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
+}
+.cub-restart-btn:hover {
+  border-color: var(--ui-blue);
+  color: var(--ui-blue);
+  background: #EEF2FF;
+}
+@media (max-width: 768px) {
+  .chat-user-bar { padding: 12px 16px 4px; }
+}
+
+/* ── 33. Topic selector — two groups ─────────────────────────── */
+.topic-selector {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 0 2px;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.topic-selector::-webkit-scrollbar { display: none; }
+.topic-pills-row {
+  display: flex;
+  gap: 6px;
+  flex-shrink: 0;
+  align-items: center;
+}
+.topic-pill {
+  background: none;
+  border: 1.5px solid var(--ui-border);
+  color: var(--ui-muted);
+  padding: 5px 12px;
+  border-radius: 6px;
+  font-size: 0.77rem;
+  font-weight: 600;
+  cursor: pointer;
+  font-family: var(--font-eng);
+  transition: background 0.12s, border-color 0.12s, color 0.12s;
+  -webkit-tap-highlight-color: transparent;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+.topic-pill:hover {
+  background: var(--ui-blue);
+  border-color: var(--ui-blue);
+  color: #fff;
+}
+.topic-pill-primary {
+  border-color: var(--ui-blue);
+  color: var(--ui-blue);
+  font-weight: 700;
+}
+.topic-ask-btn {
+  flex-shrink: 0;
+  background: var(--ui-blue);
+  border: none;
+  color: #fff;
+  padding: 6px 16px;
+  border-radius: 6px;
+  font-size: 0.77rem;
+  font-weight: 700;
+  cursor: pointer;
+  font-family: var(--font-eng);
+  white-space: nowrap;
+  transition: background 0.12s;
+  -webkit-tap-highlight-color: transparent;
+  margin-left: auto;
+}
+.topic-ask-btn:hover { background: #0044CC; }
+
+/* ── 34. Typography elevation ─────────────────────────────────── */
+body {
+  font-weight: 500 !important;
+  line-height: 1.6 !important;
+  letter-spacing: -0.01em !important;
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+.msg-bubble {
+  font-size: 0.97rem !important;
+  line-height: 1.75 !important;
+  letter-spacing: -0.005em !important;
+}
+.mob-panel-title { letter-spacing: -0.02em !important; }
+.mob-me-name     { letter-spacing: -0.02em !important; }
+.cub-name        { letter-spacing: -0.02em !important; }
+.quiz-q-text     { letter-spacing: -0.02em !important; line-height: 1.4 !important; }
+.gp-name         { letter-spacing: -0.02em !important; }
+p, li, .mob-action-title { font-weight: 500; }
+
+/* ── 36. Dark mode overrides ──────────────────────────────────── */
 [data-theme="dark"] body { background: #0A0A0F !important; }
 [data-theme="dark"] .chat-input-area { background: #12121A !important; border-color: #2A2A40 !important; }
 [data-theme="dark"] .mob-me-hero { background: #12121A !important; border-color: #2A2A40 !important; }
@@ -7836,3 +7988,8 @@ body { background: var(--ui-bg) !important; color: var(--ui-text) !important; }
 [data-theme="dark"] .lb-header-title { color: #F9FAFB !important; }
 [data-theme="dark"] .mob-me-name { color: #F9FAFB !important; }
 [data-theme="dark"] .mob-me-version { color: #374151 !important; }
+[data-theme="dark"] .chat-user-bar { border-color: #2A2A40 !important; }
+[data-theme="dark"] .cub-name      { color: #F9FAFB !important; }
+[data-theme="dark"] .cub-restart-btn { border-color: #2A2A40 !important; }
+[data-theme="dark"] .topic-pill    { border-color: #2A2A40 !important; color: #6B7280 !important; }
+[data-theme="dark"] .topic-pill-primary { border-color: var(--ui-blue) !important; color: #7EB3FF !important; }

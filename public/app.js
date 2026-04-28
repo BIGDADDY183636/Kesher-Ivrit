@@ -967,7 +967,7 @@ function updateUserBadges() {
     homeBadge.style.display = 'flex';
   }
 
-  // Lesson screen badge
+  // Lesson screen badge (hidden compat)
   const lessonBadge = document.getElementById('lesson-user-badge');
   if (lessonBadge) {
     document.getElementById('lub-name').textContent   = displayName;
@@ -975,7 +975,16 @@ function updateUserBadges() {
     const lvl = state.userProfile ? state.userProfile.level : null;
     const avatarMap = { complete_beginner:'🌱', some_exposure:'🌿', basic:'🌳', intermediate:'⭐', advanced:'🔥' };
     document.getElementById('lub-avatar').textContent = avatarMap[lvl] || '👤';
-    lessonBadge.style.display = 'flex';
+  }
+
+  // Visible chat user bar
+  var cubBar = document.getElementById('chat-user-bar');
+  if (cubBar) {
+    var cubName   = document.getElementById('cub-name');
+    var cubSchool = document.getElementById('cub-school');
+    if (cubName)   cubName.textContent   = displayName;
+    if (cubSchool) cubSchool.textContent = currentUser.school || '';
+    cubBar.style.display = 'flex';
   }
 }
 
@@ -1646,7 +1655,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v5.5</div>';
+    '<div class="mob-me-version">Kesher Ivrit v5.6</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
