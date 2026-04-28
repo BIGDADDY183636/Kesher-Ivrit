@@ -108,13 +108,13 @@ const QUIZ_QUESTIONS = [
     multi: true,
     maxSelect: 3,
     options: [
-      { value: 'prayer',       icon: '🕍', text: 'Prayer & Synagogue',    sub: 'Understand the Siddur and davening' },
-      { value: 'bible',        icon: '📜', text: 'Torah & Tanakh',         sub: 'Read the Bible in the original Hebrew' },
-      { value: 'bar_mitzvah',  icon: '✡️', text: 'Bar / Bat Mitzvah',      sub: 'Preparing for my ceremony — Torah, blessings, trope' },
-      { value: 'conversation', icon: '💬', text: 'Modern Conversation',    sub: 'Speak with Israelis like a sabra' },
-      { value: 'heritage',     icon: '🕎', text: 'Jewish Heritage',        sub: 'Connect with my Jewish roots and culture' },
-      { value: 'aliyah',       icon: '✈️', text: 'Full Fluency / Aliyah',  sub: 'Moving to Israel or aiming for near-fluency' },
-      { value: 'travel',       icon: '🏖️', text: 'Traveling to Israel',    sub: 'Get around and enjoy the country' }
+      { value: 'bible',        icon: '📜', text: 'Biblical Hebrew',        sub: 'Torah vocabulary, Biblical grammar, famous phrases — read Scripture in the original' },
+      { value: 'bar_mitzvah',  icon: '✡️', text: 'Bar / Bat Mitzvah',      sub: 'Your parasha word by word, trope, synagogue blessings — understand every word you chant' },
+      { value: 'prayer',       icon: '🕍', text: 'Prayer & Siddur',         sub: 'Shema, Amidah, Kiddush, Havdalah — every prayer phrase by phrase with full meaning' },
+      { value: 'conversation', icon: '💬', text: 'Modern Conversation',    sub: 'Speak with Israelis like a sabra — living language, real situations' },
+      { value: 'heritage',     icon: '🕎', text: 'Jewish Heritage',        sub: 'Hebrew as a window into Jewish history, culture, and identity' },
+      { value: 'aliyah',       icon: '✈️', text: 'Full Fluency / Aliyah',  sub: 'Moving to Israel or aiming for near-fluency in all situations' },
+      { value: 'travel',       icon: '🏖️', text: 'Traveling to Israel',    sub: 'Get around, order food, make friends — practical survival Hebrew' }
     ]
   },
   {
@@ -1003,15 +1003,16 @@ function loadMyClass() {
 
 function saveMyClass() {
   var data = {
-    school:          (document.getElementById('mc-school').value   || '').trim(),
-    grade:           (document.getElementById('mc-grade').value    || '').trim(),
-    textbook:        (document.getElementById('mc-textbook').value || '').trim(),
-    chapter:         (document.getElementById('mc-chapter').value  || '').trim(),
-    weeklyFocus:     (document.getElementById('mc-weekly').value   || '').trim(),
-    assignedVocab:   (document.getElementById('mc-vocab').value    || '').trim(),
-    assignedGrammar: (document.getElementById('mc-grammar').value  || '').trim(),
+    school:          (document.getElementById('mc-school').value    || '').trim(),
+    grade:           (document.getElementById('mc-grade').value     || '').trim(),
+    parasha:         (document.getElementById('mc-parasha').value   || '').trim(),
+    textbook:        (document.getElementById('mc-textbook').value  || '').trim(),
+    chapter:         (document.getElementById('mc-chapter').value   || '').trim(),
+    weeklyFocus:     (document.getElementById('mc-weekly').value    || '').trim(),
+    assignedVocab:   (document.getElementById('mc-vocab').value     || '').trim(),
+    assignedGrammar: (document.getElementById('mc-grammar').value   || '').trim(),
   };
-  if (!data.school && !data.textbook && !data.chapter && !data.weeklyFocus && !data.assignedVocab) {
+  if (!data.school && !data.textbook && !data.chapter && !data.weeklyFocus && !data.assignedVocab && !data.parasha) {
     showToast('Please fill in at least one field.');
     return;
   }
@@ -1026,7 +1027,7 @@ function clearMyClass() {
   myClass = null;
   localStorage.removeItem(MC_KEY);
   _updateMyClassBadge();
-  ['mc-school','mc-grade','mc-textbook','mc-chapter','mc-weekly','mc-vocab','mc-grammar']
+  ['mc-school','mc-grade','mc-parasha','mc-textbook','mc-chapter','mc-weekly','mc-vocab','mc-grammar']
     .forEach(function(id) { var el = document.getElementById(id); if (el) el.value = ''; });
   showToast('Class profile cleared.');
 }
@@ -1038,6 +1039,7 @@ function showMyClass() {
   if (myClass) {
     var fields = {
       'mc-school': myClass.school, 'mc-grade': myClass.grade,
+      'mc-parasha': myClass.parasha,
       'mc-textbook': myClass.textbook, 'mc-chapter': myClass.chapter,
       'mc-weekly': myClass.weeklyFocus, 'mc-vocab': myClass.assignedVocab,
       'mc-grammar': myClass.assignedGrammar
@@ -1073,9 +1075,9 @@ function _updateMyClassBadge() {
   var badge = document.getElementById('myclass-badge');
   var text  = document.getElementById('myclass-badge-text');
   if (!badge) return;
-  var label = myClass && (myClass.chapter || myClass.textbook || myClass.weeklyFocus);
+  var label = myClass && (myClass.parasha || myClass.chapter || myClass.textbook || myClass.weeklyFocus);
   if (label) {
-    text.textContent = myClass.chapter || myClass.textbook || 'Assignment set';
+    text.textContent = myClass.parasha || myClass.chapter || myClass.textbook || 'Assignment set';
     badge.style.display = 'inline-flex';
   } else {
     badge.style.display = 'none';
@@ -1642,7 +1644,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v5.7</div>';
+    '<div class="mob-me-version">Kesher Ivrit v5.8</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -2177,7 +2179,6 @@ async function startLesson() {
 }
 
 function newLesson() {
-  if (!confirm('Start a new topic? This will begin a fresh conversation with Morah.')) return;
   startLesson();
 }
 

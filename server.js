@@ -190,12 +190,13 @@ You are the student's go-to person for anything Jewish. Make them feel like they
   };
 
   const goalMap = {
-    prayer: 'read and understand Jewish prayers and synagogue Hebrew',
-    bible: 'read and understand the Torah and Tanakh in Hebrew',
+    prayer:       'read and understand Jewish prayers and the Siddur word by word',
+    bible:        'read and understand the Torah and Tanakh in Biblical Hebrew',
+    bar_mitzvah:  'prepare for their Bar/Bat Mitzvah — parasha, trope, brachot, and synagogue vocabulary',
     conversation: 'speak conversational modern Hebrew with Israelis',
-    heritage: 'connect with their Jewish heritage and culture',
-    aliyah: 'make aliyah and live in Israel',
-    travel: 'travel to Israel and get around'
+    heritage:     'connect with their Jewish heritage and culture through Hebrew',
+    aliyah:       'make aliyah and live in Israel',
+    travel:       'travel to Israel and get around confidently'
   };
 
   const styleMap = {
@@ -263,6 +264,23 @@ ${myClass.school ? 'School: ' + myClass.school : ''}${myClass.grade ? ' | Grade:
 ${myClass.weeklyFocus ? 'This week: ' + myClass.weeklyFocus : ''}${myClass.assignedVocab ? '\nVocab: ' + myClass.assignedVocab : ''}${myClass.assignedGrammar ? '\nGrammar: ' + myClass.assignedGrammar : ''}
 First message MUST acknowledge the assignment. If student strays, redirect warmly. Use ONLY assigned material in every example and challenge.
 ` : ''}
+
+${(() => {
+  const goals = Array.isArray(userProfile.goal) ? userProfile.goal : (userProfile.goal ? [userProfile.goal] : []);
+  const hasBible    = goals.includes('bible')       || userProfile.curriculum === 'biblical';
+  const hasBM       = goals.includes('bar_mitzvah');
+  const hasPrayer   = goals.includes('prayer')      || userProfile.curriculum === 'prayer';
+  const parasha     = (myClass && myClass.parasha) || '';
+  const parts = [];
+
+  if (hasBible) parts.push(`BIBLICAL HEBREW MODE: Prioritize Biblical vocabulary (roots over translations), vav-consecutive narrative structure (וַיֹּאמֶר style), construct state (סְמִיכוּת), Biblical verb binyanim. Teach famous Torah phrases with full word-by-word breakdown. Show differences vs Modern Hebrew when relevant. Tie words to Torah context — which book, which story. Never rush toward Modern conversational Hebrew; Scripture IS the curriculum.`);
+
+  if (hasBM) parts.push(`BAR/BAT MITZVAH MODE: Student is preparing for their ceremony.${parasha ? ' Their parasha: ' + parasha + '.' : ' If parasha is unknown, ask warmly in your first message.'} Teach: (1) Parasha vocabulary word-by-word with root and meaning, (2) Trope/cantillation — explain how each mark guides melody and punctuation, (3) Synagogue flow: aliyah, hagbahah, gelilah, bimah vocabulary, (4) Brachot before/after Torah reading — every word with transliteration and meaning, (5) Haftarah vocabulary. Make them understand WHAT they are chanting, not just HOW. Keep it exciting — this is their moment.`);
+
+  if (hasPrayer) parts.push(`PRAYER MODE: Teach prayers word-by-word and phrase-by-phrase. Sequence: Shema (שְׁמַע יִשְׂרָאֵל) → Amidah blessings one at a time → Kiddush (Shabbat and Yom Tov) → Havdalah → Birkat Hamazon → Modeh Ani → Aleinu. For each phrase: Hebrew text → transliteration → word-by-word meaning → full phrase meaning → why we say it. Student should understand every word they pray — not just recite sounds.`);
+
+  return parts.join('\n');
+})()}
 
 ${(() => {
   const s = userProfile.session;
