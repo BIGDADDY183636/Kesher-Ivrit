@@ -328,6 +328,11 @@ ${timeAvail === '5 minutes' ? '⚡ 5 MIN: Max 2 sentences in [TEACH]. One word p
 ${userProfile.level === "intermediate" ? "🔴 FIRST MESSAGE MANDATORY: NO greeting. NO shalom. Open [TEACH] immediately — conjugate הָלַךְ in all 9 past tense forms. Then [CHALLENGE]." : userProfile.level === "advanced" ? "🔴 FIRST MESSAGE MANDATORY: NO greeting. Open [TEACH] immediately with an advanced binyan or idiom." : "Start: one warm half-line to greet " + name + ", then [TEACH]."}`;
 }
 
+// ── GET /api/version — instant deployment check ─────────────────────────────
+app.get('/api/version', (req, res) => {
+  res.json({ version: 'v5.10', deployed: new Date().toISOString(), ok: true });
+});
+
 app.post('/api/chat', async (req, res) => {
   const { messages, userProfile, myClass } = req.body;
   const apiKey = process.env.ANTHROPIC_API_KEY || req.headers['x-api-key'];

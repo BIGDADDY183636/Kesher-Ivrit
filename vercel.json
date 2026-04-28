@@ -1,5 +1,6 @@
 {
   "version": 2,
+  "_comment": "v5.10 — forced redeploy 2026-04-27",
   "builds": [
     {
       "src": "server.js",
@@ -14,10 +15,12 @@
     {
       "source": "/(.*)",
       "headers": [
-        { "key": "Cache-Control",    "value": "no-cache, no-store, must-revalidate" },
-        { "key": "Pragma",           "value": "no-cache" },
-        { "key": "Expires",         "value": "0" },
-        { "key": "Surrogate-Control","value": "no-store" }
+        { "key": "Cache-Control",     "value": "no-cache, no-store, must-revalidate" },
+        { "key": "Pragma",            "value": "no-cache" },
+        { "key": "Expires",           "value": "0" },
+        { "key": "Surrogate-Control", "value": "no-store" },
+        { "key": "CDN-Cache-Control", "value": "no-store" },
+        { "key": "Vercel-CDN-Cache-Control", "value": "no-store" }
       ]
     }
   ]
