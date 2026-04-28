@@ -8128,7 +8128,40 @@ p, li, .mob-action-title { font-weight: 500; }
   align-self: center;
 }
 
-/* ── 41. Dark mode for new elements ──────────────────────────── */
+/* ── 41. Returning user card — clean vertical stats ─────────── */
+.returning-card {
+  padding: 18px 20px 16px !important;
+}
+.returning-name {
+  font-size: 0.95rem !important;
+  font-weight: 600 !important;
+  color: rgba(255,255,255,0.92) !important;
+  margin-bottom: 12px !important;
+}
+.returning-stats {
+  display: flex !important;
+  flex-direction: column !important;
+  gap: 6px !important;
+  margin-bottom: 16px !important;
+}
+.ret-stat {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+}
+.ret-stat-val {
+  font-size: 1.1rem;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: -0.02em;
+}
+.ret-stat-lbl {
+  font-size: 0.78rem;
+  color: rgba(255,255,255,0.6);
+  font-weight: 400;
+}
+
+/* (dark mode block follows) */
 /* (merged with section 36 dark mode block below) */
 [data-theme="dark"] body { background: #0A0A0F !important; }
 [data-theme="dark"] .chat-input-area { background: #12121A !important; border-color: #2A2A40 !important; }

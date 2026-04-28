@@ -1222,27 +1222,14 @@ function checkReturningUser() {
   document.getElementById('returning-user-section').style.display = 'block';
   document.getElementById('returning-name').textContent = state.userProfile.name;
 
-  // Avatar by level
-  const avatarMap = { complete_beginner:'🌱', some_exposure:'🌿', basic:'🌳', intermediate:'⭐', advanced:'🔥' };
-  const av = document.getElementById('returning-avatar');
-  if (av) av.textContent = avatarMap[state.userProfile.level] || '👤';
-
-  // Stats line
+  // Vertical stats stack
   const statsEl = document.getElementById('returning-stats');
   if (statsEl) {
-    const parts = [];
-    if (state.progress.streak > 0)             parts.push('🔥 ' + state.progress.streak + '-day streak');
-    if (state.progress.wordsLearned.length > 0) parts.push('📖 ' + state.progress.wordsLearned.length + ' words learned');
-    if (state.progress.points > 0)              parts.push('⭐ ' + state.progress.points + ' pts');
-    statsEl.textContent = parts.join('  ·  ');
-  }
-
-  // Last message preview
-  const previewEl = document.getElementById('returning-preview');
-  if (previewEl && state.messages.length > 0) {
-    const last = state.messages[state.messages.length - 1];
-    const raw = (last.content || '').replace(/\[TEACH\][\s\S]*?\[\/TEACH\]/g, '').replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '').replace(/📚 WORDS LEARNED:.*/s, '').replace(/\*/g, '').replace(/\s+/g, ' ').trim().slice(0, 80);
-    previewEl.textContent = last.role === 'assistant' ? '💬 Morah: ' + raw + '…' : '';
+    var rows = [];
+    if (state.progress.streak > 0)             rows.push('<div class="ret-stat"><span class="ret-stat-val">' + state.progress.streak + '</span><span class="ret-stat-lbl">day streak</span></div>');
+    if (state.progress.wordsLearned.length > 0) rows.push('<div class="ret-stat"><span class="ret-stat-val">' + state.progress.wordsLearned.length + '</span><span class="ret-stat-lbl">words learned</span></div>');
+    if (state.progress.points > 0)              rows.push('<div class="ret-stat"><span class="ret-stat-val">' + state.progress.points + '</span><span class="ret-stat-lbl">points</span></div>');
+    statsEl.innerHTML = rows.join('');
   }
 
   checkStreak();
