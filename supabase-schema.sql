@@ -41,6 +41,19 @@ CREATE TABLE IF NOT EXISTS clans (
   created_at TIMESTAMPTZ DEFAULT NOW()
 );
 
+-- ── TEACHERS ─────────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS teachers (
+  id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  name        TEXT        NOT NULL,
+  school      TEXT        NOT NULL,
+  secret_hash TEXT        NOT NULL,
+  created_at  TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (name, school)
+);
+ALTER TABLE teachers ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_manage_teachers" ON teachers;
+CREATE POLICY "anon_manage_teachers" ON teachers FOR ALL USING (true);
+
 -- ── CLAN MEMBERS ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS clan_members (
   clan_id   UUID        NOT NULL REFERENCES clans(id)  ON DELETE CASCADE,

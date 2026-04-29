@@ -358,6 +358,101 @@ app.post('/api/scores', async (req, res) => {
   }
 });
 
+// ── POST /api/teacher/register ───────────────────────────────────────────────
+app.post('/api/teacher/register', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { name, school, secretWord } = req.body || {};
+  if (!name || !school || !secretWord) return res.status(400).json({ error: 'name, school, and secretWord are required' });
+  if (secretWord.trim().length < 4) return res.status(400).json({ error: 'Secret word must be at least 4 characters.' });
+
+  try {
+    const secretHash = await bcrypt.hash(secretWord.trim(), 10);
+    const { data, error } = await supabase
+      .from('teachers')
+      .insert({ name: name.trim().slice(0, 80), school: school.trim().slice(0, 100), secret_hash: secretHash })
+      .select('id, name, school').single();
+
+    if (error) {
+      if (error.code === '23505') return res.status(409).json({ error: 'A teacher account with that name and school already exists. Try logging in instead.' });
+      throw error;
+    }
+    res.json({ teacherId: data.id, name: data.name, school: data.school });
+  } catch (err) {
+    console.error('[teacher/register]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/teacher/login ───────────────────────────────────────────────────
+app.post('/api/teacher/login', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { name, school, secretWord } = req.body || {};
+  if (!name || !school || !secretWord) return res.status(400).json({ error: 'name, school, and secretWord are required' });
+
+  try {
+    const { data: teacher, error } = await supabase
+      .from('teachers')
+      .select('id, name, school, secret_hash')
+      .eq('name', name.trim()).eq('school', school.trim())
+      .maybeSingle();
+
+    if (error) throw error;
+    if (!teacher) return res.status(404).json({ error: 'No teacher account found with that name and school.' });
+    const match = await bcrypt.compare(secretWord.trim(), teacher.secret_hash);
+    if (!match) return res.status(401).json({ error: 'Wrong secret word.' });
+    res.json({ teacherId: teacher.id, name: teacher.name, school: teacher.school });
+  } catch (err) {
+    console.error('[teacher/login]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/teacher/class ────────────────────────────────────────────────────
+// Returns all students from the teacher's school with scores + word data.
+app.get('/api/teacher/class', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { school, teacherId } = req.query;
+  if (!school || !teacherId) return res.status(400).json({ error: 'school and teacherId required' });
+
+  try {
+    // Verify teacher exists and owns this school
+    const { data: teacher } = await supabase
+      .from('teachers').select('id').eq('id', teacherId).eq('school', school).maybeSingle();
+    if (!teacher) return res.status(403).json({ error: 'Unauthorized' });
+
+    const { data: students, error } = await supabase
+      .from('users')
+      .select('id, first_name, last_initial, level, goal, created_at, scores(points, streak, words_learned, words_data, updated_at)')
+      .eq('school', school)
+      .order('first_name');
+
+    if (error) throw error;
+
+    const result = (students || []).map(s => {
+      const sc = Array.isArray(s.scores) ? s.scores[0] : s.scores;
+      return {
+        id:           s.id,
+        name:         `${s.first_name} ${s.last_initial}.`,
+        firstName:    s.first_name,
+        lastInitial:  s.last_initial,
+        level:        s.level   || 'unknown',
+        goal:         s.goal    || '',
+        joinedAt:     s.created_at,
+        points:       sc?.points        || 0,
+        streak:       sc?.streak        || 0,
+        wordsLearned: sc?.words_learned || 0,
+        wordsData:    sc?.words_data    || [],
+        lastActive:   sc?.updated_at   || s.created_at,
+      };
+    });
+
+    res.json({ students: result, school, count: result.length });
+  } catch (err) {
+    console.error('[teacher/class]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // ── GET /api/clans ────────────────────────────────────────────────────────────
 // Returns all clans with member count, sorted by total clan points.
 app.get('/api/clans', async (req, res) => {
@@ -1123,7 +1218,7 @@ function _rescueTextChallenge(raw) {
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v8.1', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v8.2', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {

@@ -948,15 +948,221 @@ function _syncScoreToDb() {
   }, 3000); // debounce — wait 3s before writing to DB
 }
 
-function showLoginPanel() {
-  document.getElementById('reg-panel-create').style.display = 'none';
-  document.getElementById('reg-panel-login').style.display  = '';
-  document.getElementById('login-firstname').focus();
+function _hideAllRegPanels() {
+  ['reg-panel-create','reg-panel-login','reg-panel-teacher'].forEach(function(id) {
+    var el = document.getElementById(id); if (el) el.style.display = 'none';
+  });
 }
-function showRegisterPanel() {
-  document.getElementById('reg-panel-login').style.display  = 'none';
-  document.getElementById('reg-panel-create').style.display = '';
-  document.getElementById('reg-firstname').focus();
+function showLoginPanel()   { _hideAllRegPanels(); document.getElementById('reg-panel-login').style.display   = ''; document.getElementById('login-firstname').focus(); }
+function showRegisterPanel(){ _hideAllRegPanels(); document.getElementById('reg-panel-create').style.display  = ''; document.getElementById('reg-firstname').focus(); }
+function showTeacherPanel() { _hideAllRegPanels(); document.getElementById('reg-panel-teacher').style.display = ''; document.getElementById('teacher-name').focus(); }
+
+// ── Teacher auth ──────────────────────────────────────────────────────────────
+var _currentTeacher = null;
+
+async function submitTeacher(mode) {
+  var name       = (document.getElementById('teacher-name').value   || '').trim();
+  var school     = (document.getElementById('teacher-school').value || '').trim();
+  var secretWord = (document.getElementById('teacher-secret').value || '').trim();
+  var errEl      = document.getElementById('teacher-error');
+  var loginBtn   = document.getElementById('teacher-login-btn');
+  var regBtn     = document.getElementById('teacher-reg-btn');
+  function showErr(msg) { errEl.textContent = msg; errEl.style.display = 'block'; }
+  if (!name)       return showErr('Please enter your name.');
+  if (!school)     return showErr('Please enter your school name.');
+  if (!secretWord) return showErr('Please enter your secret word.');
+  if (mode === 'register' && secretWord.length < 4) return showErr('Secret word must be at least 4 characters.');
+  errEl.style.display = 'none';
+  loginBtn.disabled = regBtn.disabled = true;
+  var origLogin = loginBtn.textContent, origReg = regBtn.textContent;
+  loginBtn.textContent = regBtn.textContent = mode === 'login' ? 'Logging in…' : 'Creating account…';
+  try {
+    var r = await fetch('/api/teacher/' + mode, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ name, school, secretWord })
+    });
+    var data = await r.json();
+    if (!r.ok) { showErr(data.error || 'Something went wrong.'); return; }
+    _currentTeacher = { id: data.teacherId, name: data.name, school: data.school };
+    openTeacherDashboard();
+  } catch(e) {
+    showErr('Connection error — check your internet and try again.');
+  } finally {
+    loginBtn.disabled = regBtn.disabled = false;
+    loginBtn.textContent = origLogin; regBtn.textContent = origReg;
+  }
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+//  TEACHER DASHBOARD
+// ═══════════════════════════════════════════════════════════════════════
+var _tdStudents = [], _tdSortKey = 'points', _tdActiveTab = 'students';
+
+function openTeacherDashboard() {
+  var el = document.getElementById('teacher-dashboard');
+  if (!el) return;
+  document.getElementById('td-teacher-name').textContent = _currentTeacher.name;
+  document.getElementById('td-school-name').textContent  = _currentTeacher.school;
+  el.style.display = 'flex';
+  _tdLoadClass();
+}
+function closeTeacherDashboard() {
+  var el = document.getElementById('teacher-dashboard');
+  if (el) el.style.display = 'none';
+}
+
+async function _tdLoadClass() {
+  document.getElementById('td-loading').style.display      = '';
+  document.getElementById('td-student-list').style.display = 'none';
+  try {
+    var r = await fetch('/api/teacher/class?school=' + encodeURIComponent(_currentTeacher.school) + '&teacherId=' + encodeURIComponent(_currentTeacher.id));
+    var data = await r.json();
+    if (!r.ok) { document.getElementById('td-loading').textContent = 'Error: ' + (data.error || 'Failed to load'); return; }
+    _tdStudents = data.students || [];
+    document.getElementById('td-loading').style.display      = 'none';
+    document.getElementById('td-student-list').style.display = '';
+    _tdRenderStudents();
+    _tdRenderOverview();
+  } catch(e) {
+    document.getElementById('td-loading').textContent = 'Connection error — refresh to retry.';
+  }
+}
+
+function tdSwitchTab(tab) {
+  _tdActiveTab = tab;
+  document.getElementById('td-pane-students').style.display = tab === 'students' ? '' : 'none';
+  document.getElementById('td-pane-overview').style.display = tab === 'overview' ? '' : 'none';
+  document.getElementById('td-tab-students').classList.toggle('td-tab-active', tab === 'students');
+  document.getElementById('td-tab-overview').classList.toggle('td-tab-active', tab === 'overview');
+}
+
+function tdSort(key) {
+  _tdSortKey = key;
+  document.querySelectorAll('.td-sort-btn').forEach(function(b) { b.classList.remove('td-sort-active'); });
+  event.target.classList.add('td-sort-active');
+  _tdRenderStudents();
+}
+
+function _tdSorted() {
+  var s = _tdStudents.slice();
+  if (_tdSortKey === 'points')     return s.sort(function(a,b){ return b.points - a.points; });
+  if (_tdSortKey === 'streak')     return s.sort(function(a,b){ return b.streak - a.streak; });
+  if (_tdSortKey === 'struggling') return s.sort(function(a,b){ return (a.points + a.wordsLearned*5) - (b.points + b.wordsLearned*5); });
+  if (_tdSortKey === 'name')       return s.sort(function(a,b){ return a.name.localeCompare(b.name); });
+  return s;
+}
+
+var _LEVEL_LABELS = { complete_beginner:'Beginner', some_exposure:'Basic', basic:'Basic', intermediate:'Intermediate', advanced:'Advanced', unknown:'—' };
+
+function _tdRenderStudents() {
+  var list = document.getElementById('td-student-list');
+  if (!list) return;
+  var sorted = _tdSorted();
+  if (!sorted.length) {
+    list.innerHTML = '<div class="td-empty">No students from <strong>' + escapeHtml(_currentTeacher.school) + '</strong> yet.<br>Students must enter the exact school name when registering.</div>';
+    return;
+  }
+  var html = '<table class="td-table"><thead><tr><th>Student</th><th>Level</th><th>🔥 Streak</th><th>📖 Words</th><th>⭐ Points</th><th>Last Active</th><th></th></tr></thead><tbody>';
+  sorted.forEach(function(s, i) {
+    var ago = _tdTimeAgo(s.lastActive);
+    var stale = !s.lastActive || (Date.now() - new Date(s.lastActive).getTime()) > 7 * 864e5;
+    html += '<tr class="td-row' + (stale ? ' td-row-inactive' : '') + '">' +
+      '<td class="td-name">' + escapeHtml(s.name) + '</td>' +
+      '<td><span class="td-level-badge">' + (_LEVEL_LABELS[s.level] || s.level) + '</span></td>' +
+      '<td class="td-num">' + s.streak + '</td>' +
+      '<td class="td-num">' + s.wordsLearned + '</td>' +
+      '<td class="td-num td-pts">' + s.points + '</td>' +
+      '<td class="td-ago' + (stale ? ' td-ago-stale' : '') + '">' + ago + '</td>' +
+      '<td><button class="td-detail-btn" onclick="tdOpenDetail(' + i + ')">View →</button></td></tr>';
+  });
+  list.innerHTML = html + '</tbody></table>';
+}
+
+function _tdRenderOverview() {
+  var body = document.getElementById('td-overview-body');
+  if (!body || !_tdStudents.length) return;
+  var s = _tdStudents, n = s.length;
+  var avgPts    = Math.round(s.reduce(function(a,b){ return a+b.points; }, 0) / n);
+  var avgWords  = Math.round(s.reduce(function(a,b){ return a+b.wordsLearned; }, 0) / n);
+  var avgStreak = (s.reduce(function(a,b){ return a+b.streak; }, 0) / n).toFixed(1);
+  var active    = s.filter(function(st){ return st.lastActive && (Date.now() - new Date(st.lastActive).getTime()) < 7*864e5; }).length;
+  var lvlCount  = {}, catCount = {};
+  s.forEach(function(st) {
+    lvlCount[st.level] = (lvlCount[st.level]||0) + 1;
+    (st.wordsData||[]).forEach(function(w){ var c = w.category||'other'; catCount[c]=(catCount[c]||0)+1; });
+  });
+  var topCats = Object.entries(catCount).sort(function(a,b){ return b[1]-a[1]; }).slice(0,6);
+  var html = '<div class="td-stat-grid">' +
+    '<div class="td-stat-card"><div class="td-stat-val">' + n + '</div><div class="td-stat-lbl">Students</div></div>' +
+    '<div class="td-stat-card"><div class="td-stat-val">' + avgPts + '</div><div class="td-stat-lbl">Avg Points</div></div>' +
+    '<div class="td-stat-card"><div class="td-stat-val">' + avgWords + '</div><div class="td-stat-lbl">Avg Words</div></div>' +
+    '<div class="td-stat-card"><div class="td-stat-val">' + avgStreak + '</div><div class="td-stat-lbl">Avg Streak</div></div>' +
+    '<div class="td-stat-card"><div class="td-stat-val">' + active + '/' + n + '</div><div class="td-stat-lbl">Active This Week</div></div>' +
+    '</div>';
+  html += '<div class="td-section-title">Level Distribution</div><div class="td-level-grid">';
+  Object.entries(lvlCount).forEach(function(e) {
+    html += '<div class="td-level-row"><span class="td-level-badge">' + (_LEVEL_LABELS[e[0]]||e[0]) + '</span><div class="td-level-bar"><div class="td-level-fill" style="width:' + Math.round(e[1]/n*100) + '%"></div></div><span class="td-level-count">' + e[1] + '</span></div>';
+  });
+  html += '</div>';
+  if (topCats.length) {
+    html += '<div class="td-section-title">Most Learned Word Categories</div><div class="td-cat-grid">';
+    topCats.forEach(function(c){ html += '<div class="td-cat-card"><div class="td-cat-count">' + c[1] + '</div><div class="td-cat-name">' + escapeHtml(c[0]) + '</div></div>'; });
+    html += '</div>';
+  }
+  body.innerHTML = html;
+}
+
+function tdOpenDetail(idx) {
+  var s = _tdSorted()[idx];
+  if (!s) return;
+  document.getElementById('td-detail-name').textContent = s.name;
+  var goal = s.goal ? s.goal.replace(',', ', ') : '—';
+  var catCount = {}, recentWords = [];
+  (s.wordsData||[]).forEach(function(w){ var c=w.category||'other'; catCount[c]=(catCount[c]||0)+1; recentWords.push(w); });
+  var cats = Object.entries(catCount).sort(function(a,b){ return b[1]-a[1]; });
+  var maxCat = cats.length ? cats[0][1] : 1;
+  var html = '<div class="td-detail-stats">' +
+    '<div class="td-ds"><div class="td-ds-val">' + s.points + '</div><div class="td-ds-lbl">Points</div></div>' +
+    '<div class="td-ds"><div class="td-ds-val">' + s.streak + '</div><div class="td-ds-lbl">Streak</div></div>' +
+    '<div class="td-ds"><div class="td-ds-val">' + s.wordsLearned + '</div><div class="td-ds-lbl">Words</div></div>' +
+    '</div><div class="td-detail-meta">Level: <strong>' + (_LEVEL_LABELS[s.level]||s.level) + '</strong> · Goal: <strong>' + escapeHtml(goal) + '</strong> · Last active: <strong>' + _tdTimeAgo(s.lastActive) + '</strong></div>';
+  if (cats.length) {
+    html += '<div class="td-section-title">Word Categories</div>';
+    cats.forEach(function(c) {
+      html += '<div class="td-cat-bar-row"><span class="td-cat-bar-label">' + escapeHtml(c[0]) + '</span><div class="td-cat-bar-track"><div class="td-cat-bar-fill" style="width:' + Math.round(c[1]/maxCat*100) + '%"></div></div><span class="td-cat-bar-num">' + c[1] + '</span></div>';
+    });
+  }
+  if (recentWords.length) {
+    html += '<div class="td-section-title">Recent Words</div><div class="td-word-chips">';
+    recentWords.slice(-12).reverse().forEach(function(w){ html += '<span class="td-word-chip" dir="rtl">' + escapeHtml(w.hebrew||w.english||'') + '</span>'; });
+    html += '</div>';
+  }
+  if (!cats.length) html += '<div class="td-empty">No word data synced yet.</div>';
+  document.getElementById('td-detail-body').innerHTML = html;
+  document.getElementById('td-detail').style.display = '';
+}
+function tdCloseDetail() { document.getElementById('td-detail').style.display = 'none'; }
+
+function teacherExportCSV() {
+  if (!_tdStudents.length) { showToast('No student data to export yet.'); return; }
+  var rows = ['Name,Level,Goal,Streak,Words Learned,Points,Last Active'].concat(
+    _tdSorted().map(function(s) {
+      return ['"'+s.name+'"', s.level, '"'+(s.goal||'')+'"', s.streak, s.wordsLearned, s.points, '"'+_tdTimeAgo(s.lastActive)+'"'].join(',');
+    })
+  );
+  var csv = rows.join('\n');
+  function done() { showToast('📋 CSV copied! Paste into Google Sheets or Excel.', 4000); }
+  function fallback() { var ta=document.createElement('textarea'); ta.value=csv; ta.style.cssText='position:fixed;opacity:0'; document.body.appendChild(ta); ta.select(); try{document.execCommand('copy');done();}catch(e){showToast('Could not copy.');} document.body.removeChild(ta); }
+  if (navigator.clipboard&&navigator.clipboard.writeText) navigator.clipboard.writeText(csv).then(done).catch(fallback); else fallback();
+}
+
+function _tdTimeAgo(isoStr) {
+  if (!isoStr) return 'Never';
+  var ms=Date.now()-new Date(isoStr).getTime(), min=Math.floor(ms/60000);
+  if (min<2) return 'Just now'; if (min<60) return min+'m ago';
+  var hr=Math.floor(min/60); if (hr<24) return hr+'h ago';
+  var days=Math.floor(hr/24); if (days===1) return 'Yesterday'; if (days<7) return days+' days ago';
+  if (days<30) return Math.floor(days/7)+' weeks ago'; return Math.floor(days/30)+' months ago';
 }
 
 function submitRegistration() {
@@ -1836,7 +2042,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v8.1</div>';
+    '<div class="mob-me-version">Kesher Ivrit v8.2</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -6104,7 +6310,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v8.1';
+  var CURRENT_VERSION = 'v8.2';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })

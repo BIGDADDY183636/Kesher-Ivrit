@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Kesher Ivrit v8.1 | קשר עברית</title>
+  <title>Kesher Ivrit v8.2 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=810" />
+  <link rel="stylesheet" href="style.css?v=820" />
 </head>
 <body>
 
@@ -253,6 +253,9 @@
           <button class="reg-switch-btn" onclick="showLoginPanel()">
             Returning user? <strong>Log back in →</strong>
           </button>
+          <button class="reg-switch-btn reg-teacher-btn" onclick="showTeacherPanel()">
+            🏫 I'm a teacher — <strong>Teacher Dashboard →</strong>
+          </button>
         </div>
       </div>
 
@@ -310,8 +313,106 @@
         </div>
       </div>
 
+      <!-- ══ PANEL C: TEACHER ACCESS ══ -->
+      <div id="reg-panel-teacher" style="display:none;">
+        <div class="quiz-header" style="background:linear-gradient(135deg,#1a0e00,#4a2c00);">
+          <div class="quiz-logo">קשר עברית</div>
+          <div class="reg-header-sub">Teacher Dashboard</div>
+        </div>
+        <div class="reg-body">
+          <div class="reg-hero">
+            <div class="reg-star">🏫</div>
+            <h2 class="reg-title">Teacher Access</h2>
+            <p class="reg-sub">Create a teacher account or log in to view your class progress, sort students by performance, and export data.</p>
+          </div>
+          <div class="reg-fields">
+            <div class="reg-field">
+              <label class="reg-label">Your Name</label>
+              <input type="text" id="teacher-name" class="quiz-name-input reg-input"
+                placeholder="e.g. Ms. Cohen" maxlength="80" autocomplete="name"
+                oninput="document.getElementById('teacher-error').style.display='none'"
+                onkeydown="if(event.key==='Enter') document.getElementById('teacher-school').focus()" />
+            </div>
+            <div class="reg-field">
+              <label class="reg-label">School Name</label>
+              <input type="text" id="teacher-school" class="quiz-name-input reg-input"
+                placeholder="e.g. Ramaz, SAR Academy" maxlength="100" autocomplete="organization"
+                oninput="document.getElementById('teacher-error').style.display='none'"
+                onkeydown="if(event.key==='Enter') document.getElementById('teacher-secret').focus()" />
+            </div>
+            <div class="reg-field">
+              <label class="reg-label">Secret Word <span class="reg-label-hint">min 4 characters — use same word to log back in</span></label>
+              <input type="password" id="teacher-secret" class="quiz-name-input reg-input"
+                placeholder="Your secret word" maxlength="60" autocomplete="current-password"
+                oninput="document.getElementById('teacher-error').style.display='none'"
+                onkeydown="if(event.key==='Enter') submitTeacher('login')" />
+            </div>
+          </div>
+          <div id="teacher-error" class="reg-error" style="display:none;"></div>
+          <div class="teacher-btn-row">
+            <button class="btn-quiz-next reg-submit teacher-login-btn" id="teacher-login-btn" onclick="submitTeacher('login')">Log In →</button>
+            <button class="teacher-register-btn" id="teacher-reg-btn" onclick="submitTeacher('register')">Create Account</button>
+          </div>
+          <button class="reg-switch-btn" onclick="showRegisterPanel()">
+            ← Back to student registration
+          </button>
+        </div>
+      </div>
+
     </div><!-- /reg-card -->
     <div class="flag-stripe bottom"></div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════
+     TEACHER DASHBOARD OVERLAY
+═══════════════════════════════════════════ -->
+<div id="teacher-dashboard" class="td-overlay" style="display:none;" role="dialog" aria-label="Teacher Dashboard">
+  <!-- Header -->
+  <div class="td-header">
+    <div class="td-header-left">
+      <button class="td-exit-btn" onclick="closeTeacherDashboard()">✕ Exit</button>
+    </div>
+    <div class="td-header-center">
+      <div class="td-header-title">📊 Teacher Dashboard</div>
+      <div class="td-header-sub"><span id="td-teacher-name"></span> · <span id="td-school-name"></span></div>
+    </div>
+    <div class="td-header-right">
+      <button class="td-export-btn" onclick="teacherExportCSV()">📥 Export CSV</button>
+    </div>
+  </div>
+
+  <!-- Tabs -->
+  <div class="td-tabs">
+    <button class="td-tab td-tab-active" id="td-tab-students"  onclick="tdSwitchTab('students')">👥 Students</button>
+    <button class="td-tab"               id="td-tab-overview"  onclick="tdSwitchTab('overview')">📈 Class Overview</button>
+  </div>
+
+  <!-- Body: students tab -->
+  <div class="td-pane" id="td-pane-students">
+    <div class="td-sort-bar">
+      <span class="td-sort-label">Sort by:</span>
+      <button class="td-sort-btn td-sort-active" onclick="tdSort('points')">⭐ Top Performers</button>
+      <button class="td-sort-btn" onclick="tdSort('struggling')">⚠️ Struggling</button>
+      <button class="td-sort-btn" onclick="tdSort('streak')">🔥 Most Active</button>
+      <button class="td-sort-btn" onclick="tdSort('name')">🔤 Name</button>
+    </div>
+    <div class="td-loading" id="td-loading">Loading class data…</div>
+    <div class="td-student-list" id="td-student-list" style="display:none;"></div>
+  </div>
+
+  <!-- Body: overview tab -->
+  <div class="td-pane" id="td-pane-overview" style="display:none;">
+    <div class="td-overview-body" id="td-overview-body"></div>
+  </div>
+
+  <!-- Student detail panel (slides in from right) -->
+  <div class="td-detail" id="td-detail" style="display:none;">
+    <div class="td-detail-header">
+      <button class="td-detail-back" onclick="tdCloseDetail()">← Back</button>
+      <div class="td-detail-name" id="td-detail-name"></div>
+    </div>
+    <div class="td-detail-body" id="td-detail-body"></div>
   </div>
 </div>
 
@@ -478,7 +579,7 @@
           <span class="cub-school" id="cub-school"></span>
         </div>
         <div class="cub-right">
-          <span class="cub-version">v8.1</span>
+          <span class="cub-version">v8.2</span>
           <button class="cub-restart-btn" onclick="newLesson()" title="New conversation">↺</button>
         </div>
       </div>
@@ -499,7 +600,7 @@
             <span class="typing-dot"></span>
           </div>
           <span class="typing-text">Morah is thinking…</span>
-          <span class="typing-version">v8.1</span>
+          <span class="typing-version">v8.2</span>
         </div>
         <div class="input-row">
           <button class="btn-mic" id="btn-mic" onclick="toggleVoiceInput()" title="Speak your answer">
@@ -1178,7 +1279,7 @@
 
 </div>
 
-<script src="app.js?v=810"></script>
+<script src="app.js?v=820"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">
