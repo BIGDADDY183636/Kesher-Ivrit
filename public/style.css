@@ -33,14 +33,57 @@ html { font-size: 16px; }
 
 body {
   font-family: var(--font-eng);
-  background: var(--blue-bg);
   color: var(--text-dark);
-  min-height: 100vh;
-  overflow-x: hidden;
+  overflow: hidden;
+  /* Center the app column on desktop */
+  display: flex;
+  justify-content: center;
+  align-items: stretch;
+  height: 100vh;
+  height: 100dvh;
+  /* Desktop background — the "wall" behind the phone column */
+  background: #060917;
+  background-image:
+    radial-gradient(ellipse at 22% 50%, rgba(0,56,184,0.22) 0%, transparent 52%),
+    radial-gradient(ellipse at 78% 50%, rgba(27,94,224,0.14) 0%, transparent 52%),
+    radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 34px 34px;
+}
+[data-theme="dark"] body {
+  background: #020407;
+  background-image:
+    radial-gradient(ellipse at 22% 50%, rgba(0,20,80,0.55) 0%, transparent 52%),
+    radial-gradient(ellipse at 78% 50%, rgba(0,10,50,0.4) 0%, transparent 52%),
+    radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
+  background-size: 100% 100%, 100% 100%, 34px 34px;
 }
 
+/* ── App root — the centered phone column ── */
+#app-root {
+  width: 100%;
+  max-width: 430px;
+  height: 100vh;
+  height: 100dvh;
+  overflow: hidden;
+  position: relative;
+  flex-shrink: 0;
+  background: var(--blue-bg);
+  /*
+   * Critical: a non-none transform makes this the containing block for ALL
+   * position:fixed descendants — so every overlay (teacher dashboard, modals,
+   * placement test, etc.) fills exactly this 430px column, not the full viewport.
+   */
+  transform: translateZ(0);
+  /* Premium shadow visible on desktop, invisible on mobile (phone fills screen) */
+  box-shadow:
+    0 0 0 1px rgba(255,255,255,0.07),
+    0 20px 80px rgba(0,0,0,0.65),
+    0 0 120px rgba(0,30,120,0.3);
+}
+[data-theme="dark"] #app-root { background: #0A0A0F; }
+
 /* ═══ SCREENS ═══ */
-.screen { display: none; min-height: 100vh; }
+.screen { display: none; width: 100%; height: 100vh; height: 100dvh; }
 .screen.active { display: flex; flex-direction: column; }
 
 /* ═══════════════════════════════════
@@ -9909,3 +9952,73 @@ p, li, .mob-action-title { font-weight: 500; }
 [data-theme="dark"] .td-cat-bar-track { background: #2A2A40; }
 [data-theme="dark"] .td-cat-bar-num   { color: #6878A0; }
 [data-theme="dark"] .td-word-chip     { background: #12121F; border-color: #2A2A40; color: #7EB3FF; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   ALWAYS-MOBILE LAYOUT — forces the phone UI on every screen size.
+   These rules come last so they override any earlier desktop-specific styles.
+   On desktop the body centers #app-root (max 430px); on mobile it fills 100%.
+   ══════════════════════════════════════════════════════════════════════════ */
+
+/* Sidebar — permanently hidden; bottom nav is the only navigation */
+.sidebar         { display: none !important; }
+.sidebar-logo    { display: none !important; }
+.student-card    { display: none !important; }
+.sidebar-section { display: none !important; }
+.sidebar-actions { display: none !important; }
+
+/* Lesson screen always stacks vertically */
+#screen-lesson           { flex-direction: column !important; }
+.lesson-layout           { flex-direction: column !important; }
+.lesson-user-badge       { display: none !important; }
+.chat-header-actions .btn-lesson-path-header { display: none !important; }
+
+/* Bottom nav — always visible */
+.bottom-nav {
+  display: flex !important;
+  height: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
+}
+
+/* Lesson layout fills screen above the nav */
+#screen-lesson .lesson-layout {
+  height: calc(100dvh - 68px - env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* Tab panel switching — always works */
+#screen-lesson.mob-tab-path .lesson-layout,
+#screen-lesson.mob-tab-games .lesson-layout,
+#screen-lesson.mob-tab-me .lesson-layout { display: none !important; }
+
+#screen-lesson.mob-tab-path #mob-path  { display: flex !important; }
+#screen-lesson.mob-tab-me   #mob-me    { display: flex !important; }
+
+/* Panels sit above the nav bar, safe-area aware */
+.mob-panel {
+  bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+  overflow: hidden !important;
+}
+#mob-games {
+  bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* PWA install banner above nav */
+.pwa-banner {
+  bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+}
+
+/* Chat area */
+.chat-messages  { padding-bottom: 16px !important; }
+.chat-input-area { padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; }
+
+/* On desktop the app column looks like a premium phone — subtle rounded frame */
+@media (min-width: 431px) {
+  #app-root {
+    border-radius: 28px;
+    overflow: hidden;
+  }
+  /* Screens must fill the rounded column */
+  .screen,
+  #screen-home,
+  #screen-register,
+  #screen-quiz { border-radius: inherit; }
+}
