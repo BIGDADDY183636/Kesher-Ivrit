@@ -1696,69 +1696,23 @@ function renderMobileProfile() {
       '<div class="mob-stat"><div class="mob-stat-icon">⭐</div><div class="mob-stat-val">' + pts + '</div><div class="mob-stat-lbl">Points</div></div>' +
       '<div class="mob-stat"><div class="mob-stat-icon">📅</div><div class="mob-stat-val">' + state.progress.lessonsCompleted + '</div><div class="mob-stat-lbl">Lessons</div></div>' +
     '</div>' +
-    '<div class="mob-score-msg" style="border-color:' + lbMsg.color + '">' +
-      '<span class="mob-score-emoji">' + lbMsg.emoji + '</span>' +
-      '<span>' + lbMsg.text + '</span>' +
-    '</div>' +
-    (function() {
-      var todayL = computeTodayLesson ? computeTodayLesson() : null;
-      if (!todayL) return '';
-      var ds = todayL.dailyState;
-      var done = ds && ds.status === 'completed';
-      var rt = DAILY_REVIEW_TYPES[Math.min(todayL.reviewSession, 4)] || DAILY_REVIEW_TYPES[1];
-      return '<div class="mob-daily-card' + (done ? ' mob-daily-done' : '') + '">' +
-        '<div class="mob-daily-top">' +
-          '<span class="mob-daily-badge" style="background:' + rt.color + '">' + rt.label + '</span>' +
-          '<span class="mob-daily-session">Session ' + todayL.reviewSession + ' of 4</span>' +
-        '</div>' +
-        '<div class="mob-daily-title">' + escapeHtml(todayL.concept.title) + '</div>' +
-        (done
-          ? '<div class="mob-daily-done-row">✓ Completed today' + (ds.score !== null ? ' · ' + ds.score + '%' : '') + '</div>'
-          : '<button class="mob-daily-start" onclick="goHome();switchTab(\'learn\')">Start Today\'s Lesson →</button>') +
-      '</div>';
-    })() +
-    (function() {
-      var md = loadMastery ? loadMastery() : {};
-      var mc = 0, pc = 0;
-      Object.keys(md).forEach(function(id) { if (md[id].level === 'mastered') mc++; else if (md[id].level === 'practicing') pc++; });
-      if (mc + pc === 0) return '';
-      return '<div class="mob-mastery-row">' +
-        '<span class="mob-mr-item mob-mr-mastered">🏆 ' + mc + ' mastered</span>' +
-        (pc > 0 ? '<span class="mob-mr-item mob-mr-practicing">🔵 ' + pc + ' practicing</span>' : '') +
-      '</div>';
-    })() +
-    '<button class="share-kesher-btn" onclick="shareKesherIvrit(\'me\')">🇮🇱 Share Kesher Ivrit with Friends</button>' +
     '<button class="mob-progress-btn" onclick="showProgressScreen()">📊 My Progress</button>' +
     '<button class="mob-lb-open-btn" onclick="showLeaderboardScreen()">🏆 Leaderboard</button>' +
-    '<button class="mob-share-btn" onclick="shareScore()">📤 Share My Score</button>' +
-    '<div class="mob-action-list">' +
-      '<button class="mob-action-btn" onclick="showNotebook()">' +
-        '<span class="mob-action-icon">📓</span>' +
-        '<div><div class="mob-action-title">My Notebook</div><div class="mob-action-sub">' + state.progress.wordsLearned.length + ' words collected</div></div>' +
-      '</button>' +
-      '<button class="mob-action-btn" onclick="showFeedback()">' +
-        '<span class="mob-action-icon">📝</span>' +
-        '<div><div class="mob-action-title">Lesson Feedback</div><div class="mob-action-sub">Rate your session</div></div>' +
-      '</button>' +
-      '<button class="mob-action-btn" onclick="goHome();switchTab(' + "'learn'" + ')">' +
-        '<span class="mob-action-icon">🏠</span>' +
-        '<div><div class="mob-action-title">Home</div><div class="mob-action-sub">Return to the home screen</div></div>' +
-      '</button>' +
-      (function() {
-        var dark = document.documentElement.getAttribute('data-theme') === 'dark';
-        return '<button class="dm-toggle-btn" onclick="toggleDarkMode()">' +
-          '<span class="dm-toggle-icon">' + (dark ? '☀️' : '🌙') + '</span>' +
-          '<span class="dm-toggle-text">' +
-            '<span class="dm-toggle-title">Dark Mode</span>' +
-            '<span class="dm-toggle-sub">' + (dark ? 'On — tap to switch to light' : 'Off — tap to switch to dark') + '</span>' +
-          '</span>' +
-          '<span class="dm-toggle-pill' + (dark ? ' dm-on' : '') + '">' +
-            '<span class="dm-toggle-knob"></span>' +
-          '</span>' +
-        '</button>';
-      })() +
-    '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v7.4</div>';
+    '<button class="share-kesher-btn" onclick="shareKesherIvrit(\'me\')">🇮🇱 Share Kesher Ivrit with Friends</button>' +
+    (function() {
+      var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+      return '<button class="dm-toggle-btn" onclick="toggleDarkMode()">' +
+        '<span class="dm-toggle-icon">' + (dark ? '☀️' : '🌙') + '</span>' +
+        '<span class="dm-toggle-text">' +
+          '<span class="dm-toggle-title">Dark Mode</span>' +
+          '<span class="dm-toggle-sub">' + (dark ? 'On — tap to switch to light' : 'Off — tap to switch to dark') + '</span>' +
+        '</span>' +
+        '<span class="dm-toggle-pill' + (dark ? ' dm-on' : '') + '">' +
+          '<span class="dm-toggle-knob"></span>' +
+        '</span>' +
+      '</button>';
+    })() +
+    '<div class="mob-me-version">Kesher Ivrit v7.5</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -6026,7 +5980,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v7.4';
+  var CURRENT_VERSION = 'v7.5';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
