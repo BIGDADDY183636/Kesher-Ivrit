@@ -1360,7 +1360,7 @@ function _rescueTextChallenge(raw) {
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v8.6', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v9.0', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {
@@ -1411,6 +1411,9 @@ app.post('/api/chat', async (req, res) => {
 });
 
 app.post('/api/feedback', async (req, res) => {
+  const { rating, positive, improve, other, userProfile, lessonSummary } = req.body || {};
+  console.log('[feedback] rating=%s user=%s lesson=%s positive=%s improve=%s other=%s',
+    rating, userProfile?.name || 'anon', lessonSummary, positive, improve, other);
   res.json({ success: true, message: 'Todah rabah! Thank you for your feedback!' });
 });
 

@@ -1977,10 +1977,7 @@ function completeOnboarding() {
 
 function _afterOnboarding() {
   showScreen('screen-register');
-  setTimeout(function() {
-    var f = document.getElementById('reg-firstname');
-    if (f) f.focus();
-  }, 150);
+  showChoicePanel();
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
@@ -1995,7 +1992,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       _obShow();
     } else {
       showScreen('screen-register');
-      setTimeout(() => document.getElementById('reg-firstname').focus(), 100);
+      showChoicePanel();
     }
   } else {
     updateUserBadges();
@@ -2181,7 +2178,7 @@ function resetProgress() {
   document.getElementById('returning-user-section').style.display = 'none';
   showToast('Progress cleared. Time for a fresh start! חָדָשׁ!');
   showScreen('screen-register');
-  setTimeout(() => document.getElementById('reg-firstname').focus(), 100);
+  showChoicePanel();
 }
 
 // ─── QUIZ ─────────────────────────────────────────────────
@@ -2487,7 +2484,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v8.6</div>';
+    '<div class="mob-me-version">Kesher Ivrit v9.0</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -6762,7 +6759,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v8.6';
+  var CURRENT_VERSION = 'v9.0';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
@@ -7168,6 +7165,7 @@ function _qmFlushWrong() {
 }
 
 function _qmReviewMorah() {
+  _qmFlushWrong();
   closeQuizMode();
   showToast('Morah will focus on your quiz mistakes this lesson!');
   continueLearning();

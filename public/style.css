@@ -6532,6 +6532,10 @@ html, body,
 [data-theme="dark"] .reg-sub   { color: #A8B4D0; }
 [data-theme="dark"] .reg-label { color: #A8B4D0; }
 [data-theme="dark"] .reg-label-hint { color: #6878A0; }
+[data-theme="dark"] .reg-error { background: rgba(220,38,38,0.15); border-color: rgba(220,38,38,0.5); color: #FCA5A5; }
+[data-theme="dark"] .reg-code-status.rc-valid   { color: #4ADE80; }
+[data-theme="dark"] .reg-code-status.rc-invalid { color: #FCA5A5; }
+[data-theme="dark"] .reg-input-code { background: #12121F; color: #E8EAFF; }
 [data-theme="dark"] #screen-quiz {
   background: linear-gradient(160deg, #050508 0%, #0A0A14 100%) !important;
 }
@@ -9607,7 +9611,7 @@ p, li, .mob-action-title { font-weight: 500; }
 }
 .td-detail-back { background: none; border: none; color: var(--blue-mid); font-size: 0.9rem; font-weight: 700; cursor: pointer; font-family: var(--font-eng); padding: 6px; }
 .td-detail-name { font-size: 1.1rem; font-weight: 800; color: var(--text-dark); }
-.td-detail-body { flex: 1; overflow-y: auto; -webkit-overflow-scrolling: touch; padding: 16px; }
+.td-detail-body { flex: 1; display: flex; flex-direction: column; overflow: hidden; }
 .td-detail-stats { display: flex; gap: 12px; margin-bottom: 14px; }
 .td-ds { flex: 1; background: #fff; border-radius: 14px; padding: 16px 10px; text-align: center; box-shadow: 0 2px 8px rgba(0,56,184,0.07); }
 .td-ds-val { font-size: 1.6rem; font-weight: 900; color: var(--blue-deep); }
@@ -9835,3 +9839,73 @@ p, li, .mob-action-title { font-weight: 500; }
   .td-cal-cell { width: 10px; height: 10px; }
   .td-week-chart { height: 100px; }
 }
+
+/* ── TEACHER DASHBOARD DARK MODE ─────────────────────────── */
+[data-theme="dark"] .td-overlay   { background: #0A0A0F; }
+[data-theme="dark"] .td-detail    { background: #0D0D1A; }
+[data-theme="dark"] .td-pane      { background: #0D0D1A; }
+[data-theme="dark"] .td-detail-header { background: #12121F; border-color: #2A2A40; }
+[data-theme="dark"] .td-detail-name   { color: #E8EAFF; }
+[data-theme="dark"] .td-detail-back   { color: #7EB3FF; }
+[data-theme="dark"] .td-ptabs     { background: #12121F; border-color: #2A2A40; }
+[data-theme="dark"] .td-ptab      { color: #6878A0; }
+[data-theme="dark"] .td-ptab-active { color: #7EB3FF; border-bottom-color: #4F8EF7; }
+[data-theme="dark"] .td-profile-pane { background: #0D0D1A; }
+[data-theme="dark"] .td-section-title { color: #4A5480; }
+[data-theme="dark"] .td-info-grid  { background: #12121F; box-shadow: none; }
+[data-theme="dark"] .td-info-row   { border-color: #2A2A40; }
+[data-theme="dark"] .td-info-label { color: #4A5480; }
+[data-theme="dark"] .td-info-val   { color: #C8D0E8; }
+[data-theme="dark"] .td-placement-card { background: linear-gradient(135deg,#1A1A30,#2A2A50); color: #A8CFFF; }
+[data-theme="dark"] .td-placement-date { color: #6878A0; }
+[data-theme="dark"] .td-cal-wrap   { background: #12121F; box-shadow: none; }
+[data-theme="dark"] .td-cal-cell   { background: #2A2A40; }
+[data-theme="dark"] .td-cal-done   { background: #1E3A5F; }
+[data-theme="dark"] .td-cal-mid    { background: #1D4ED8; }
+[data-theme="dark"] .td-cal-high   { background: #60A5FA; }
+[data-theme="dark"] .td-cal-summary { color: #6878A0; }
+[data-theme="dark"] .td-hist-table  { background: #12121F; box-shadow: none; }
+[data-theme="dark"] .td-hist-table td { border-color: #2A2A40; color: #C8D0E8; }
+[data-theme="dark"] .td-hist-table tr:hover td { background: #1A1A30; }
+[data-theme="dark"] .td-score-badge.td-score-high { background: rgba(74,222,128,0.15); color: #4ADE80; }
+[data-theme="dark"] .td-score-badge.td-score-mid  { background: rgba(250,204,21,0.15); color: #FDE047; }
+[data-theme="dark"] .td-score-badge.td-score-low  { background: rgba(248,113,113,0.15); color: #F87171; }
+[data-theme="dark"] .td-week-chart  { background: #12121F; box-shadow: none; }
+[data-theme="dark"] .td-week-label  { color: #4A5480; }
+[data-theme="dark"] .td-week-val    { color: rgba(255,255,255,0.8); }
+[data-theme="dark"] .td-trend-line  { color: #6878A0; }
+[data-theme="dark"] .td-struggle-chip { background: #1A0A0A; border-color: rgba(248,113,113,0.4); }
+[data-theme="dark"] .td-struggle-q  { color: #C8D0E8; }
+[data-theme="dark"] .td-struggle-a  { color: #4ADE80; }
+[data-theme="dark"] .td-notes-hint  { color: #4A5480; }
+[data-theme="dark"] .td-notes-area  { background: #12121F; border-color: #2A2A40; color: #C8D0E8; }
+[data-theme="dark"] .td-notes-area:focus { border-color: #4F8EF7; box-shadow: 0 0 0 3px rgba(79,142,247,0.2); }
+[data-theme="dark"] .td-notes-updated { color: #4ADE80; }
+[data-theme="dark"] .td-recent-msg   { background: #12121F; color: #C8D0E8; box-shadow: none; }
+[data-theme="dark"] .td-msg-num      { background: #1A1A30; color: #7EB3FF; }
+[data-theme="dark"] .td-empty        { color: #4A5480; }
+[data-theme="dark"] .td-loading      { color: #4A5480; }
+[data-theme="dark"] .td-stat-card    { background: #12121F; box-shadow: none; }
+[data-theme="dark"] .td-stat-val     { color: #7EB3FF; }
+[data-theme="dark"] .td-stat-lbl     { color: #4A5480; }
+[data-theme="dark"] .td-level-grid   { background: #12121F; }
+[data-theme="dark"] .td-level-bar    { background: #2A2A40; }
+[data-theme="dark"] .td-level-count  { color: #6878A0; }
+[data-theme="dark"] .td-cat-card     { background: #12121F; }
+[data-theme="dark"] .td-cat-count    { color: #7EB3FF; }
+[data-theme="dark"] .td-cat-name     { color: #4A5480; }
+[data-theme="dark"] .td-row:hover    { background: #1A1A30; }
+[data-theme="dark"] .td-name         { color: #C8D0E8; }
+[data-theme="dark"] .td-num          { color: #C8D0E8; }
+[data-theme="dark"] .td-pts          { color: #7EB3FF; }
+[data-theme="dark"] .td-ago          { color: #4A5480; }
+[data-theme="dark"] .td-row          { border-color: #2A2A40; }
+[data-theme="dark"] .td-table        { background: #12121F; }
+[data-theme="dark"] .td-ds           { background: #12121F; }
+[data-theme="dark"] .td-ds-val       { color: #7EB3FF; }
+[data-theme="dark"] .td-ds-lbl       { color: #4A5480; }
+[data-theme="dark"] .td-detail-meta  { color: #6878A0; }
+[data-theme="dark"] .td-cat-bar-label { color: #C8D0E8; }
+[data-theme="dark"] .td-cat-bar-track { background: #2A2A40; }
+[data-theme="dark"] .td-cat-bar-num   { color: #6878A0; }
+[data-theme="dark"] .td-word-chip     { background: #12121F; border-color: #2A2A40; color: #7EB3FF; }
