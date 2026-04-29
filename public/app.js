@@ -1758,7 +1758,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v7.3</div>';
+    '<div class="mob-me-version">Kesher Ivrit v7.4</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -6026,7 +6026,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v7.3';
+  var CURRENT_VERSION = 'v7.4';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
