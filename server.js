@@ -72,64 +72,122 @@ async function callAI(provider, systemPrompt, messages, maxTokens) {
 
 // ── Supabase client (optional — app works without it) ────────────────────────
 let supabase = null;
-if (process.env.SUPABASE_URL && process.env.SUPABASE_ANON_KEY) {
-  supabase = createClient(process.env.SUPABASE_URL, process.env.SUPABASE_ANON_KEY);
-  console.log('[DB] Supabase connected:', process.env.SUPABASE_URL);
+const _sbUrl = process.env.SUPABASE_URL      || '';
+const _sbKey = process.env.SUPABASE_ANON_KEY || '';
+
+console.log('[DB] SUPABASE_URL set:',      !!_sbUrl, _sbUrl  ? '(' + _sbUrl.slice(0, 30) + '...)' : '(empty)');
+console.log('[DB] SUPABASE_ANON_KEY set:', !!_sbKey, _sbKey  ? '(length ' + _sbKey.length + ')' : '(empty)');
+
+if (_sbUrl && _sbKey) {
+  try {
+    supabase = createClient(_sbUrl, _sbKey);
+    console.log('[DB] Supabase client created OK');
+  } catch (initErr) {
+    console.error('[DB] createClient threw:', initErr.message);
+  }
 } else {
-  console.warn('[DB] SUPABASE_URL / SUPABASE_ANON_KEY not set — database features disabled');
+  console.warn('[DB] Supabase disabled — missing env vars');
 }
 
 function dbRequired(res) {
   if (!supabase) {
-    res.status(503).json({ error: 'Database not configured', hint: 'Set SUPABASE_URL and SUPABASE_ANON_KEY in .env' });
+    const hint = !_sbUrl ? 'SUPABASE_URL is not set' : 'SUPABASE_ANON_KEY is not set';
+    console.error('[DB] dbRequired: no client —', hint);
+    res.status(503).json({ error: 'Database not configured', hint });
     return false;
   }
   return true;
 }
 
+// ── GET /api/db-status — env var + connectivity check ────────────────────────
+app.get('/api/db-status', async (req, res) => {
+  const status = {
+    SUPABASE_URL_set:      !!_sbUrl,
+    SUPABASE_ANON_KEY_set: !!_sbKey,
+    SUPABASE_URL_prefix:   _sbUrl  ? _sbUrl.slice(0, 40)  : null,
+    SUPABASE_KEY_length:   _sbKey  ? _sbKey.length         : 0,
+    client_created:        !!supabase,
+    ping: null,
+    ping_error: null,
+  };
+  if (supabase) {
+    try {
+      // Lightweight ping: count rows in users (returns 0 if table is empty, errors if table missing)
+      const { count, error } = await supabase
+        .from('users')
+        .select('*', { count: 'exact', head: true });
+      status.ping       = error ? 'error' : 'ok';
+      status.ping_error = error ? error.message : null;
+      status.user_count = count;
+    } catch (e) {
+      status.ping       = 'exception';
+      status.ping_error = e.message;
+    }
+  }
+  res.json(status);
+});
+
 // ── POST /api/register ───────────────────────────────────────────────────────
-// Creates (or retrieves) a user row and ensures a scores row exists.
-// Returns { userId } — stored in localStorage so the client can sync scores.
 app.post('/api/register', async (req, res) => {
+  console.log('[register] called — body keys:', Object.keys(req.body || {}));
+
   if (!dbRequired(res)) return;
+
   const { firstName, lastInitial, school, level, goal } = req.body || {};
   if (!firstName || !lastInitial) {
+    console.warn('[register] missing required fields');
     return res.status(400).json({ error: 'firstName and lastInitial are required' });
   }
 
-  const fn  = firstName.trim().slice(0, 60);
-  const li  = lastInitial.trim().toUpperCase().slice(0, 1);
-  const sc  = (school || 'Independent Learner').trim().slice(0, 100) || 'Independent Learner';
+  const fn = firstName.trim().slice(0, 60);
+  const li = lastInitial.trim().toUpperCase().slice(0, 1);
+  const sc = (school || 'Independent Learner').trim().slice(0, 100) || 'Independent Learner';
   if (!/^[A-Za-z]$/.test(li)) return res.status(400).json({ error: 'lastInitial must be a single letter' });
 
   const userRow = { first_name: fn, last_initial: li, school: sc };
   if (level) userRow.level = String(level).slice(0, 40);
   if (goal)  userRow.goal  = (Array.isArray(goal) ? goal.join(',') : String(goal)).slice(0, 120);
 
+  console.log('[register] upserting user row:', JSON.stringify(userRow));
+
   try {
-    // Upsert user — returns existing row if the unique key matches.
-    // On conflict, update level/goal if provided (they improve over time).
     const { data: uData, error: uErr } = await supabase
       .from('users')
       .upsert(userRow, { onConflict: 'first_name,last_initial,school' })
       .select('id')
       .single();
 
-    if (uErr) throw uErr;
-    const userId = uData.id;
+    if (uErr) {
+      console.error('[register] users upsert error — code:', uErr.code, '| message:', uErr.message, '| details:', uErr.details, '| hint:', uErr.hint);
+      throw uErr;
+    }
 
-    // Ensure a scores row exists — don't overwrite real scores on re-register
-    await supabase
+    const userId = uData.id;
+    console.log('[register] user upserted OK, userId:', userId);
+
+    const { error: sErr } = await supabase
       .from('scores')
       .upsert(
         { user_id: userId, points: 0, streak: 0, words_learned: 0 },
         { onConflict: 'user_id', ignoreDuplicates: true }
       );
 
+    if (sErr) {
+      console.error('[register] scores upsert error — code:', sErr.code, '| message:', sErr.message);
+      // Non-fatal — user row was created; scores row may already exist
+    } else {
+      console.log('[register] scores row upserted OK');
+    }
+
     res.json({ userId });
   } catch (err) {
-    console.error('[DB] /api/register error:', err.message);
-    res.status(500).json({ error: err.message });
+    console.error('[register] FAILED —', err.code || '', err.message);
+    res.status(500).json({
+      error:   err.message,
+      code:    err.code    || null,
+      details: err.details || null,
+      hint:    err.hint    || null,
+    });
   }
 });
 
