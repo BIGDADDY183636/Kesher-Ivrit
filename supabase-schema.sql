@@ -12,9 +12,13 @@ CREATE TABLE IF NOT EXISTS users (
   school       TEXT        NOT NULL DEFAULT 'Independent Learner',
   level        TEXT,                          -- e.g. 'complete_beginner', 'intermediate'
   goal         TEXT,                          -- e.g. 'conversation', 'bar_mitzvah'
+  secret_hash  TEXT,                          -- bcrypt hash of the student's secret word
   created_at   TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE (first_name, last_initial, school)
 );
+
+-- If the table already exists, add the column safely:
+ALTER TABLE users ADD COLUMN IF NOT EXISTS secret_hash TEXT;
 
 -- ── SCORES ───────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS scores (
@@ -22,8 +26,12 @@ CREATE TABLE IF NOT EXISTS scores (
   points        INT         NOT NULL DEFAULT 0,
   streak        INT         NOT NULL DEFAULT 0,
   words_learned INT         NOT NULL DEFAULT 0,
+  words_data    JSONB,                        -- full words list for cross-device restore
   updated_at    TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- If the table already exists, add the column safely:
+ALTER TABLE scores ADD COLUMN IF NOT EXISTS words_data JSONB;
 
 -- ── CLANS ────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS clans (

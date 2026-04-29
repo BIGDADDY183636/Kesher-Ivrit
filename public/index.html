@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Kesher Ivrit v8.0 | קשר עברית</title>
+  <title>Kesher Ivrit v8.1 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=800" />
+  <link rel="stylesheet" href="style.css?v=810" />
 </head>
 <body>
 
@@ -194,47 +194,123 @@
     <div class="stars-bg"></div>
     <div class="flag-stripe top"></div>
     <div class="quiz-container reg-card">
-      <div class="quiz-header">
-        <div class="quiz-logo">קשר עברית</div>
-        <div class="reg-header-sub">Create Your Account</div>
-      </div>
-      <div class="reg-body">
-        <div class="reg-hero">
-          <div class="reg-star">✡</div>
-          <h2 class="reg-title">Welcome to Kesher Ivrit!</h2>
-          <p class="reg-sub">Create your learner account to track progress, join the leaderboard, and connect with classmates.</p>
+
+      <!-- ══ PANEL A: CREATE ACCOUNT ══ -->
+      <div id="reg-panel-create">
+        <div class="quiz-header">
+          <div class="quiz-logo">קשר עברית</div>
+          <div class="reg-header-sub">Create Your Account</div>
         </div>
-        <div class="reg-fields">
-          <div class="reg-row">
+        <div class="reg-body">
+          <div class="reg-hero">
+            <div class="reg-star">✡</div>
+            <h2 class="reg-title">Welcome to Kesher Ivrit!</h2>
+            <p class="reg-sub">Create your account to track progress, join the leaderboard, and access your learning from any device.</p>
+          </div>
+          <div class="reg-fields">
+            <div class="reg-row">
+              <div class="reg-field">
+                <label class="reg-label">First Name</label>
+                <input type="text" id="reg-firstname" class="quiz-name-input reg-input"
+                  placeholder="e.g. Rivka" maxlength="40" autocomplete="given-name"
+                  oninput="document.getElementById('reg-error').style.display='none'"
+                  onkeydown="if(event.key==='Enter') document.getElementById('reg-lastinitial').focus()" />
+              </div>
+              <div class="reg-field reg-field-narrow">
+                <label class="reg-label">Last Initial<span class="reg-label-hint">one letter</span></label>
+                <input type="text" id="reg-lastinitial" class="quiz-name-input reg-input reg-input-initial"
+                  placeholder="C" maxlength="1" autocomplete="off"
+                  oninput="document.getElementById('reg-error').style.display='none'"
+                  onkeydown="if(event.key==='Enter') document.getElementById('reg-school').focus()" />
+              </div>
+            </div>
             <div class="reg-field">
-              <label class="reg-label">First Name</label>
-              <input type="text" id="reg-firstname" class="quiz-name-input reg-input"
-                placeholder="e.g. Rivka" maxlength="40"
+              <label class="reg-label">School Name <span class="reg-label-hint">optional</span></label>
+              <input type="text" id="reg-school" class="quiz-name-input reg-input"
+                placeholder="e.g. Ramaz, SAR, homeschool" maxlength="80" autocomplete="organization"
                 oninput="document.getElementById('reg-error').style.display='none'"
-                onkeydown="if(event.key==='Enter') document.getElementById('reg-lastinitial').focus()" />
+                onkeydown="if(event.key==='Enter') document.getElementById('reg-secret').focus()" />
             </div>
-            <div class="reg-field reg-field-narrow">
-              <label class="reg-label">Last Name Initial<span class="reg-label-hint">one letter only — e.g. if Cohen, type C</span></label>
-              <input type="text" id="reg-lastinitial" class="quiz-name-input reg-input reg-input-initial"
-                placeholder="C" maxlength="1"
+            <div class="reg-field">
+              <label class="reg-label">Secret Word <span class="reg-label-hint">used to log in from any device — remember it!</span></label>
+              <input type="password" id="reg-secret" class="quiz-name-input reg-input"
+                placeholder="e.g. bluedragon42" maxlength="60" autocomplete="new-password"
                 oninput="document.getElementById('reg-error').style.display='none'"
-                onkeydown="if(event.key==='Enter') document.getElementById('reg-school').focus()" />
+                onkeydown="if(event.key==='Enter') document.getElementById('reg-secret-confirm').focus()" />
+            </div>
+            <div class="reg-field">
+              <label class="reg-label">Confirm Secret Word</label>
+              <input type="password" id="reg-secret-confirm" class="quiz-name-input reg-input"
+                placeholder="Type it again" maxlength="60" autocomplete="new-password"
+                oninput="document.getElementById('reg-error').style.display='none'"
+                onkeydown="if(event.key==='Enter') submitRegistration()" />
             </div>
           </div>
-          <div class="reg-field">
-            <label class="reg-label">School Name <span class="reg-label-hint">optional — leave blank if homeschooled or independent</span></label>
-            <input type="text" id="reg-school" class="quiz-name-input reg-input"
-              placeholder="Optional — e.g. Ramaz, SAR, homeschool" maxlength="80"
-              oninput="document.getElementById('reg-error').style.display='none'"
-              onkeydown="if(event.key==='Enter') submitRegistration()" />
-          </div>
+          <div id="reg-error" class="reg-error" style="display:none;"></div>
+          <button class="btn-quiz-next reg-submit" onclick="submitRegistration()">
+            Create Account — <span class="heb-small">הִצְטָרֵף!</span>
+          </button>
+          <button class="reg-switch-btn" onclick="showLoginPanel()">
+            Returning user? <strong>Log back in →</strong>
+          </button>
         </div>
-        <div id="reg-error" class="reg-error" style="display:none;"></div>
-        <button class="btn-quiz-next reg-submit" onclick="submitRegistration()">
-          Join — <span class="heb-small">הִצְטָרֵף!</span>
-        </button>
       </div>
-    </div>
+
+      <!-- ══ PANEL B: LOG BACK IN ══ -->
+      <div id="reg-panel-login" style="display:none;">
+        <div class="quiz-header">
+          <div class="quiz-logo">קשר עברית</div>
+          <div class="reg-header-sub">Welcome Back!</div>
+        </div>
+        <div class="reg-body">
+          <div class="reg-hero">
+            <div class="reg-star">🔑</div>
+            <h2 class="reg-title">Log Back In</h2>
+            <p class="reg-sub">Enter your details to restore your progress on this device.</p>
+          </div>
+          <div class="reg-fields">
+            <div class="reg-row">
+              <div class="reg-field">
+                <label class="reg-label">First Name</label>
+                <input type="text" id="login-firstname" class="quiz-name-input reg-input"
+                  placeholder="e.g. Rivka" maxlength="40" autocomplete="given-name"
+                  oninput="document.getElementById('login-error').style.display='none'"
+                  onkeydown="if(event.key==='Enter') document.getElementById('login-lastinitial').focus()" />
+              </div>
+              <div class="reg-field reg-field-narrow">
+                <label class="reg-label">Last Initial</label>
+                <input type="text" id="login-lastinitial" class="quiz-name-input reg-input reg-input-initial"
+                  placeholder="C" maxlength="1" autocomplete="off"
+                  oninput="document.getElementById('login-error').style.display='none'"
+                  onkeydown="if(event.key==='Enter') document.getElementById('login-school').focus()" />
+              </div>
+            </div>
+            <div class="reg-field">
+              <label class="reg-label">School Name <span class="reg-label-hint">leave blank if independent</span></label>
+              <input type="text" id="login-school" class="quiz-name-input reg-input"
+                placeholder="e.g. Ramaz, SAR, homeschool" maxlength="80" autocomplete="organization"
+                oninput="document.getElementById('login-error').style.display='none'"
+                onkeydown="if(event.key==='Enter') document.getElementById('login-secret').focus()" />
+            </div>
+            <div class="reg-field">
+              <label class="reg-label">Secret Word</label>
+              <input type="password" id="login-secret" class="quiz-name-input reg-input"
+                placeholder="Your secret word" maxlength="60" autocomplete="current-password"
+                oninput="document.getElementById('login-error').style.display='none'"
+                onkeydown="if(event.key==='Enter') submitLogin()" />
+            </div>
+          </div>
+          <div id="login-error" class="reg-error" style="display:none;"></div>
+          <button class="btn-quiz-next reg-submit" id="login-submit-btn" onclick="submitLogin()">
+            Log In &amp; Restore Progress
+          </button>
+          <button class="reg-switch-btn" onclick="showRegisterPanel()">
+            ← New user? Create an account
+          </button>
+        </div>
+      </div>
+
+    </div><!-- /reg-card -->
     <div class="flag-stripe bottom"></div>
   </div>
 </div>
@@ -402,7 +478,7 @@
           <span class="cub-school" id="cub-school"></span>
         </div>
         <div class="cub-right">
-          <span class="cub-version">v8.0</span>
+          <span class="cub-version">v8.1</span>
           <button class="cub-restart-btn" onclick="newLesson()" title="New conversation">↺</button>
         </div>
       </div>
@@ -423,7 +499,7 @@
             <span class="typing-dot"></span>
           </div>
           <span class="typing-text">Morah is thinking…</span>
-          <span class="typing-version">v8.0</span>
+          <span class="typing-version">v8.1</span>
         </div>
         <div class="input-row">
           <button class="btn-mic" id="btn-mic" onclick="toggleVoiceInput()" title="Speak your answer">
@@ -1102,7 +1178,7 @@
 
 </div>
 
-<script src="app.js?v=800"></script>
+<script src="app.js?v=810"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">

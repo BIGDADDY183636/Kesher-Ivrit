@@ -886,26 +886,47 @@ function saveUser() {
 }
 
 // ── Supabase registration (fire-and-forget — app works without it) ───────────
-function _registerWithDb(firstName, lastInitial, school) {
+function _registerWithDb(firstName, lastInitial, school, secretWord) {
   var profile = (state && state.userProfile) || {};
   fetch('/api/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
-      firstName, lastInitial, school,
+      firstName, lastInitial, school, secretWord,
       level: profile.level || null,
       goal:  profile.goal  || null
     })
   })
-  .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
-  .then(function(data) {
-    if (data && data.userId) {
-      currentUser.userId = data.userId;
+  .then(function(r) { return r.json().then(function(d) { return { ok: r.ok, data: d }; }); })
+  .then(function(res) {
+    if (res.ok && res.data.userId) {
+      currentUser.userId = res.data.userId;
       saveUser();
-      console.log('[DB] Registered, userId:', data.userId);
+      console.log('[DB] Registered, userId:', res.data.userId);
+    } else {
+      console.warn('[DB] Registration failed:', res.data.error);
     }
   })
   .catch(function(e) { console.warn('[DB] Registration sync failed (offline?):', e); });
+}
+
+// ── Score + words sync — saves full words list for cross-device restore ────────
+function _syncProgressToDb() {
+  if (!currentUser || !currentUser.userId) return;
+  clearTimeout(_syncTimer);
+  _syncTimer = setTimeout(function() {
+    fetch('/api/progress/save', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        userId:       currentUser.userId,
+        points:       state.progress.points,
+        streak:       state.progress.streak,
+        wordsLearned: state.progress.wordsLearned.length,
+        wordsData:    state.progress.wordsLearned
+      })
+    }).catch(function(e) { console.warn('[DB] Progress save failed:', e); });
+  }, 3000);
 }
 
 // ── Score sync — debounced, fire-and-forget ───────────────────────────────────
@@ -927,24 +948,36 @@ function _syncScoreToDb() {
   }, 3000); // debounce — wait 3s before writing to DB
 }
 
+function showLoginPanel() {
+  document.getElementById('reg-panel-create').style.display = 'none';
+  document.getElementById('reg-panel-login').style.display  = '';
+  document.getElementById('login-firstname').focus();
+}
+function showRegisterPanel() {
+  document.getElementById('reg-panel-login').style.display  = 'none';
+  document.getElementById('reg-panel-create').style.display = '';
+  document.getElementById('reg-firstname').focus();
+}
+
 function submitRegistration() {
-  const firstName   = (document.getElementById('reg-firstname').value   || '').trim();
-  const lastInitial = (document.getElementById('reg-lastinitial').value || '').trim().toUpperCase();
-  const school      = (document.getElementById('reg-school').value      || '').trim();
+  const firstName   = (document.getElementById('reg-firstname').value        || '').trim();
+  const lastInitial = (document.getElementById('reg-lastinitial').value      || '').trim().toUpperCase();
+  const school      = (document.getElementById('reg-school').value           || '').trim();
+  const secretWord  = (document.getElementById('reg-secret').value          || '').trim();
+  const secretConf  = (document.getElementById('reg-secret-confirm').value  || '').trim();
   const errEl = document.getElementById('reg-error');
 
-  if (!firstName) {
-    errEl.textContent = 'Please enter your first name.';
+  function showErr(msg, focusId) {
+    errEl.textContent = msg;
     errEl.style.display = 'block';
-    document.getElementById('reg-firstname').focus();
-    return;
+    if (focusId) document.getElementById(focusId).focus();
   }
-  if (!lastInitial || !/^[A-Za-z]$/.test(lastInitial)) {
-    errEl.textContent = 'Last initial must be a single letter.';
-    errEl.style.display = 'block';
-    document.getElementById('reg-lastinitial').focus();
-    return;
-  }
+
+  if (!firstName)                              return showErr('Please enter your first name.', 'reg-firstname');
+  if (!lastInitial || !/^[A-Za-z]$/.test(lastInitial)) return showErr('Last initial must be a single letter.', 'reg-lastinitial');
+  if (secretWord.length < 3)                   return showErr('Secret word must be at least 3 characters.', 'reg-secret');
+  if (secretWord !== secretConf)               return showErr('Secret words don\'t match — try again.', 'reg-secret-confirm');
+
   errEl.style.display = 'none';
   var schoolFinal = school || 'Independent Learner';
   currentUser = { firstName, lastInitial, school: schoolFinal, joinedAt: Date.now() };
@@ -953,7 +986,83 @@ function submitRegistration() {
   showScreen('screen-home');
   renderWordOfDay();
   checkReturningUser();
-  _registerWithDb(firstName, lastInitial, schoolFinal);
+  _registerWithDb(firstName, lastInitial, schoolFinal, secretWord);
+}
+
+async function submitLogin() {
+  const firstName  = (document.getElementById('login-firstname').value   || '').trim();
+  const lastInitial = (document.getElementById('login-lastinitial').value || '').trim().toUpperCase();
+  const school     = (document.getElementById('login-school').value      || '').trim();
+  const secretWord = (document.getElementById('login-secret').value      || '').trim();
+  const errEl = document.getElementById('login-error');
+  const btn   = document.getElementById('login-submit-btn');
+
+  function showErr(msg) {
+    errEl.textContent = msg; errEl.style.display = 'block';
+  }
+
+  if (!firstName)   return showErr('Please enter your first name.');
+  if (!lastInitial || !/^[A-Za-z]$/.test(lastInitial)) return showErr('Last initial must be a single letter.');
+  if (!secretWord)  return showErr('Please enter your secret word.');
+
+  errEl.style.display = 'none';
+  btn.disabled = true;
+  btn.textContent = 'Logging in…';
+
+  try {
+    var r = await fetch('/api/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        firstName, lastInitial,
+        school: school || 'Independent Learner',
+        secretWord
+      })
+    });
+    var data = await r.json();
+
+    if (!r.ok) {
+      showErr(data.error || 'Login failed. Check your details.');
+      btn.disabled = false;
+      btn.textContent = 'Log In & Restore Progress';
+      return;
+    }
+
+    // ── Restore user ──────────────────────────────────────────
+    currentUser = {
+      firstName:   data.firstName,
+      lastInitial: data.lastInitial,
+      school:      data.school,
+      userId:      data.userId,
+      joinedAt:    Date.now()
+    };
+    saveUser();
+
+    // Restore progress stats
+    state.progress.points          = data.points       || 0;
+    state.progress.streak          = data.streak       || 0;
+    if (data.wordsData && Array.isArray(data.wordsData) && data.wordsData.length > 0) {
+      state.progress.wordsLearned  = data.wordsData;
+    }
+    saveProgress();
+
+    // Restore level/goal into userProfile if available
+    if (data.level && state.userProfile) state.userProfile.level = data.level;
+    if (data.goal  && state.userProfile) {
+      state.userProfile.goal = data.goal.includes(',') ? data.goal.split(',') : data.goal;
+    }
+
+    updateUserBadges();
+    showScreen('screen-home');
+    renderWordOfDay();
+    checkReturningUser();
+    showToast('Welcome back, ' + data.firstName + '! Your progress has been restored. 🎉', 4000);
+
+  } catch (e) {
+    showErr('Connection error — check your internet and try again.');
+    btn.disabled = false;
+    btn.textContent = 'Log In & Restore Progress';
+  }
 }
 
 function updateUserBadges() {
@@ -1305,7 +1414,7 @@ function saveProgress() {
   } catch (e) {
     console.warn('Could not save progress:', e);
   }
-  _syncScoreToDb();
+  _syncProgressToDb(); // replaces _syncScoreToDb — also saves words list
 }
 
 function checkReturningUser() {
@@ -1727,7 +1836,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v8.0</div>';
+    '<div class="mob-me-version">Kesher Ivrit v8.1</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -5995,7 +6104,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v8.0';
+  var CURRENT_VERSION = 'v8.1';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })

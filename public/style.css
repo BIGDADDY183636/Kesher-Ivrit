@@ -437,6 +437,31 @@ body {
   width: 100%;
 }
 
+/* "Returning user?" / "New user?" toggle link */
+.reg-switch-btn {
+  display: block;
+  width: 100%;
+  margin-top: 14px;
+  padding: 12px;
+  background: none;
+  border: 1.5px solid var(--border);
+  border-radius: 14px;
+  font-size: 0.88rem;
+  font-weight: 500;
+  color: var(--text-mid);
+  cursor: pointer;
+  font-family: var(--font-eng);
+  text-align: center;
+  transition: border-color 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.reg-switch-btn strong { color: var(--blue-mid); font-weight: 700; }
+.reg-switch-btn:hover  { border-color: var(--blue-mid); color: var(--blue-deep); }
+.reg-switch-btn:active { background: var(--blue-pale); }
+
+[data-theme="dark"] .reg-switch-btn { border-color: #2A2A40; color: #6878A0; }
+[data-theme="dark"] .reg-switch-btn:hover { border-color: #4F8EF7; color: #7EB3FF; }
+
 /* ─── HOME SCREEN USER BADGE ──────────────────────────── */
 .home-user-badge {
   position: absolute;

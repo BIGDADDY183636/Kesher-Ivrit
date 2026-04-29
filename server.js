@@ -3,6 +3,7 @@ const express    = require('express');
 const Groq       = require('groq-sdk');
 const Anthropic  = require('@anthropic-ai/sdk');
 const path       = require('path');
+const bcrypt     = require('bcryptjs');
 const { createClient } = require('@supabase/supabase-js');
 
 const app = express();
@@ -130,13 +131,14 @@ app.get('/api/db-status', async (req, res) => {
 // ── POST /api/register ───────────────────────────────────────────────────────
 app.post('/api/register', async (req, res) => {
   console.log('[register] called — body keys:', Object.keys(req.body || {}));
-
   if (!dbRequired(res)) return;
 
-  const { firstName, lastInitial, school, level, goal } = req.body || {};
+  const { firstName, lastInitial, school, level, goal, secretWord } = req.body || {};
   if (!firstName || !lastInitial) {
-    console.warn('[register] missing required fields');
     return res.status(400).json({ error: 'firstName and lastInitial are required' });
+  }
+  if (!secretWord || secretWord.trim().length < 3) {
+    return res.status(400).json({ error: 'Secret word must be at least 3 characters.' });
   }
 
   const fn = firstName.trim().slice(0, 60);
@@ -144,50 +146,134 @@ app.post('/api/register', async (req, res) => {
   const sc = (school || 'Independent Learner').trim().slice(0, 100) || 'Independent Learner';
   if (!/^[A-Za-z]$/.test(li)) return res.status(400).json({ error: 'lastInitial must be a single letter' });
 
-  const userRow = { first_name: fn, last_initial: li, school: sc };
+  const secretHash = await bcrypt.hash(secretWord.trim(), 10);
+  const userRow = { first_name: fn, last_initial: li, school: sc, secret_hash: secretHash };
   if (level) userRow.level = String(level).slice(0, 40);
   if (goal)  userRow.goal  = (Array.isArray(goal) ? goal.join(',') : String(goal)).slice(0, 120);
 
-  console.log('[register] upserting user row:', JSON.stringify(userRow));
+  console.log('[register] upserting user:', fn, li, sc);
 
   try {
-    const { data: uData, error: uErr } = await supabase
+    // Check if user already exists (can't update secret_hash on conflict for security)
+    const { data: existing } = await supabase
       .from('users')
-      .upsert(userRow, { onConflict: 'first_name,last_initial,school' })
-      .select('id')
-      .single();
+      .select('id, secret_hash')
+      .eq('first_name', fn).eq('last_initial', li).eq('school', sc)
+      .maybeSingle();
 
-    if (uErr) {
-      console.error('[register] users upsert error — code:', uErr.code, '| message:', uErr.message, '| details:', uErr.details, '| hint:', uErr.hint);
-      throw uErr;
+    let userId;
+    if (existing) {
+      // User exists — don't overwrite their secret_hash
+      userId = existing.id;
+      // Update level/goal only
+      const patch = {};
+      if (level) patch.level = userRow.level;
+      if (goal)  patch.goal  = userRow.goal;
+      if (Object.keys(patch).length) {
+        await supabase.from('users').update(patch).eq('id', userId);
+      }
+      console.log('[register] existing user found, userId:', userId);
+    } else {
+      const { data: uData, error: uErr } = await supabase
+        .from('users').insert(userRow).select('id').single();
+      if (uErr) {
+        console.error('[register] insert error:', uErr.code, uErr.message, uErr.details, uErr.hint);
+        throw uErr;
+      }
+      userId = uData.id;
+      console.log('[register] new user created, userId:', userId);
     }
-
-    const userId = uData.id;
-    console.log('[register] user upserted OK, userId:', userId);
 
     const { error: sErr } = await supabase
       .from('scores')
-      .upsert(
-        { user_id: userId, points: 0, streak: 0, words_learned: 0 },
-        { onConflict: 'user_id', ignoreDuplicates: true }
-      );
-
-    if (sErr) {
-      console.error('[register] scores upsert error — code:', sErr.code, '| message:', sErr.message);
-      // Non-fatal — user row was created; scores row may already exist
-    } else {
-      console.log('[register] scores row upserted OK');
-    }
+      .upsert({ user_id: userId, points: 0, streak: 0, words_learned: 0 },
+               { onConflict: 'user_id', ignoreDuplicates: true });
+    if (sErr) console.error('[register] scores upsert non-fatal:', sErr.message);
 
     res.json({ userId });
   } catch (err) {
     console.error('[register] FAILED —', err.code || '', err.message);
-    res.status(500).json({
-      error:   err.message,
-      code:    err.code    || null,
-      details: err.details || null,
-      hint:    err.hint    || null,
+    res.status(500).json({ error: err.message, code: err.code || null,
+                           details: err.details || null, hint: err.hint || null });
+  }
+});
+
+// ── POST /api/login ───────────────────────────────────────────────────────────
+// Finds user by name+school, verifies secret word, returns profile + progress.
+app.post('/api/login', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { firstName, lastInitial, school, secretWord } = req.body || {};
+  if (!firstName || !lastInitial || !secretWord) {
+    return res.status(400).json({ error: 'firstName, lastInitial, and secretWord are required' });
+  }
+
+  const fn = firstName.trim().slice(0, 60);
+  const li = lastInitial.trim().toUpperCase().slice(0, 1);
+  const sc = (school || 'Independent Learner').trim().slice(0, 100) || 'Independent Learner';
+
+  try {
+    const { data: user, error: uErr } = await supabase
+      .from('users')
+      .select('id, first_name, last_initial, school, level, goal, secret_hash')
+      .eq('first_name', fn).eq('last_initial', li).eq('school', sc)
+      .maybeSingle();
+
+    if (uErr) throw uErr;
+    if (!user) return res.status(404).json({ error: 'No account found with that name and school. Check your details and try again.' });
+    if (!user.secret_hash) return res.status(401).json({ error: 'This account was created before secret words were added. Please re-register.' });
+
+    const match = await bcrypt.compare(secretWord.trim(), user.secret_hash);
+    if (!match) return res.status(401).json({ error: 'Wrong secret word. Try again.' });
+
+    // Fetch scores + words for cross-device restore
+    const { data: scores } = await supabase
+      .from('scores')
+      .select('points, streak, words_learned, words_data')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    res.json({
+      userId:       user.id,
+      firstName:    user.first_name,
+      lastInitial:  user.last_initial,
+      school:       user.school,
+      level:        user.level  || null,
+      goal:         user.goal   || null,
+      points:       scores?.points        || 0,
+      streak:       scores?.streak        || 0,
+      wordsLearned: scores?.words_learned || 0,
+      wordsData:    scores?.words_data    || null,
     });
+  } catch (err) {
+    console.error('[login] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/progress/save ───────────────────────────────────────────────────
+// Saves the full words list to DB so it can be restored on any device.
+app.post('/api/progress/save', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { userId, points, streak, wordsLearned, wordsData } = req.body || {};
+  if (!userId) return res.status(400).json({ error: 'userId required' });
+
+  try {
+    const { error } = await supabase
+      .from('scores')
+      .upsert({
+        user_id:       userId,
+        points:        Math.max(0, parseInt(points)        || 0),
+        streak:        Math.max(0, parseInt(streak)        || 0),
+        words_learned: Math.max(0, parseInt(wordsLearned)  || 0),
+        words_data:    wordsData || null,
+        updated_at:    new Date().toISOString(),
+      }, { onConflict: 'user_id' });
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[progress/save] error:', err.message);
+    res.status(500).json({ error: err.message });
   }
 });
 
@@ -1037,7 +1123,7 @@ function _rescueTextChallenge(raw) {
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v8.0', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v8.1', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {
