@@ -910,11 +910,37 @@ function _registerWithDb(firstName, lastInitial, school, secretWord) {
   .catch(function(e) { console.warn('[DB] Registration sync failed (offline?):', e); });
 }
 
-// ── Score + words sync — saves full words list for cross-device restore ────────
+// ── Progress sync — saves words + full progress_blob for teacher dashboard ─────
 function _syncProgressToDb() {
   if (!currentUser || !currentUser.userId) return;
   clearTimeout(_syncTimer);
   _syncTimer = setTimeout(function() {
+    var up = state.userProfile || {};
+    var recentMsgs = [];
+    try {
+      var msgs = JSON.parse(localStorage.getItem('kesher_messages') || '[]');
+      recentMsgs = msgs.filter(function(m){ return m.role === 'user'; })
+        .slice(-10).map(function(m){ return m.content.slice(0, 200); });
+    } catch(e) {}
+
+    var blob = {
+      level:          up.level || null,
+      goal:           up.goal  || null,
+      timeAvailable:  up.timeAvailable  || null,
+      learningStyle:  up.learningStyle  || null,
+      background:     up.background     || null,
+      myClass:        myClass || null,
+      lessonsCompleted: state.progress.lessonsCompleted || 0,
+      activityDays:   state.progress.activityDays || [],
+      quizHistory:    _safeLS('kesher_quiz_history',    []),
+      dailyHistory:   _safeLS('kesher_daily_history',   []),
+      weeklyPts:      _safeLS('kesher_weekly_pts',      {}),
+      struggles:      _safeLS('kesher_review',          []),
+      placement:      _safeLS('kesher_placement',       null),
+      recentMessages: recentMsgs,
+      syncedAt:       new Date().toISOString()
+    };
+
     fetch('/api/progress/save', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -923,10 +949,15 @@ function _syncProgressToDb() {
         points:       state.progress.points,
         streak:       state.progress.streak,
         wordsLearned: state.progress.wordsLearned.length,
-        wordsData:    state.progress.wordsLearned
+        wordsData:    state.progress.wordsLearned,
+        progressBlob: blob
       })
     }).catch(function(e) { console.warn('[DB] Progress save failed:', e); });
   }, 3000);
+}
+
+function _safeLS(key, fallback) {
+  try { return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback)); } catch(e) { return fallback; }
 }
 
 // ── Score sync — debounced, fire-and-forget ───────────────────────────────────
@@ -1112,36 +1143,355 @@ function _tdRenderOverview() {
   body.innerHTML = html;
 }
 
-function tdOpenDetail(idx) {
+// ── Rich student profile ─────────────────────────────────────────────────────
+var _tdCurrentStudentId   = null;
+var _tdCurrentStudentData = null;
+var _tdProfileTab         = 'profile';
+
+async function tdOpenDetail(idx) {
   var s = _tdSorted()[idx];
   if (!s) return;
+  _tdCurrentStudentId = s.id;
+  _tdProfileTab       = 'profile';
+
   document.getElementById('td-detail-name').textContent = s.name;
-  var goal = s.goal ? s.goal.replace(',', ', ') : '—';
-  var catCount = {}, recentWords = [];
-  (s.wordsData||[]).forEach(function(w){ var c=w.category||'other'; catCount[c]=(catCount[c]||0)+1; recentWords.push(w); });
+  document.getElementById('td-detail-body').innerHTML =
+    '<div class="td-loading">Loading student profile…</div>';
+  document.getElementById('td-detail').style.display = '';
+
+  try {
+    var r = await fetch('/api/teacher/student/' + s.id + '?teacherId=' + encodeURIComponent(_currentTeacher.id));
+    _tdCurrentStudentData = await r.json();
+    if (!r.ok) throw new Error(_tdCurrentStudentData.error || 'Failed');
+    _tdRenderProfile();
+  } catch(e) {
+    document.getElementById('td-detail-body').innerHTML =
+      '<div class="td-empty">⚠️ ' + e.message + '</div>';
+  }
+}
+
+function tdCloseDetail() {
+  document.getElementById('td-detail').style.display = 'none';
+  _tdCurrentStudentId = null; _tdCurrentStudentData = null;
+}
+
+function tdSwitchProfileTab(tab) {
+  _tdProfileTab = tab;
+  document.querySelectorAll('.td-ptab').forEach(function(b) {
+    b.classList.toggle('td-ptab-active', b.dataset.tab === tab);
+  });
+  _tdRenderProfilePane();
+}
+
+function _tdRenderProfile() {
+  var d   = _tdCurrentStudentData;
+  var s   = d.student, sc = d.scores, blob = d.progressBlob || {};
+  var tabs = ['profile','activity','quizzes','progress','notes'];
+  var labels = { profile:'👤 Profile', activity:'📅 Activity', quizzes:'🎯 Quizzes', progress:'📈 Progress', notes:'📝 Notes' };
+
+  var tabBar = '<div class="td-ptabs">' + tabs.map(function(t) {
+    return '<button class="td-ptab' + (t === _tdProfileTab ? ' td-ptab-active' : '') + '" data-tab="' + t + '" onclick="tdSwitchProfileTab(\'' + t + '\')">' + labels[t] + '</button>';
+  }).join('') + '</div>';
+
+  document.getElementById('td-detail-name').textContent = s.name + ' — ' + (_LEVEL_LABELS[s.level] || s.level);
+  document.getElementById('td-detail-body').innerHTML = tabBar + '<div id="td-profile-pane" class="td-profile-pane"></div>';
+  _tdRenderProfilePane();
+}
+
+function _tdRenderProfilePane() {
+  var pane = document.getElementById('td-profile-pane');
+  if (!pane) return;
+  var d = _tdCurrentStudentData, s = d.student, sc = d.scores, blob = d.progressBlob || {};
+  var t = _tdProfileTab;
+
+  if (t === 'profile')   pane.innerHTML = _tdPaneProfile(s, sc, blob);
+  if (t === 'activity')  pane.innerHTML = _tdPaneActivity(blob);
+  if (t === 'quizzes')   pane.innerHTML = _tdPaneQuizzes(sc, blob);
+  if (t === 'progress')  pane.innerHTML = _tdPaneProgress(sc, blob);
+  if (t === 'notes')     pane.innerHTML = _tdPaneNotes(d);
+}
+
+// ── Tab: Profile ─────────────────────────────────────────────
+function _tdPaneProfile(s, sc, blob) {
+  var goal  = blob.goal || s.goal || '—';
+  if (Array.isArray(goal)) goal = goal.join(', ');
+  else goal = goal.replace(',', ', ');
+
+  var joinedDate = s.joinedAt ? new Date(s.joinedAt).toLocaleDateString() : '—';
+  var lastActive = sc.lastActive ? _tdTimeAgo(sc.lastActive) : '—';
+  var placement  = blob.placement;
+  var mc         = blob.myClass;
+  var wordsData  = sc.wordsData || [];
+  var catCount   = {};
+  wordsData.forEach(function(w){ var c=w.category||'other'; catCount[c]=(catCount[c]||0)+1; });
   var cats = Object.entries(catCount).sort(function(a,b){ return b[1]-a[1]; });
   var maxCat = cats.length ? cats[0][1] : 1;
+
+  var totalSessions = blob.lessonsCompleted || sc.wordsLearned || 0;
+  var estMins = Math.round(totalSessions * 12);
+
   var html = '<div class="td-detail-stats">' +
-    '<div class="td-ds"><div class="td-ds-val">' + s.points + '</div><div class="td-ds-lbl">Points</div></div>' +
-    '<div class="td-ds"><div class="td-ds-val">' + s.streak + '</div><div class="td-ds-lbl">Streak</div></div>' +
-    '<div class="td-ds"><div class="td-ds-val">' + s.wordsLearned + '</div><div class="td-ds-lbl">Words</div></div>' +
-    '</div><div class="td-detail-meta">Level: <strong>' + (_LEVEL_LABELS[s.level]||s.level) + '</strong> · Goal: <strong>' + escapeHtml(goal) + '</strong> · Last active: <strong>' + _tdTimeAgo(s.lastActive) + '</strong></div>';
-  if (cats.length) {
-    html += '<div class="td-section-title">Word Categories</div>';
-    cats.forEach(function(c) {
-      html += '<div class="td-cat-bar-row"><span class="td-cat-bar-label">' + escapeHtml(c[0]) + '</span><div class="td-cat-bar-track"><div class="td-cat-bar-fill" style="width:' + Math.round(c[1]/maxCat*100) + '%"></div></div><span class="td-cat-bar-num">' + c[1] + '</span></div>';
-    });
+    '<div class="td-ds"><div class="td-ds-val">' + sc.points + '</div><div class="td-ds-lbl">Points</div></div>' +
+    '<div class="td-ds"><div class="td-ds-val">' + sc.streak + '</div><div class="td-ds-lbl">Day Streak</div></div>' +
+    '<div class="td-ds"><div class="td-ds-val">' + sc.wordsLearned + '</div><div class="td-ds-lbl">Words</div></div>' +
+    '<div class="td-ds"><div class="td-ds-val">~' + estMins + 'm</div><div class="td-ds-lbl">Est. Time</div></div>' +
+    '</div>';
+
+  html += '<div class="td-info-grid">' +
+    _tdInfoRow('Level',       _LEVEL_LABELS[s.level] || s.level) +
+    _tdInfoRow('Goal',        escapeHtml(goal)) +
+    _tdInfoRow('Joined',      joinedDate) +
+    _tdInfoRow('Last Active', lastActive) +
+    (blob.timeAvailable ? _tdInfoRow('Session Length', blob.timeAvailable) : '') +
+    (blob.learningStyle ? _tdInfoRow('Learning Style', blob.learningStyle) : '') +
+    '</div>';
+
+  if (placement) {
+    html += '<div class="td-section-title">Placement Test Result</div>' +
+      '<div class="td-placement-card">' +
+      '<span class="td-level-badge">' + (_LEVEL_LABELS[placement.level] || placement.level) + '</span>' +
+      '<span class="td-placement-date">Set ' + new Date(placement.date).toLocaleDateString() + '</span></div>';
   }
-  if (recentWords.length) {
-    html += '<div class="td-section-title">Recent Words</div><div class="td-word-chips">';
-    recentWords.slice(-12).reverse().forEach(function(w){ html += '<span class="td-word-chip" dir="rtl">' + escapeHtml(w.hebrew||w.english||'') + '</span>'; });
+
+  if (mc && (mc.textbook || mc.chapter || mc.parasha || mc.weeklyFocus || mc.school)) {
+    html += '<div class="td-section-title">My Class Info</div><div class="td-info-grid">';
+    if (mc.school)      html += _tdInfoRow('School',        escapeHtml(mc.school));
+    if (mc.grade)       html += _tdInfoRow('Grade',         escapeHtml(mc.grade));
+    if (mc.textbook)    html += _tdInfoRow('Textbook',      escapeHtml(mc.textbook));
+    if (mc.chapter)     html += _tdInfoRow('Chapter',       escapeHtml(mc.chapter));
+    if (mc.parasha)     html += _tdInfoRow('Parasha',       escapeHtml(mc.parasha));
+    if (mc.weeklyFocus) html += _tdInfoRow('Weekly Focus',  escapeHtml(mc.weeklyFocus));
+    if (mc.assignedVocab) html += _tdInfoRow('Vocab',       escapeHtml(mc.assignedVocab));
     html += '</div>';
   }
-  if (!cats.length) html += '<div class="td-empty">No word data synced yet.</div>';
-  document.getElementById('td-detail-body').innerHTML = html;
-  document.getElementById('td-detail').style.display = '';
+
+  if (cats.length) {
+    html += '<div class="td-section-title">Word Categories Learned</div>';
+    cats.forEach(function(c) {
+      html += '<div class="td-cat-bar-row"><span class="td-cat-bar-label">' + escapeHtml(c[0]) + '</span>' +
+        '<div class="td-cat-bar-track"><div class="td-cat-bar-fill" style="width:' + Math.round(c[1]/maxCat*100) + '%"></div></div>' +
+        '<span class="td-cat-bar-num">' + c[1] + '</span></div>';
+    });
+  }
+
+  if (wordsData.length) {
+    html += '<div class="td-section-title">Recently Learned Words</div><div class="td-word-chips">';
+    wordsData.slice(-14).reverse().forEach(function(w) {
+      html += '<span class="td-word-chip" dir="rtl" title="' + escapeHtml(w.english||'') + '">' + escapeHtml(w.hebrew||w.english||'') + '</span>';
+    });
+    html += '</div>';
+  }
+
+  if (blob.recentMessages && blob.recentMessages.length) {
+    html += '<div class="td-section-title">Last ' + blob.recentMessages.length + ' Questions to Morah</div><div class="td-recent-msgs">';
+    blob.recentMessages.slice().reverse().forEach(function(m, i) {
+      html += '<div class="td-recent-msg"><span class="td-msg-num">' + (blob.recentMessages.length - i) + '</span>' + escapeHtml(m.slice(0,120)) + (m.length > 120 ? '…' : '') + '</div>';
+    });
+    html += '</div>';
+  }
+
+  return html;
 }
-function tdCloseDetail() { document.getElementById('td-detail').style.display = 'none'; }
+
+function _tdInfoRow(label, value) {
+  return '<div class="td-info-row"><span class="td-info-label">' + label + '</span><span class="td-info-val">' + value + '</span></div>';
+}
+
+// ── Tab: Activity (GitHub contribution calendar) ─────────────
+function _tdPaneActivity(blob) {
+  var dailyHistory = blob.dailyHistory || [];
+  var activityDays = blob.activityDays || [];
+
+  // Build date→score map from dailyHistory
+  var dateScore = {};
+  dailyHistory.forEach(function(d) {
+    if (d.date) dateScore[d.date] = d.score || 1; // 1 = present but no score
+  });
+  // Also mark activityDays as "active" if not already in dailyHistory
+  activityDays.forEach(function(d) { if (!dateScore[d]) dateScore[d] = 1; });
+
+  var weeks = 26;
+  var today = new Date(); today.setHours(0,0,0,0);
+  // Find Sunday of 26 weeks ago
+  var start = new Date(today);
+  start.setDate(start.getDate() - (weeks * 7 - 1) - today.getDay());
+
+  var totalDone = 0, html = '<div class="td-cal-wrap">';
+  var monthPositions = [];
+
+  // Month labels row
+  var monthHtml = '<div class="td-cal-months">';
+  var prevMonth = -1, weekIdx = 0;
+  for (var w = 0; w < weeks; w++) {
+    var weekStart = new Date(start); weekStart.setDate(start.getDate() + w*7);
+    var m = weekStart.getMonth();
+    if (m !== prevMonth) { monthHtml += '<span style="grid-column:' + (w+1) + '">' + ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][m] + '</span>'; prevMonth = m; }
+  }
+  monthHtml += '</div>';
+
+  // Weeks grid
+  html += monthHtml + '<div class="td-cal-grid">';
+  for (var w2 = 0; w2 < weeks; w2++) {
+    html += '<div class="td-cal-week">';
+    for (var d2 = 0; d2 < 7; d2++) {
+      var dt = new Date(start); dt.setDate(start.getDate() + w2*7 + d2);
+      var dateStr = dt.toDateString();
+      var score = dateScore[dateStr];
+      var cls = 'td-cal-cell';
+      if (score !== undefined) {
+        totalDone++;
+        if (score >= 80) cls += ' td-cal-high';
+        else if (score >= 60) cls += ' td-cal-mid';
+        else cls += ' td-cal-done';
+      }
+      var label = dt.toLocaleDateString() + (score !== undefined ? (score > 1 ? ' — ' + score + '%' : ' — Active') : '');
+      html += '<div class="' + cls + '" title="' + label + '"></div>';
+    }
+    html += '</div>';
+  }
+  html += '</div>';
+
+  html += '<div class="td-cal-legend">Less <div class="td-cal-cell"></div><div class="td-cal-cell td-cal-done"></div><div class="td-cal-cell td-cal-mid"></div><div class="td-cal-cell td-cal-high"></div> More</div>';
+  html += '</div>';
+
+  if (!totalDone) html += '<div class="td-empty">No activity recorded yet.<br>Student needs to complete lessons and sync their progress.</div>';
+  else html += '<div class="td-cal-summary">' + totalDone + ' active day' + (totalDone !== 1 ? 's' : '') + ' in the last 6 months</div>';
+
+  // Daily history table
+  if (dailyHistory.length) {
+    html += '<div class="td-section-title">Daily Lesson History</div><table class="td-hist-table"><thead><tr><th>Date</th><th>Concept</th><th>Session</th><th>Score</th></tr></thead><tbody>';
+    dailyHistory.slice().reverse().slice(0, 30).forEach(function(d) {
+      var pct = d.score || 0;
+      var cls = pct >= 80 ? 'td-score-high' : pct >= 60 ? 'td-score-mid' : 'td-score-low';
+      html += '<tr><td>' + new Date(d.isoDate||d.date).toLocaleDateString() + '</td>' +
+        '<td>' + escapeHtml((d.title||d.conceptId||'').slice(0,40)) + '</td>' +
+        '<td style="text-align:center">' + (d.session||'?') + '/4</td>' +
+        '<td><span class="td-score-badge ' + cls + '">' + pct + '%</span></td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  return html;
+}
+
+// ── Tab: Quizzes ─────────────────────────────────────────────
+function _tdPaneQuizzes(sc, blob) {
+  var quizHistory = blob.quizHistory || [];
+  var struggles   = blob.struggles   || [];
+  var html = '';
+
+  if (!quizHistory.length) {
+    html += '<div class="td-empty">No quiz data yet.<br>Student needs to complete Quiz Mode and sync their progress.</div>';
+  } else {
+    html += '<div class="td-section-title">Quiz History (' + quizHistory.length + ' quizzes)</div>';
+    html += '<table class="td-hist-table"><thead><tr><th>Date</th><th>Topic</th><th>Score</th><th>Result</th></tr></thead><tbody>';
+    quizHistory.slice().reverse().forEach(function(q) {
+      var pct = q.pct || Math.round((q.score/q.total)*100);
+      var cls = pct >= 80 ? 'td-score-high' : pct >= 60 ? 'td-score-mid' : 'td-score-low';
+      html += '<tr><td>' + new Date(q.date).toLocaleDateString() + '</td>' +
+        '<td>' + escapeHtml((q.topic||'').replace('_',' ')) + '</td>' +
+        '<td style="text-align:center">' + q.score + '/' + q.total + '</td>' +
+        '<td><span class="td-score-badge ' + cls + '">' + pct + '%</span></td></tr>';
+    });
+    html += '</tbody></table>';
+  }
+
+  if (struggles.length) {
+    html += '<div class="td-section-title">⚠️ Struggle Areas (' + struggles.length + ' items)</div>';
+    html += '<div class="td-word-chips">';
+    struggles.slice(-20).forEach(function(w) {
+      html += '<div class="td-struggle-chip">' +
+        '<div class="td-struggle-q">' + escapeHtml((w.question||'').slice(0,60)) + '</div>' +
+        '<div class="td-struggle-a">✓ ' + escapeHtml(w.correct_answer||w.correctAnswer||'') + '</div>' +
+      '</div>';
+    });
+    html += '</div>';
+  } else if (quizHistory.length) {
+    html += '<div class="td-section-title">Struggle Areas</div><div class="td-empty">No repeated mistakes recorded — great work!</div>';
+  }
+
+  return html;
+}
+
+// ── Tab: Progress ─────────────────────────────────────────────
+function _tdPaneProgress(sc, blob) {
+  var weeklyPts = blob.weeklyPts || {};
+  var entries   = Object.entries(weeklyPts).sort().slice(-16);
+  var html      = '';
+
+  if (entries.length >= 2) {
+    var maxPts = Math.max.apply(null, entries.map(function(e){ return e[1]; })) || 1;
+    html += '<div class="td-section-title">Points Per Week</div><div class="td-week-chart">';
+    entries.forEach(function(e) {
+      var h = Math.max(4, Math.round(e[1] / maxPts * 100));
+      var weekLabel = e[0].slice(-3); // W01, W02...
+      html += '<div class="td-week-bar-col">' +
+        '<div class="td-week-bar-inner"><div class="td-week-bar" style="height:' + h + '%"><span class="td-week-val">' + e[1] + '</span></div></div>' +
+        '<div class="td-week-label">' + weekLabel + '</div></div>';
+    });
+    html += '</div>';
+
+    // Trend
+    var first = entries[0][1], last2 = entries[entries.length-1][1];
+    var trend = last2 > first ? '📈 Improving' : last2 < first ? '📉 Declining' : '→ Steady';
+    html += '<div class="td-trend-line">' + trend + ' — ' + Math.abs(last2 - first) + ' points change over ' + entries.length + ' weeks</div>';
+  } else {
+    html += '<div class="td-empty">Not enough data for a progress chart yet.<br>Student needs multiple weeks of activity.</div>';
+  }
+
+  var activityDays = blob.activityDays || [];
+  var dailyHistory = blob.dailyHistory || [];
+  var totalDays    = Math.max(activityDays.length, dailyHistory.length);
+  var lessons      = blob.lessonsCompleted || 0;
+  var estMins      = Math.round((sc.wordsLearned || 0) * 2 + totalDays * 12);
+
+  html += '<div class="td-section-title">Learning Summary</div><div class="td-info-grid">' +
+    _tdInfoRow('Active Days',   totalDays + (activityDays.length ? '' : '+')) +
+    _tdInfoRow('Lessons Completed', lessons + '') +
+    _tdInfoRow('Daily Lessons',  dailyHistory.length + ' recorded') +
+    _tdInfoRow('Estimated Time', '~' + estMins + ' minutes total') +
+    _tdInfoRow('Points',         sc.points + '') +
+    _tdInfoRow('Longest Streak', sc.streak + ' days') +
+    '</div>';
+
+  return html;
+}
+
+// ── Tab: Notes ────────────────────────────────────────────────
+function _tdPaneNotes(d) {
+  var notes    = d.teacherNotes || '';
+  var updated  = d.notesUpdatedAt ? 'Last saved: ' + new Date(d.notesUpdatedAt).toLocaleDateString() : 'Not saved yet';
+  return '<div class="td-section-title">Private Teacher Notes</div>' +
+    '<p class="td-notes-hint">Only you can see these notes. They are stored securely and never shown to the student.</p>' +
+    '<textarea id="td-notes-area" class="td-notes-area" placeholder="Add notes about this student — learning pace, parent concerns, accommodations, Bar/Bat Mitzvah date, parasha details…">' + escapeHtml(notes) + '</textarea>' +
+    '<div class="td-notes-actions">' +
+    '<button class="btn-quiz-next td-notes-save-btn" onclick="tdSaveNotes()">💾 Save Notes</button>' +
+    '<span class="td-notes-updated" id="td-notes-updated">' + updated + '</span></div>';
+}
+
+async function tdSaveNotes() {
+  var area = document.getElementById('td-notes-area');
+  var btn  = document.querySelector('.td-notes-save-btn');
+  if (!area || !_currentTeacher || !_tdCurrentStudentId) return;
+
+  var orig = btn.textContent;
+  btn.disabled = true; btn.textContent = 'Saving…';
+  try {
+    var r = await fetch('/api/teacher/notes', {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ teacherId: _currentTeacher.id, studentId: _tdCurrentStudentId, notes: area.value })
+    });
+    if (r.ok) {
+      if (_tdCurrentStudentData) { _tdCurrentStudentData.teacherNotes = area.value; _tdCurrentStudentData.notesUpdatedAt = new Date().toISOString(); }
+      var upd = document.getElementById('td-notes-updated');
+      if (upd) upd.textContent = 'Saved ' + new Date().toLocaleTimeString();
+      showToast('Notes saved.', 2000);
+    } else {
+      showToast('Save failed — try again.');
+    }
+  } catch(e) { showToast('Connection error.'); }
+  finally { btn.disabled = false; btn.textContent = orig; }
+}
 
 function teacherExportCSV() {
   if (!_tdStudents.length) { showToast('No student data to export yet.'); return; }
@@ -1617,10 +1967,32 @@ function saveProgress() {
       localStorage.setItem('kesher_messages', JSON.stringify(recent));
     }
     localStorage.setItem('kesher_curriculum', JSON.stringify(state.curriculumProgress));
+
+    // Weekly points snapshot (for teacher progress chart)
+    try {
+      var now = new Date();
+      var jan1 = new Date(now.getFullYear(), 0, 1);
+      var wk = String(Math.ceil(((now - jan1) / 86400000 + jan1.getDay() + 1) / 7)).padStart(2, '0');
+      var weekKey = now.getFullYear() + '-W' + wk;
+      var wpts = JSON.parse(localStorage.getItem('kesher_weekly_pts') || '{}');
+      wpts[weekKey] = state.progress.points;
+      var wEntries = Object.entries(wpts).sort();
+      if (wEntries.length > 52) wpts = Object.fromEntries(wEntries.slice(-52));
+      localStorage.setItem('kesher_weekly_pts', JSON.stringify(wpts));
+    } catch(e) {}
+
+    // Capture placement result on first sync
+    try {
+      if (state.userProfile && state.userProfile.level && !localStorage.getItem('kesher_placement')) {
+        localStorage.setItem('kesher_placement', JSON.stringify({
+          level: state.userProfile.level, date: new Date().toISOString()
+        }));
+      }
+    } catch(e) {}
   } catch (e) {
     console.warn('Could not save progress:', e);
   }
-  _syncProgressToDb(); // replaces _syncScoreToDb — also saves words list
+  _syncProgressToDb();
 }
 
 function checkReturningUser() {
@@ -2042,7 +2414,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v8.2</div>';
+    '<div class="mob-me-version">Kesher Ivrit v8.3</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -6223,6 +6595,13 @@ function completeDailyLesson() {
 
   if (conceptId) updateMasteryForConcept(conceptId, score, session);
 
+  // Track daily lesson history for teacher dashboard calendar
+  try {
+    var dhist = JSON.parse(localStorage.getItem('kesher_daily_history') || '[]');
+    dhist.push({ date: new Date().toDateString(), isoDate: new Date().toISOString(), conceptId: conceptId || '', title: title || '', score: score, session: session || 1 });
+    localStorage.setItem('kesher_daily_history', JSON.stringify(dhist.slice(-200)));
+  } catch(e) {}
+
   _dailyLessonActive = false;
   _dailyLessonInfo   = null;
   if (state.userProfile) delete state.userProfile.dailyLesson;
@@ -6310,7 +6689,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v8.2';
+  var CURRENT_VERSION = 'v8.3';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
@@ -6638,6 +7017,12 @@ function _qmShowResults() {
   var pts   = score * 10;
 
   state.progress.points += pts;
+  // Track quiz history for teacher dashboard
+  try {
+    var qhist = JSON.parse(localStorage.getItem('kesher_quiz_history') || '[]');
+    qhist.push({ topic: _qm.topic, score: score, total: total, pct: pct, date: new Date().toISOString() });
+    localStorage.setItem('kesher_quiz_history', JSON.stringify(qhist.slice(-50)));
+  } catch(e) {}
   saveProgress();
   _qmFlushWrong();
 

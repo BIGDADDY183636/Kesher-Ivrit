@@ -31,7 +31,21 @@ CREATE TABLE IF NOT EXISTS scores (
 );
 
 -- If the table already exists, add the column safely:
-ALTER TABLE scores ADD COLUMN IF NOT EXISTS words_data JSONB;
+ALTER TABLE scores ADD COLUMN IF NOT EXISTS words_data   JSONB;
+ALTER TABLE scores ADD COLUMN IF NOT EXISTS progress_blob JSONB; -- rich progress data for teacher dashboard
+
+-- ── TEACHER NOTES ─────────────────────────────────────────────
+CREATE TABLE IF NOT EXISTS teacher_notes (
+  id          UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  teacher_id  UUID        NOT NULL REFERENCES teachers(id) ON DELETE CASCADE,
+  student_id  UUID        NOT NULL REFERENCES users(id)    ON DELETE CASCADE,
+  notes       TEXT        NOT NULL DEFAULT '',
+  updated_at  TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (teacher_id, student_id)
+);
+ALTER TABLE teacher_notes ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_manage_teacher_notes" ON teacher_notes;
+CREATE POLICY "anon_manage_teacher_notes" ON teacher_notes FOR ALL USING (true);
 
 -- ── CLANS ────────────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS clans (

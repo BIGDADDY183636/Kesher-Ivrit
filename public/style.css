@@ -9530,3 +9530,211 @@ p, li, .mob-action-title { font-weight: 500; }
   .td-header { padding: 10px 12px; }
   .td-pane { padding: 12px; }
 }
+
+/* ── STUDENT PROFILE TABS ─────────────────────────────────── */
+.td-ptabs {
+  display: flex; overflow-x: auto; -webkit-overflow-scrolling: touch;
+  background: #fff; border-bottom: 2px solid #D0DCFF;
+  flex-shrink: 0; gap: 0; padding: 0 4px;
+  scrollbar-width: none;
+}
+.td-ptabs::-webkit-scrollbar { display: none; }
+.td-ptab {
+  flex-shrink: 0; padding: 10px 14px; border: none; background: none;
+  font-size: 0.8rem; font-weight: 700; color: var(--text-mid);
+  cursor: pointer; font-family: var(--font-eng); white-space: nowrap;
+  border-bottom: 3px solid transparent; margin-bottom: -2px;
+  transition: color 0.15s, border-color 0.15s;
+}
+.td-ptab-active { color: var(--blue-deep); border-bottom-color: var(--blue-mid); }
+.td-profile-pane {
+  flex: 1; min-height: 0; overflow-y: auto;
+  -webkit-overflow-scrolling: touch; padding: 16px;
+}
+
+/* ── INFO GRID ────────────────────────────────────────────── */
+.td-info-grid {
+  background: #fff; border-radius: 14px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,56,184,0.07); margin-bottom: 16px;
+}
+.td-info-row {
+  display: flex; align-items: baseline; gap: 10px;
+  padding: 9px 14px; border-bottom: 1px solid #EEF2FF;
+}
+.td-info-row:last-child { border-bottom: none; }
+.td-info-label {
+  font-size: 0.75rem; font-weight: 700; color: var(--text-light);
+  text-transform: uppercase; letter-spacing: 0.05em; min-width: 90px; flex-shrink: 0;
+}
+.td-info-val {
+  font-size: 0.88rem; font-weight: 600; color: var(--text-dark); flex: 1;
+}
+
+/* ── PLACEMENT CARD ───────────────────────────────────────── */
+.td-placement-card {
+  background: linear-gradient(135deg, #EEF2FF, #D0DCFF);
+  border-radius: 12px; padding: 12px 16px; margin-bottom: 16px;
+  display: flex; align-items: center; justify-content: space-between;
+  font-weight: 700; color: var(--blue-deep); font-size: 0.9rem;
+}
+.td-placement-date { font-size: 0.75rem; color: var(--text-mid); font-weight: 600; }
+
+/* ── CONTRIBUTION CALENDAR ────────────────────────────────── */
+.td-cal-wrap {
+  background: #fff; border-radius: 14px; padding: 14px 16px;
+  box-shadow: 0 2px 8px rgba(0,56,184,0.07); margin-bottom: 16px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.td-cal-months {
+  display: flex; gap: 0; margin-bottom: 4px;
+  font-size: 0.68rem; font-weight: 700; color: var(--text-light);
+  text-transform: uppercase; letter-spacing: 0.05em; padding-left: 2px;
+}
+.td-cal-months span { flex: 1; }
+.td-cal-grid {
+  display: flex; gap: 3px;
+}
+.td-cal-week { display: flex; flex-direction: column; gap: 3px; }
+.td-cal-cell {
+  width: 12px; height: 12px; border-radius: 2px;
+  background: #EEF2FF; flex-shrink: 0;
+}
+.td-cal-done { background: #93C5FD; }
+.td-cal-mid  { background: #3B82F6; }
+.td-cal-high { background: #1D4ED8; }
+.td-cal-legend {
+  display: flex; align-items: center; gap: 4px; margin-top: 8px;
+  font-size: 0.7rem; color: var(--text-light); font-weight: 600;
+}
+.td-cal-summary {
+  margin-top: 8px; font-size: 0.8rem; color: var(--text-mid); font-weight: 600;
+}
+
+/* ── HISTORY TABLE ────────────────────────────────────────── */
+.td-hist-table {
+  width: 100%; border-collapse: collapse; font-size: 0.82rem;
+  background: #fff; border-radius: 12px; overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,56,184,0.07); margin-bottom: 16px;
+}
+.td-hist-table thead tr { background: linear-gradient(135deg, #001F77, #003399); }
+.td-hist-table th {
+  padding: 9px 12px; font-size: 0.7rem; font-weight: 800;
+  color: rgba(255,255,255,0.85); text-align: left;
+  letter-spacing: 0.05em; text-transform: uppercase; white-space: nowrap;
+}
+.td-hist-table td {
+  padding: 8px 12px; border-bottom: 1px solid #EEF2FF;
+  color: var(--text-dark); vertical-align: middle;
+}
+.td-hist-table tr:last-child td { border-bottom: none; }
+.td-hist-table tr:hover td { background: #F5F8FF; }
+
+/* ── SCORE BADGES ─────────────────────────────────────────── */
+.td-score-badge {
+  display: inline-block; padding: 3px 9px; border-radius: 50px;
+  font-size: 0.75rem; font-weight: 800; letter-spacing: 0.02em;
+}
+.td-score-high { background: #DCFCE7; color: #166534; }
+.td-score-mid  { background: #FEF9C3; color: #92400E; }
+.td-score-low  { background: #FEE2E2; color: #991B1B; }
+
+/* ── WEEKLY POINTS CHART ──────────────────────────────────── */
+.td-week-chart {
+  display: flex; align-items: flex-end; gap: 6px; height: 120px;
+  background: #fff; border-radius: 14px; padding: 14px 12px 8px;
+  box-shadow: 0 2px 8px rgba(0,56,184,0.07); margin-bottom: 10px;
+  overflow-x: auto; -webkit-overflow-scrolling: touch;
+}
+.td-week-bar-col {
+  display: flex; flex-direction: column; align-items: center;
+  gap: 4px; flex: 1; min-width: 28px; height: 100%;
+}
+.td-week-bar-inner {
+  flex: 1; width: 100%; display: flex; align-items: flex-end;
+}
+.td-week-bar {
+  width: 100%; background: linear-gradient(180deg, var(--blue-mid), var(--blue-deep));
+  border-radius: 4px 4px 0 0; min-height: 4px; position: relative;
+  display: flex; align-items: flex-start; justify-content: center;
+  transition: height 0.3s ease;
+}
+.td-week-val {
+  font-size: 0.6rem; font-weight: 800; color: #fff;
+  margin-top: 3px; white-space: nowrap;
+}
+.td-week-label {
+  font-size: 0.62rem; font-weight: 700; color: var(--text-light);
+  text-align: center; white-space: nowrap; flex-shrink: 0;
+}
+.td-trend-line {
+  font-size: 0.78rem; color: var(--text-mid); font-weight: 600;
+  text-align: center; margin-bottom: 16px;
+}
+
+/* ── STRUGGLE CHIPS ───────────────────────────────────────── */
+.td-struggle-chip {
+  background: #fff; border: 1.5px solid #FCA5A5; border-radius: 10px;
+  padding: 8px 12px; margin-bottom: 8px;
+  box-shadow: 0 1px 4px rgba(220,38,38,0.08);
+}
+.td-struggle-q {
+  font-size: 0.82rem; color: var(--text-dark); font-weight: 600;
+  margin-bottom: 3px;
+}
+.td-struggle-a {
+  font-size: 0.78rem; color: #16A34A; font-weight: 700;
+}
+
+/* ── TEACHER NOTES ────────────────────────────────────────── */
+.td-notes-hint {
+  font-size: 0.78rem; color: var(--text-light); margin-bottom: 10px;
+  line-height: 1.5; font-style: italic;
+}
+.td-notes-area {
+  width: 100%; min-height: 180px; border: 1.5px solid #D0DCFF;
+  border-radius: 12px; padding: 12px 14px; font-size: 0.88rem;
+  color: var(--text-dark); font-family: var(--font-eng); line-height: 1.6;
+  resize: vertical; background: #fff; box-sizing: border-box;
+  transition: border-color 0.15s;
+}
+.td-notes-area:focus {
+  outline: none; border-color: var(--blue-mid);
+  box-shadow: 0 0 0 3px rgba(59,130,246,0.15);
+}
+.td-notes-actions {
+  display: flex; align-items: center; gap: 12px; margin-top: 10px;
+  flex-wrap: wrap;
+}
+.td-notes-save-btn {
+  padding: 9px 22px; border-radius: 10px; border: none;
+  background: var(--blue-deep); color: #fff;
+  font-size: 0.85rem; font-weight: 800; cursor: pointer;
+  font-family: var(--font-eng); transition: background 0.15s, transform 0.1s;
+}
+.td-notes-save-btn:active { transform: translateY(1px); }
+.td-notes-updated {
+  font-size: 0.78rem; color: #16A34A; font-weight: 600;
+}
+
+/* ── RECENT MESSAGES ──────────────────────────────────────── */
+.td-recent-msgs {
+  display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px;
+}
+.td-recent-msg {
+  background: #fff; border-radius: 10px; padding: 10px 14px;
+  font-size: 0.84rem; color: var(--text-dark); line-height: 1.5;
+  box-shadow: 0 1px 4px rgba(0,56,184,0.07);
+  display: flex; align-items: flex-start; gap: 10px;
+}
+.td-msg-num {
+  font-size: 0.7rem; font-weight: 800; color: var(--blue-mid);
+  background: #EEF2FF; border-radius: 50%; width: 20px; height: 20px;
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px;
+}
+
+@media (max-width: 600px) {
+  .td-profile-pane { padding: 12px; }
+  .td-ptab { padding: 9px 10px; font-size: 0.75rem; }
+  .td-cal-cell { width: 10px; height: 10px; }
+  .td-week-chart { height: 100px; }
+}

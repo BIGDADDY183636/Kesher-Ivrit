@@ -254,22 +254,30 @@ app.post('/api/login', async (req, res) => {
 // Saves the full words list to DB so it can be restored on any device.
 app.post('/api/progress/save', async (req, res) => {
   if (!dbRequired(res)) return;
-  const { userId, points, streak, wordsLearned, wordsData } = req.body || {};
+  const { userId, points, streak, wordsLearned, wordsData, progressBlob } = req.body || {};
   if (!userId) return res.status(400).json({ error: 'userId required' });
 
   try {
-    const { error } = await supabase
-      .from('scores')
-      .upsert({
-        user_id:       userId,
-        points:        Math.max(0, parseInt(points)        || 0),
-        streak:        Math.max(0, parseInt(streak)        || 0),
-        words_learned: Math.max(0, parseInt(wordsLearned)  || 0),
-        words_data:    wordsData || null,
-        updated_at:    new Date().toISOString(),
-      }, { onConflict: 'user_id' });
-
+    const row = {
+      user_id:       userId,
+      points:        Math.max(0, parseInt(points)       || 0),
+      streak:        Math.max(0, parseInt(streak)       || 0),
+      words_learned: Math.max(0, parseInt(wordsLearned) || 0),
+      words_data:    wordsData    || null,
+      progress_blob: progressBlob || null,
+      updated_at:    new Date().toISOString(),
+    };
+    const { error } = await supabase.from('scores').upsert(row, { onConflict: 'user_id' });
     if (error) throw error;
+
+    // Mirror level/goal up to the users table if provided in blob
+    if (progressBlob && (progressBlob.level || progressBlob.goal)) {
+      const patch = {};
+      if (progressBlob.level) patch.level = String(progressBlob.level).slice(0, 40);
+      if (progressBlob.goal)  patch.goal  = (Array.isArray(progressBlob.goal) ? progressBlob.goal.join(',') : String(progressBlob.goal)).slice(0, 120);
+      await supabase.from('users').update(patch).eq('id', userId);
+    }
+
     res.json({ ok: true });
   } catch (err) {
     console.error('[progress/save] error:', err.message);
@@ -449,6 +457,71 @@ app.get('/api/teacher/class', async (req, res) => {
     res.json({ students: result, school, count: result.length });
   } catch (err) {
     console.error('[teacher/class]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/teacher/student/:userId ─────────────────────────────────────────
+// Full student profile for the teacher detail view — scores, progress_blob, notes.
+app.get('/api/teacher/student/:userId', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { teacherId } = req.query;
+  const { userId }    = req.params;
+  if (!teacherId || !userId) return res.status(400).json({ error: 'teacherId and userId required' });
+
+  try {
+    const { data: student, error: sErr } = await supabase
+      .from('users').select('id, first_name, last_initial, school, level, goal, created_at')
+      .eq('id', userId).maybeSingle();
+    if (sErr) throw sErr;
+    if (!student) return res.status(404).json({ error: 'Student not found' });
+
+    const { data: teacher } = await supabase
+      .from('teachers').select('id, school').eq('id', teacherId).maybeSingle();
+    if (!teacher || teacher.school !== student.school) return res.status(403).json({ error: 'Unauthorized' });
+
+    const { data: scores } = await supabase
+      .from('scores').select('points, streak, words_learned, words_data, progress_blob, updated_at')
+      .eq('user_id', userId).maybeSingle();
+
+    const { data: notes } = await supabase
+      .from('teacher_notes').select('notes, updated_at')
+      .eq('teacher_id', teacherId).eq('student_id', userId).maybeSingle();
+
+    res.json({
+      student: {
+        id: student.id, name: `${student.first_name} ${student.last_initial}.`,
+        firstName: student.first_name, school: student.school,
+        level: student.level || 'unknown', goal: student.goal || '', joinedAt: student.created_at,
+      },
+      scores: {
+        points: scores?.points || 0, streak: scores?.streak || 0,
+        wordsLearned: scores?.words_learned || 0,
+        wordsData: scores?.words_data || [], lastActive: scores?.updated_at || null,
+      },
+      progressBlob:   scores?.progress_blob || null,
+      teacherNotes:   notes?.notes   || '',
+      notesUpdatedAt: notes?.updated_at || null,
+    });
+  } catch (err) {
+    console.error('[teacher/student]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/teacher/notes ───────────────────────────────────────────────────
+app.post('/api/teacher/notes', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { teacherId, studentId, notes } = req.body || {};
+  if (!teacherId || !studentId) return res.status(400).json({ error: 'teacherId and studentId required' });
+  try {
+    const { error } = await supabase.from('teacher_notes')
+      .upsert({ teacher_id: teacherId, student_id: studentId, notes: (notes || '').slice(0, 4000), updated_at: new Date().toISOString() },
+               { onConflict: 'teacher_id,student_id' });
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[teacher/notes]', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -1218,7 +1291,7 @@ function _rescueTextChallenge(raw) {
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v8.2', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v8.3', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {
