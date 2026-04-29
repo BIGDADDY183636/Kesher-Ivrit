@@ -980,10 +980,11 @@ function _syncScoreToDb() {
 }
 
 function _hideAllRegPanels() {
-  ['reg-panel-create','reg-panel-login','reg-panel-teacher'].forEach(function(id) {
+  ['reg-panel-choice','reg-panel-create','reg-panel-login','reg-panel-teacher'].forEach(function(id) {
     var el = document.getElementById(id); if (el) el.style.display = 'none';
   });
 }
+function showChoicePanel()  { _hideAllRegPanels(); document.getElementById('reg-panel-choice').style.display  = ''; }
 function showLoginPanel()   { _hideAllRegPanels(); document.getElementById('reg-panel-login').style.display   = ''; document.getElementById('login-firstname').focus(); }
 function showRegisterPanel(){ _hideAllRegPanels(); document.getElementById('reg-panel-create').style.display  = ''; document.getElementById('reg-firstname').focus(); }
 function showTeacherPanel() { _hideAllRegPanels(); document.getElementById('reg-panel-teacher').style.display = ''; document.getElementById('teacher-name').focus(); }
@@ -2414,7 +2415,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v8.3</div>';
+    '<div class="mob-me-version">Kesher Ivrit v8.4</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -6689,7 +6690,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v8.3';
+  var CURRENT_VERSION = 'v8.4';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })

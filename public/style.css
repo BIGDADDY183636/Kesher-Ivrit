@@ -9407,6 +9407,64 @@ p, li, .mob-action-title { font-weight: 500; }
 }
 .teacher-register-btn:hover { border-color: var(--blue-mid); color: var(--blue-deep); }
 
+/* ── ROLE CHOICE SCREEN ───────────────────────────────────── */
+.rc-body {
+  display: flex; flex-direction: column; align-items: center;
+  padding: 24px 20px 32px; gap: 0;
+}
+.rc-hero { text-align: center; margin-bottom: 32px; }
+.rc-star {
+  font-size: 2.6rem; margin-bottom: 12px; display: block;
+  filter: drop-shadow(0 2px 8px rgba(0,56,184,0.18));
+}
+.rc-title {
+  font-size: 1.9rem; font-weight: 900; color: var(--blue-deep);
+  letter-spacing: -0.02em; margin: 0 0 6px;
+}
+.rc-sub {
+  font-size: 1rem; color: var(--text-mid); font-weight: 500; margin: 0;
+}
+.rc-btn {
+  width: 100%; display: flex; align-items: center; gap: 16px;
+  padding: 18px 20px; border-radius: 18px; border: none;
+  text-align: left; cursor: pointer; font-family: var(--font-eng);
+  -webkit-tap-highlight-color: transparent;
+  transition: transform 0.13s, box-shadow 0.13s;
+  margin-bottom: 14px;
+}
+.rc-btn:active { transform: scale(0.98); }
+.rc-btn-student {
+  background: linear-gradient(135deg, #001F77 0%, #0038B8 100%);
+  box-shadow: 0 6px 24px rgba(0,56,184,0.28);
+}
+.rc-btn-teacher {
+  background: linear-gradient(135deg, #92400E 0%, #D97706 100%);
+  box-shadow: 0 6px 24px rgba(146,64,14,0.25);
+}
+.rc-btn-icon {
+  font-size: 2.2rem; flex-shrink: 0; line-height: 1;
+  filter: drop-shadow(0 1px 4px rgba(0,0,0,0.18));
+}
+.rc-btn-text {
+  display: flex; flex-direction: column; gap: 3px; flex: 1;
+}
+.rc-btn-label {
+  font-size: 1.15rem; font-weight: 800; color: #fff; line-height: 1;
+  letter-spacing: -0.01em;
+}
+.rc-btn-hint {
+  font-size: 0.78rem; font-weight: 500; color: rgba(255,255,255,0.72); line-height: 1;
+}
+.rc-btn-arrow {
+  font-size: 1.8rem; color: rgba(255,255,255,0.5); font-weight: 300;
+  flex-shrink: 0; margin-right: 2px;
+}
+.reg-back-btn { color: var(--text-light) !important; font-size: 0.82rem !important; }
+.reg-back-btn:hover { color: var(--blue-deep) !important; }
+
+[data-theme="dark"] .rc-title { color: #A8CFFF; }
+[data-theme="dark"] .rc-sub   { color: #6878A0; }
+
 .td-overlay {
   position: fixed; inset: 0; z-index: 8000;
   background: #F0F4FF;

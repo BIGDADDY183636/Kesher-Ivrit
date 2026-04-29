@@ -195,8 +195,39 @@
     <div class="flag-stripe top"></div>
     <div class="quiz-container reg-card">
 
+      <!-- ══ PANEL 0: ROLE CHOICE ══ -->
+      <div id="reg-panel-choice">
+        <div class="quiz-header">
+          <div class="quiz-logo">קשר עברית</div>
+          <div class="reg-header-sub">Hebrew Learning</div>
+        </div>
+        <div class="reg-body rc-body">
+          <div class="rc-hero">
+            <div class="rc-star">✡</div>
+            <h2 class="rc-title">Welcome!</h2>
+            <p class="rc-sub">Who are you today?</p>
+          </div>
+          <button class="rc-btn rc-btn-student" onclick="showRegisterPanel()">
+            <span class="rc-btn-icon">📚</span>
+            <div class="rc-btn-text">
+              <span class="rc-btn-label">I'm a Student</span>
+              <span class="rc-btn-hint">Learn Hebrew &amp; track your progress</span>
+            </div>
+            <span class="rc-btn-arrow">›</span>
+          </button>
+          <button class="rc-btn rc-btn-teacher" onclick="showTeacherPanel()">
+            <span class="rc-btn-icon">👩‍🏫</span>
+            <div class="rc-btn-text">
+              <span class="rc-btn-label">I'm a Teacher</span>
+              <span class="rc-btn-hint">View your class dashboard</span>
+            </div>
+            <span class="rc-btn-arrow">›</span>
+          </button>
+        </div>
+      </div>
+
       <!-- ══ PANEL A: CREATE ACCOUNT ══ -->
-      <div id="reg-panel-create">
+      <div id="reg-panel-create" style="display:none;">
         <div class="quiz-header">
           <div class="quiz-logo">קשר עברית</div>
           <div class="reg-header-sub">Create Your Account</div>
@@ -253,8 +284,8 @@
           <button class="reg-switch-btn" onclick="showLoginPanel()">
             Returning user? <strong>Log back in →</strong>
           </button>
-          <button class="reg-switch-btn reg-teacher-btn" onclick="showTeacherPanel()">
-            🏫 I'm a teacher — <strong>Teacher Dashboard →</strong>
+          <button class="reg-switch-btn reg-back-btn" onclick="showChoicePanel()">
+            ← Back
           </button>
         </div>
       </div>
@@ -310,6 +341,9 @@
           <button class="reg-switch-btn" onclick="showRegisterPanel()">
             ← New user? Create an account
           </button>
+          <button class="reg-switch-btn reg-back-btn" onclick="showChoicePanel()">
+            ← Back to start
+          </button>
         </div>
       </div>
 
@@ -353,8 +387,8 @@
             <button class="btn-quiz-next reg-submit teacher-login-btn" id="teacher-login-btn" onclick="submitTeacher('login')">Log In →</button>
             <button class="teacher-register-btn" id="teacher-reg-btn" onclick="submitTeacher('register')">Create Account</button>
           </div>
-          <button class="reg-switch-btn" onclick="showRegisterPanel()">
-            ← Back to student registration
+          <button class="reg-switch-btn reg-back-btn" onclick="showChoicePanel()">
+            ← Back
           </button>
         </div>
       </div>
