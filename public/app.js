@@ -1699,20 +1699,30 @@ function renderMobileProfile() {
     '<button class="mob-progress-btn" onclick="showProgressScreen()">📊 My Progress</button>' +
     '<button class="mob-lb-open-btn" onclick="showLeaderboardScreen()">🏆 Leaderboard</button>' +
     '<button class="share-kesher-btn" onclick="shareKesherIvrit(\'me\')">🇮🇱 Share Kesher Ivrit with Friends</button>' +
-    (function() {
-      var dark = document.documentElement.getAttribute('data-theme') === 'dark';
-      return '<button class="dm-toggle-btn" onclick="toggleDarkMode()">' +
-        '<span class="dm-toggle-icon">' + (dark ? '☀️' : '🌙') + '</span>' +
-        '<span class="dm-toggle-text">' +
-          '<span class="dm-toggle-title">Dark Mode</span>' +
-          '<span class="dm-toggle-sub">' + (dark ? 'On — tap to switch to light' : 'Off — tap to switch to dark') + '</span>' +
-        '</span>' +
-        '<span class="dm-toggle-pill' + (dark ? ' dm-on' : '') + '">' +
-          '<span class="dm-toggle-knob"></span>' +
-        '</span>' +
-      '</button>';
-    })() +
-    '<div class="mob-me-version">Kesher Ivrit v7.5</div>';
+    '<div class="mob-action-list">' +
+      '<button class="mob-action-btn" onclick="showNotebook()">' +
+        '<span class="mob-action-icon">📓</span>' +
+        '<div><div class="mob-action-title">My Notebook</div><div class="mob-action-sub">' + state.progress.wordsLearned.length + ' words collected</div></div>' +
+      '</button>' +
+      '<button class="mob-action-btn" onclick="goHome();switchTab(' + "'learn'" + ')">' +
+        '<span class="mob-action-icon">🏠</span>' +
+        '<div><div class="mob-action-title">Home</div><div class="mob-action-sub">Return to the home screen</div></div>' +
+      '</button>' +
+      (function() {
+        var dark = document.documentElement.getAttribute('data-theme') === 'dark';
+        return '<button class="dm-toggle-btn" onclick="toggleDarkMode()">' +
+          '<span class="dm-toggle-icon">' + (dark ? '☀️' : '🌙') + '</span>' +
+          '<span class="dm-toggle-text">' +
+            '<span class="dm-toggle-title">Dark Mode</span>' +
+            '<span class="dm-toggle-sub">' + (dark ? 'On — tap to switch to light' : 'Off — tap to switch to dark') + '</span>' +
+          '</span>' +
+          '<span class="dm-toggle-pill' + (dark ? ' dm-on' : '') + '">' +
+            '<span class="dm-toggle-knob"></span>' +
+          '</span>' +
+        '</button>';
+      })() +
+    '</div>' +
+    '<div class="mob-me-version">Kesher Ivrit v7.6</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -5980,7 +5990,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v7.5';
+  var CURRENT_VERSION = 'v7.6';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
