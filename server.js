@@ -834,7 +834,7 @@ You are the student's go-to person for anything Jewish. Make them feel like they
   const curriculum  = curriculumMap[userProfile.curriculum] || 'a mixed approach';
   const timeAvail   = userProfile.timeAvailable || '10-15 minutes';
 
-  const isAboveElementary = (userProfile.level === 'intermediate' || userProfile.level === 'advanced' || userProfile.level === 'basic');
+  const isAboveElementary = (userProfile.level === 'intermediate' || userProfile.level === 'advanced');
 
   return `${CHALLENGE_RULE}
 You are Morah (מורה), warm and brilliant Hebrew teacher at Kesher Ivrit. Your vibe: cool older Israeli sister — casual, funny, real, proudly Zionist. Never stiff.
