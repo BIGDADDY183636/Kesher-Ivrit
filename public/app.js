@@ -1047,7 +1047,7 @@ async function _tdLoadClass() {
   document.getElementById('td-loading').style.display      = '';
   document.getElementById('td-student-list').style.display = 'none';
   try {
-    var r = await fetch('/api/teacher/class?school=' + encodeURIComponent(_currentTeacher.school) + '&teacherId=' + encodeURIComponent(_currentTeacher.id));
+    var r = await fetch('/api/teacher/class?teacherId=' + encodeURIComponent(_currentTeacher.id));
     var data = await r.json();
     if (!r.ok) { document.getElementById('td-loading').textContent = 'Error: ' + (data.error || 'Failed to load'); return; }
     _tdStudents = data.students || [];
@@ -2415,7 +2415,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v8.4</div>';
+    '<div class="mob-me-version">Kesher Ivrit v8.5</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -6690,7 +6690,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v8.4';
+  var CURRENT_VERSION = 'v8.5';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })

@@ -416,17 +416,20 @@ app.post('/api/teacher/login', async (req, res) => {
 });
 
 // ── GET /api/teacher/class ────────────────────────────────────────────────────
-// Returns all students from the teacher's school with scores + word data.
+// Returns students from the teacher's school only.
+// School is always derived from the teacher's DB record — never trusted from client.
 app.get('/api/teacher/class', async (req, res) => {
   if (!dbRequired(res)) return;
-  const { school, teacherId } = req.query;
-  if (!school || !teacherId) return res.status(400).json({ error: 'school and teacherId required' });
+  const { teacherId } = req.query;
+  if (!teacherId) return res.status(400).json({ error: 'teacherId required' });
 
   try {
-    // Verify teacher exists and owns this school
+    // Derive school from DB — client-sent school param is intentionally ignored
     const { data: teacher } = await supabase
-      .from('teachers').select('id').eq('id', teacherId).eq('school', school).maybeSingle();
+      .from('teachers').select('id, school').eq('id', teacherId).maybeSingle();
     if (!teacher) return res.status(403).json({ error: 'Unauthorized' });
+
+    const school = teacher.school;
 
     const { data: students, error } = await supabase
       .from('users')
@@ -515,6 +518,15 @@ app.post('/api/teacher/notes', async (req, res) => {
   const { teacherId, studentId, notes } = req.body || {};
   if (!teacherId || !studentId) return res.status(400).json({ error: 'teacherId and studentId required' });
   try {
+    // Verify teacher and student are at the same school before allowing write
+    const [{ data: teacher }, { data: student }] = await Promise.all([
+      supabase.from('teachers').select('school').eq('id', teacherId).maybeSingle(),
+      supabase.from('users').select('school').eq('id', studentId).maybeSingle(),
+    ]);
+    if (!teacher || !student || teacher.school !== student.school) {
+      return res.status(403).json({ error: 'Unauthorized' });
+    }
+
     const { error } = await supabase.from('teacher_notes')
       .upsert({ teacher_id: teacherId, student_id: studentId, notes: (notes || '').slice(0, 4000), updated_at: new Date().toISOString() },
                { onConflict: 'teacher_id,student_id' });
@@ -1291,7 +1303,7 @@ function _rescueTextChallenge(raw) {
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v8.4', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v8.5', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {
