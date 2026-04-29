@@ -520,9 +520,11 @@ body {
 ═══════════════════════════════════ */
 #screen-quiz {
   background: linear-gradient(160deg, var(--blue-bg) 0%, #D6E8FF 100%);
-  align-items: center;
+  align-items: flex-start;
   justify-content: center;
   padding: 20px;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .quiz-container {
@@ -9152,3 +9154,173 @@ p, li, .mob-action-title { font-weight: 500; }
   .bm-book-portions { padding: 10px 12px 14px; gap: 6px; }
   .bm-pars-btn { padding: 7px 13px; font-size: 0.78rem; }
 }
+
+/* ╔═══════════════════════════════════════════════════════════╗
+   ║  v7.3 — SCROLL FIXES & CURRICULUM PANEL                   ║
+   ║  Every panel, overlay, and screen must be scrollable       ║
+   ╚═══════════════════════════════════════════════════════════╝ */
+
+/* ── Global: all screens scroll on body axis ────────────────── */
+/* Registration and home screens can have tall content on small phones */
+#screen-register {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  align-items: flex-start;
+  justify-content: center;
+}
+#screen-register .reg-bg { min-height: 100%; }
+
+#screen-home {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
+
+/* Placement test: center until content is taller than viewport, then scroll */
+@media (max-height: 700px) {
+  #screen-quiz { align-items: flex-start; padding-top: 12px; }
+}
+
+/* ── Me tab panel: already has mob-me-body with overflow-y:auto ─
+   Ensure the panel wrapper doesn't clip it on all screen sizes  */
+.mob-panel { overflow: hidden; } /* keeps rounded corners, children handle scroll */
+
+/* ── My Class bottom sheet: already 94vh + overflow-y:auto ─────
+   Extra safety: ensure it doesn't overflow on 390px            */
+@media (max-width: 480px) {
+  .mc-sheet { max-height: 96vh; }
+  .mc-body  { padding: 14px 14px 28px; }
+}
+
+/* ── Quiz Mode overlays ─────────────────────────────────────── */
+/* Topic-select pane: grid must fill remaining height and scroll */
+#qm-topic-select { flex-direction: column; overflow: hidden; }
+.qm-topic-grid   { flex: 1; min-height: 0; overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* Results pane: ensure share + actions always reachable */
+.qm-results-pane { overflow-y: auto; -webkit-overflow-scrolling: touch; min-height: 0; }
+.qm-res-wrap     { padding-bottom: 60px; } /* extra bottom room on small screens */
+
+/* ── Progress screen ────────────────────────────────────────── */
+.progress-screen  { overflow: hidden; }
+.prog-body        { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── Leaderboard screen ─────────────────────────────────────── */
+.lb-screen        { overflow: hidden; }
+.lb-body          { overflow-y: auto; -webkit-overflow-scrolling: touch; }
+
+/* ── Parasha selector: already overflow-y:auto on overlay  ──── */
+/* Safety: ensure it doesn't clip on 390px */
+@media (max-width: 430px) {
+  .bm-po-scroll { padding: 20px 10px 50px; }
+  .bm-po-question { font-size: 1.6rem; }
+}
+
+/* ── Daily lesson card on home: never clip ──────────────────── */
+.home-container   { overflow: visible; }
+.returning-card, .daily-lesson-card { overflow: visible; }
+
+/* ── 390px safety sweep ─────────────────────────────────────── */
+@media (max-width: 400px) {
+  /* Placement test card: allow full width at 390px */
+  #screen-quiz { padding: 12px; }
+  .quiz-container { border-radius: 20px; }
+
+  /* Registration card: tighter padding */
+  .reg-body { padding: 20px 16px 20px; }
+  .quiz-header { padding: 16px 16px; }
+
+  /* Me tab: smaller gaps */
+  .mob-me-body { padding: 12px; gap: 10px; }
+  .mob-me-hero { padding: 18px 14px; }
+  .mob-stat    { font-size: 1.1rem; }
+
+  /* Share button fits 390px */
+  .share-kesher-btn { padding: 14px; font-size: 0.95rem; }
+
+  /* Quiz mode at 390px */
+  .qm-ts-title { font-size: 1.2rem; }
+  .qm-mc-grid  { gap: 8px; }
+  .qm-mc-btn   { padding: 12px 6px; font-size: 0.82rem; }
+  .qm-res-stats { gap: 8px; }
+  .qm-rs-val   { font-size: 1.2rem; }
+
+  /* Streak/celebration modal */
+  .modal-streak-box { padding: 28px 18px; }
+  .btn-share-celebration { padding: 13px; font-size: 0.9rem; }
+}
+
+/* ╔═══════════════════════════════════════════════════════════╗
+   ║  CURRICULUM / LESSON PATH PANEL                            ║
+   ║  Was missing CSS entirely — panel had no layout styling    ║
+   ╚═══════════════════════════════════════════════════════════╝ */
+.curriculum-panel {
+  position: fixed;
+  inset: 0;
+  z-index: 3000;
+  background: var(--blue-bg);
+  flex-direction: column;
+  overflow: hidden;
+}
+.curriculum-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2999;
+  background: rgba(0, 13, 68, 0.55);
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+.curriculum-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 20px 20px 14px;
+  background: var(--white);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  box-shadow: 0 2px 12px rgba(0,56,184,0.07);
+}
+.curriculum-title-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+.curriculum-icon { font-size: 1.8rem; line-height: 1; flex-shrink: 0; }
+.curriculum-name {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: var(--text-dark);
+  line-height: 1.2;
+}
+.curriculum-sub {
+  font-size: 0.73rem;
+  color: var(--text-light);
+  margin-top: 2px;
+}
+.curriculum-close {
+  width: 36px; height: 36px;
+  background: var(--border);
+  border: none;
+  border-radius: 50%;
+  font-size: 1rem;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--text-mid);
+  flex-shrink: 0;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.curriculum-close:hover { background: #C0C8D8; }
+.curriculum-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 16px 16px 32px;
+}
+
+/* Dark mode for curriculum panel */
+[data-theme="dark"] .curriculum-header { background: #12121A !important; border-color: #2A2A40 !important; }
+[data-theme="dark"] .curriculum-name   { color: #F9FAFB !important; }
+[data-theme="dark"] .curriculum-sub    { color: #6878A0 !important; }
+[data-theme="dark"] .curriculum-close  { background: #1A1A2E !important; color: #A8B4D0 !important; }
+[data-theme="dark"] .curriculum-panel  { background: #0A0A0F !important; }

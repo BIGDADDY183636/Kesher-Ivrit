@@ -1744,10 +1744,6 @@ function renderMobileProfile() {
         '<span class="mob-action-icon">🏠</span>' +
         '<div><div class="mob-action-title">Home</div><div class="mob-action-sub">Return to the home screen</div></div>' +
       '</button>' +
-      '<button class="mob-action-btn" onclick="newLesson();switchTab(' + "'learn'" + ')">' +
-        '<span class="mob-action-icon">↺</span>' +
-        '<div><div class="mob-action-title">Restart Lesson</div><div class="mob-action-sub">Start a fresh conversation with Morah</div></div>' +
-      '</button>' +
       (function() {
         var dark = document.documentElement.getAttribute('data-theme') === 'dark';
         return '<button class="dm-toggle-btn" onclick="toggleDarkMode()">' +
@@ -1762,7 +1758,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v7.2</div>';
+    '<div class="mob-me-version">Kesher Ivrit v7.3</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -6030,7 +6026,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v7.2';
+  var CURRENT_VERSION = 'v7.3';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
