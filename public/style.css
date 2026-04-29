@@ -33,57 +33,24 @@ html { font-size: 16px; }
 
 body {
   font-family: var(--font-eng);
+  background: var(--blue-bg);
   color: var(--text-dark);
-  overflow: hidden;
-  /* Center the app column on desktop */
-  display: flex;
-  justify-content: center;
-  align-items: stretch;
-  height: 100vh;
-  height: 100dvh;
-  /* Desktop background — the "wall" behind the phone column */
-  background: #060917;
-  background-image:
-    radial-gradient(ellipse at 22% 50%, rgba(0,56,184,0.22) 0%, transparent 52%),
-    radial-gradient(ellipse at 78% 50%, rgba(27,94,224,0.14) 0%, transparent 52%),
-    radial-gradient(circle, rgba(255,255,255,0.055) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 34px 34px;
+  min-height: 100vh;
+  overflow-x: hidden;
 }
-[data-theme="dark"] body {
-  background: #020407;
-  background-image:
-    radial-gradient(ellipse at 22% 50%, rgba(0,20,80,0.55) 0%, transparent 52%),
-    radial-gradient(ellipse at 78% 50%, rgba(0,10,50,0.4) 0%, transparent 52%),
-    radial-gradient(circle, rgba(255,255,255,0.025) 1px, transparent 1px);
-  background-size: 100% 100%, 100% 100%, 34px 34px;
-}
+[data-theme="dark"] body { background: #0A0A0F; }
 
-/* ── App root — the centered phone column ── */
+/* ── App root — full-width container ── */
 #app-root {
   width: 100%;
-  max-width: 430px;
   height: 100vh;
   height: 100dvh;
   overflow: hidden;
   position: relative;
-  flex-shrink: 0;
-  background: var(--blue-bg);
-  /*
-   * Critical: a non-none transform makes this the containing block for ALL
-   * position:fixed descendants — so every overlay (teacher dashboard, modals,
-   * placement test, etc.) fills exactly this 430px column, not the full viewport.
-   */
-  transform: translateZ(0);
-  /* Premium shadow visible on desktop, invisible on mobile (phone fills screen) */
-  box-shadow:
-    0 0 0 1px rgba(255,255,255,0.07),
-    0 20px 80px rgba(0,0,0,0.65),
-    0 0 120px rgba(0,30,120,0.3);
 }
-[data-theme="dark"] #app-root { background: #0A0A0F; }
 
 /* ═══ SCREENS ═══ */
-.screen { display: none; width: 100%; height: 100vh; height: 100dvh; }
+.screen { display: none; min-height: 100vh; }
 .screen.active { display: flex; flex-direction: column; }
 
 /* ═══════════════════════════════════
@@ -9954,71 +9921,274 @@ p, li, .mob-action-title { font-weight: 500; }
 [data-theme="dark"] .td-word-chip     { background: #12121F; border-color: #2A2A40; color: #7EB3FF; }
 
 /* ══════════════════════════════════════════════════════════════════════════
-   ALWAYS-MOBILE LAYOUT — forces the phone UI on every screen size.
-   These rules come last so they override any earlier desktop-specific styles.
-   On desktop the body centers #app-root (max 430px); on mobile it fills 100%.
+   MOBILE LAYOUT  ≤768px
    ══════════════════════════════════════════════════════════════════════════ */
+@media (max-width: 768px) {
+  .sidebar         { display: none !important; }
+  .sidebar-logo    { display: none !important; }
+  .student-card    { display: none !important; }
+  .sidebar-section { display: none !important; }
+  .sidebar-actions { display: none !important; }
 
-/* Sidebar — permanently hidden; bottom nav is the only navigation */
-.sidebar         { display: none !important; }
-.sidebar-logo    { display: none !important; }
-.student-card    { display: none !important; }
-.sidebar-section { display: none !important; }
-.sidebar-actions { display: none !important; }
+  #screen-lesson    { flex-direction: column !important; }
+  .lesson-layout    { flex-direction: column !important; }
+  .lesson-user-badge { display: none !important; }
+  .chat-header-actions .btn-lesson-path-header { display: none !important; }
 
-/* Lesson screen always stacks vertically */
-#screen-lesson           { flex-direction: column !important; }
-.lesson-layout           { flex-direction: column !important; }
-.lesson-user-badge       { display: none !important; }
-.chat-header-actions .btn-lesson-path-header { display: none !important; }
+  #dt-left, #dt-right { display: none !important; }
 
-/* Bottom nav — always visible */
-.bottom-nav {
-  display: flex !important;
-  height: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
-  padding-bottom: env(safe-area-inset-bottom, 0px) !important;
-}
-
-/* Lesson layout fills screen above the nav */
-#screen-lesson .lesson-layout {
-  height: calc(100dvh - 68px - env(safe-area-inset-bottom, 0px)) !important;
-}
-
-/* Tab panel switching — always works */
-#screen-lesson.mob-tab-path .lesson-layout,
-#screen-lesson.mob-tab-games .lesson-layout,
-#screen-lesson.mob-tab-me .lesson-layout { display: none !important; }
-
-#screen-lesson.mob-tab-path #mob-path  { display: flex !important; }
-#screen-lesson.mob-tab-me   #mob-me    { display: flex !important; }
-
-/* Panels sit above the nav bar, safe-area aware */
-.mob-panel {
-  bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
-  overflow: hidden !important;
-}
-#mob-games {
-  bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
-}
-
-/* PWA install banner above nav */
-.pwa-banner {
-  bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
-}
-
-/* Chat area */
-.chat-messages  { padding-bottom: 16px !important; }
-.chat-input-area { padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; }
-
-/* On desktop the app column looks like a premium phone — subtle rounded frame */
-@media (min-width: 431px) {
-  #app-root {
-    border-radius: 28px;
-    overflow: hidden;
+  .bottom-nav {
+    display: flex !important;
+    height: calc(68px + env(safe-area-inset-bottom, 0px)) !important;
+    padding-bottom: env(safe-area-inset-bottom, 0px) !important;
   }
-  /* Screens must fill the rounded column */
-  .screen,
-  #screen-home,
-  #screen-register,
-  #screen-quiz { border-radius: inherit; }
+
+  #screen-lesson .lesson-layout {
+    height: calc(100dvh - 68px - env(safe-area-inset-bottom, 0px)) !important;
+  }
+
+  #screen-lesson.mob-tab-path .lesson-layout,
+  #screen-lesson.mob-tab-games .lesson-layout,
+  #screen-lesson.mob-tab-me .lesson-layout { display: none !important; }
+
+  #screen-lesson.mob-tab-path #mob-path { display: flex !important; }
+  #screen-lesson.mob-tab-me   #mob-me   { display: flex !important; }
+
+  .mob-panel  { bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important; overflow: hidden !important; }
+  #mob-games  { bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important; }
+  .pwa-banner { bottom: calc(68px + env(safe-area-inset-bottom, 0px)) !important; }
+
+  .chat-messages   { padding-bottom: 16px !important; }
+  .chat-input-area { padding-bottom: max(8px, env(safe-area-inset-bottom, 0px)) !important; }
 }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   DESKTOP LAYOUT  ≥769px  — full 3-column Duolingo-style
+   ══════════════════════════════════════════════════════════════════════════ */
+@media (min-width: 769px) {
+  /* Screens fill full height */
+  .screen { min-height: 100vh; }
+  #screen-lesson { flex-direction: row !important; height: 100vh; height: 100dvh; overflow: hidden; }
+
+  /* Bottom nav hidden on desktop */
+  .bottom-nav { display: none !important; }
+
+  /* Old lesson sidebar always hidden — replaced by #dt-left */
+  .sidebar { display: none !important; }
+
+  /* Mobile panels: fill center area (position:fixed, covers content columns) */
+  .mob-panel { left: 240px !important; bottom: 0 !important; }
+  #mob-games { left: 240px !important; bottom: 0 !important; }
+
+  /* Lesson layout fills all space between the two sidebars */
+  .lesson-layout { flex: 1 !important; min-width: 0; height: 100vh !important; height: 100dvh !important; }
+  #screen-lesson .lesson-layout { height: 100vh !important; height: 100dvh !important; }
+
+  /* On desktop, tab switching keeps lesson layout visible */
+  #screen-lesson.mob-tab-path .lesson-layout,
+  #screen-lesson.mob-tab-games .lesson-layout,
+  #screen-lesson.mob-tab-me .lesson-layout { display: flex !important; }
+
+  /* Chat area — bigger, more breathing room */
+  .chat-messages { font-size: 1rem; padding: 28px 32px !important; padding-bottom: 28px !important; }
+  .chat-input-area { padding: 16px 28px !important; }
+  .msg-bubble { font-size: 1rem; line-height: 1.75; }
+
+  /* Desktop left sidebar */
+  #dt-left {
+    display: flex !important;
+    flex-direction: column;
+    width: 240px;
+    flex-shrink: 0;
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: linear-gradient(180deg, #001F77 0%, #002B9E 50%, #003399 100%);
+    border-right: 1px solid rgba(255,255,255,0.08);
+    scrollbar-width: none;
+  }
+  #dt-left::-webkit-scrollbar { display: none; }
+  [data-theme="dark"] #dt-left { background: linear-gradient(180deg, #08082A 0%, #0A0A30 100%); }
+
+  /* Desktop right sidebar */
+  #dt-right {
+    display: flex !important;
+    flex-direction: column;
+    width: 300px;
+    flex-shrink: 0;
+    height: 100vh;
+    height: 100dvh;
+    overflow-y: auto;
+    overflow-x: hidden;
+    background: #F4F7FF;
+    border-left: 1px solid #D0DCFF;
+    scrollbar-width: thin;
+    scrollbar-color: #D0DCFF transparent;
+  }
+  [data-theme="dark"] #dt-right { background: #0D0D1A; border-color: #2A2A40; }
+}
+
+/* ── Desktop left sidebar elements ──────────────────────────────────────── */
+.dt-logo {
+  padding: 24px 20px 20px;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+  flex-shrink: 0;
+}
+.dt-logo-heb {
+  font-family: var(--font-heb);
+  font-size: 1.5rem;
+  font-weight: 900;
+  color: #fff;
+  letter-spacing: 0.04em;
+  line-height: 1;
+}
+.dt-logo-eng {
+  font-size: 0.72rem;
+  color: rgba(255,255,255,0.55);
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  margin-top: 3px;
+}
+
+.dt-nav { display: flex; flex-direction: column; gap: 4px; padding: 16px 12px; flex-shrink: 0; }
+.dt-nav-btn {
+  display: flex; align-items: center; gap: 12px;
+  padding: 11px 14px; border-radius: 12px; border: none;
+  background: transparent; color: rgba(255,255,255,0.65);
+  font-size: 0.92rem; font-weight: 700; cursor: pointer;
+  font-family: var(--font-eng); text-align: left; width: 100%;
+  transition: background 0.15s, color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.dt-nav-btn:hover { background: rgba(255,255,255,0.1); color: #fff; }
+.dt-nav-btn.dt-nav-active { background: rgba(255,255,255,0.18); color: #fff; }
+.dt-nav-icon { font-size: 1.2rem; width: 24px; text-align: center; flex-shrink: 0; }
+.dt-nav-label { font-size: 0.9rem; font-weight: 700; }
+
+.dt-divider { height: 1px; background: rgba(255,255,255,0.1); margin: 8px 16px; flex-shrink: 0; }
+
+.dt-section-label {
+  font-size: 0.64rem; font-weight: 800; color: rgba(255,255,255,0.4);
+  text-transform: uppercase; letter-spacing: 0.1em;
+  padding: 12px 20px 6px; flex-shrink: 0;
+}
+
+.dt-user-card {
+  padding: 16px 20px 12px; text-align: center; flex-shrink: 0;
+}
+.dt-user-avatar { font-size: 2.2rem; margin-bottom: 6px; }
+.dt-user-name  { font-size: 0.92rem; font-weight: 800; color: #fff; line-height: 1.2; }
+.dt-user-level { font-size: 0.72rem; color: rgba(255,255,255,0.5); margin-top: 3px; }
+
+.dt-stats-grid {
+  display: grid; grid-template-columns: repeat(3,1fr);
+  gap: 8px; padding: 8px 14px 16px; flex-shrink: 0;
+}
+.dt-stat {
+  background: rgba(255,255,255,0.1); border-radius: 10px;
+  padding: 10px 6px; text-align: center;
+}
+.dt-stat-val { font-size: 1.3rem; font-weight: 900; color: #fff; line-height: 1; }
+.dt-stat-lbl { font-size: 0.6rem; color: rgba(255,255,255,0.55); text-transform: uppercase; letter-spacing: 0.06em; margin-top: 3px; }
+
+.dt-my-class { padding: 0 14px 16px; flex-shrink: 0; }
+.dt-mc-row {
+  display: flex; align-items: center; gap: 8px;
+  font-size: 0.8rem; color: rgba(255,255,255,0.65); font-weight: 600;
+  padding: 5px 0; border-bottom: 1px solid rgba(255,255,255,0.06);
+}
+.dt-mc-row:last-child { border-bottom: none; }
+
+.dt-sidebar-footer {
+  margin-top: auto; padding: 16px 14px;
+  border-top: 1px solid rgba(255,255,255,0.1); flex-shrink: 0;
+}
+.dt-dark-toggle {
+  display: flex; align-items: center; gap: 8px;
+  width: 100%; padding: 9px 14px; border-radius: 10px;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.07); color: rgba(255,255,255,0.7);
+  font-size: 0.82rem; font-weight: 700; cursor: pointer;
+  font-family: var(--font-eng); transition: all 0.15s;
+}
+.dt-dark-toggle:hover { background: rgba(255,255,255,0.14); color: #fff; }
+
+/* ── Desktop right sidebar elements ─────────────────────────────────────── */
+.dt-right-section {
+  padding: 20px 20px 0; flex-shrink: 0;
+}
+.dt-right-section:last-child { padding-bottom: 20px; }
+.dt-right-title {
+  font-size: 0.72rem; font-weight: 800; color: var(--text-light);
+  text-transform: uppercase; letter-spacing: 0.08em; margin-bottom: 12px;
+}
+[data-theme="dark"] .dt-right-title { color: #4A5480; }
+
+.dt-daily-card {
+  background: linear-gradient(135deg, #001F77, #0038B8);
+  border-radius: 14px; padding: 16px; color: #fff;
+}
+.dt-daily-session-dots { display: flex; gap: 5px; margin-bottom: 10px; }
+.dt-daily-dot { width: 8px; height: 8px; border-radius: 50%; background: rgba(255,255,255,0.3); }
+.dt-daily-dot.done { background: #4ADE80; }
+.dt-daily-dot.cur  { background: #fff; }
+.dt-daily-concept { font-size: 1rem; font-weight: 800; margin-bottom: 4px; }
+.dt-daily-sub { font-size: 0.78rem; color: rgba(255,255,255,0.65); margin-bottom: 14px; }
+.dt-daily-btn {
+  display: block; width: 100%; padding: 10px;
+  background: rgba(255,255,255,0.2); border: 1.5px solid rgba(255,255,255,0.4);
+  border-radius: 10px; color: #fff; font-size: 0.88rem; font-weight: 800;
+  cursor: pointer; font-family: var(--font-eng); text-align: center;
+  transition: background 0.15s;
+}
+.dt-daily-btn:hover { background: rgba(255,255,255,0.3); }
+.dt-daily-done {
+  display: flex; align-items: center; gap: 8px;
+  color: rgba(255,255,255,0.7); font-size: 0.85rem; font-weight: 600;
+}
+
+.dt-wotd-card {
+  background: #fff; border-radius: 14px; padding: 16px;
+  box-shadow: 0 2px 12px rgba(0,56,184,0.08); border: 1px solid #E8F0FF;
+}
+[data-theme="dark"] .dt-wotd-card { background: #12121F; border-color: #2A2A40; box-shadow: none; }
+.dt-wotd-heb { font-family: var(--font-heb); font-size: 2rem; font-weight: 900; color: var(--blue-deep); direction: rtl; }
+[data-theme="dark"] .dt-wotd-heb { color: #7EB3FF; }
+.dt-wotd-trans { font-size: 0.85rem; color: var(--text-mid); font-style: italic; margin: 4px 0; }
+[data-theme="dark"] .dt-wotd-trans { color: #6878A0; }
+.dt-wotd-eng { font-size: 0.92rem; font-weight: 700; color: var(--text-dark); }
+[data-theme="dark"] .dt-wotd-eng { color: #C8D0E8; }
+.dt-wotd-example { font-size: 0.78rem; color: var(--text-light); margin-top: 8px; line-height: 1.5; font-style: italic; }
+[data-theme="dark"] .dt-wotd-example { color: #4A5480; }
+
+.dt-games-grid { display: flex; flex-direction: column; gap: 8px; }
+.dt-game-btn {
+  display: flex; align-items: center; gap: 10px;
+  padding: 11px 14px; border-radius: 12px;
+  border: 1.5px solid #D0DCFF; background: #fff;
+  font-size: 0.85rem; font-weight: 700; color: var(--text-dark);
+  cursor: pointer; font-family: var(--font-eng); text-align: left;
+  transition: all 0.14s; -webkit-tap-highlight-color: transparent;
+}
+.dt-game-btn:hover { border-color: var(--blue-mid); color: var(--blue-deep); background: #EEF2FF; }
+.dt-game-btn:active { transform: scale(0.98); }
+[data-theme="dark"] .dt-game-btn { background: #12121F; border-color: #2A2A40; color: #C8D0E8; }
+[data-theme="dark"] .dt-game-btn:hover { border-color: #4F8EF7; color: #7EB3FF; background: #1A1A30; }
+.dt-game-icon { font-size: 1.1rem; width: 24px; text-align: center; flex-shrink: 0; }
+
+.dt-lb-mini { display: flex; flex-direction: column; gap: 6px; }
+.dt-lb-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 8px 12px; border-radius: 10px;
+  background: #fff; border: 1px solid #E8F0FF;
+  font-size: 0.82rem;
+}
+[data-theme="dark"] .dt-lb-row { background: #12121F; border-color: #2A2A40; }
+.dt-lb-row.dt-lb-me { background: #EEF2FF; border-color: var(--blue-mid); }
+[data-theme="dark"] .dt-lb-row.dt-lb-me { background: #1A1A30; border-color: #4F8EF7; }
+.dt-lb-rank { font-size: 0.78rem; font-weight: 800; color: var(--text-light); min-width: 20px; }
+.dt-lb-name { flex: 1; font-weight: 700; color: var(--text-dark); }
+[data-theme="dark"] .dt-lb-name { color: #C8D0E8; }
+.dt-lb-pts  { font-weight: 800; color: var(--blue-deep); }
+[data-theme="dark"] .dt-lb-pts { color: #7EB3FF; }

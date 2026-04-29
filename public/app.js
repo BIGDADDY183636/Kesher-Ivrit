@@ -1728,6 +1728,7 @@ function updateUserBadges() {
     if (cubSchool) cubSchool.textContent = currentUser.school || '';
     cubBar.style.display = 'flex';
   }
+  _dtUpdate();
 }
 
 // ─── INIT ─────────────────────────────────────────────────
@@ -2063,6 +2064,7 @@ function saveProgress() {
     console.warn('Could not save progress:', e);
   }
   _syncProgressToDb();
+  _dtUpdate();
 }
 
 function checkReturningUser() {
@@ -2319,15 +2321,169 @@ var _mobTab = 'learn';
 
 function switchTab(tab) {
   _mobTab = tab;
+  // Sync mobile bottom nav
   document.querySelectorAll('.nav-btn').forEach(function(btn) {
     btn.classList.toggle('active', btn.dataset.panel === tab);
   });
+  // Sync desktop left nav
+  document.querySelectorAll('.dt-nav-btn').forEach(function(btn) {
+    btn.classList.toggle('dt-nav-active', btn.dataset.tab === tab);
+  });
   var sl = document.getElementById('screen-lesson');
-  // Remove any existing mob-tab-* class then add the new one
   sl.className = sl.className.replace(/\bmob-tab-\S+/g, '').trim();
   if (tab !== 'learn') sl.classList.add('mob-tab-' + tab);
   if (tab === 'path')  renderMobilePath();
   if (tab === 'me')    renderMobileProfile();
+}
+
+// ── DESKTOP SIDEBARS ──────────────────────────────────────────────────────────
+function _isDesktop() { return window.innerWidth >= 769; }
+
+function _dtUpdate() {
+  if (!_isDesktop()) return;
+  _dtRenderLeft();
+  _dtRenderRight();
+}
+
+function _dtRenderLeft() {
+  var el = document.getElementById('dt-left');
+  if (!el) return;
+
+  var avatarMap  = { complete_beginner:'🌱', some_exposure:'🌿', basic:'🌳', intermediate:'⭐', advanced:'🔥' };
+  var levelNames = { complete_beginner:'Complete Beginner', some_exposure:'Some Exposure', basic:'Basic', intermediate:'Intermediate', advanced:'Advanced' };
+  var lvl    = state.userProfile ? state.userProfile.level : null;
+  var name   = currentUser ? (currentUser.firstName + ' ' + currentUser.lastInitial + '.') : (state.userProfile ? state.userProfile.name || '' : '');
+  var school = currentUser ? (currentUser.school || '') : '';
+  var pts    = state.progress.points;
+  var streak = state.progress.streak;
+  var words  = state.progress.wordsLearned.length;
+  var isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+
+  var navItems = [
+    { tab:'learn', icon:'💬', label:'Learn' },
+    { tab:'path',  icon:'🗺️', label:'Path'  },
+    { tab:'games', icon:'🎮', label:'Games' },
+    { tab:'me',    icon:'👤', label:'Me'    },
+  ];
+
+  var mcHtml = '';
+  if (myClass && (myClass.school || myClass.textbook || myClass.parasha || myClass.grade)) {
+    mcHtml = '<div class="dt-section-label">My Class</div><div class="dt-my-class">' +
+      (myClass.school    ? '<div class="dt-mc-row">🏫 ' + escapeHtml(myClass.school)    + '</div>' : '') +
+      (myClass.grade     ? '<div class="dt-mc-row">🎓 ' + escapeHtml(myClass.grade)     + '</div>' : '') +
+      (myClass.textbook  ? '<div class="dt-mc-row">📚 ' + escapeHtml(myClass.textbook)  + '</div>' : '') +
+      (myClass.chapter   ? '<div class="dt-mc-row">📖 Ch. ' + escapeHtml(myClass.chapter) + '</div>' : '') +
+      (myClass.parasha   ? '<div class="dt-mc-row">📜 ' + escapeHtml(myClass.parasha)   + '</div>' : '') +
+    '</div>';
+  }
+
+  el.innerHTML =
+    '<div class="dt-logo"><div class="dt-logo-heb">קֶשֶׁר עִבְרִית</div><div class="dt-logo-eng">Kesher Ivrit</div></div>' +
+    '<nav class="dt-nav">' +
+      navItems.map(function(n) {
+        return '<button class="dt-nav-btn' + (n.tab === _mobTab ? ' dt-nav-active' : '') + '" data-tab="' + n.tab + '" onclick="switchTab(\'' + n.tab + '\')">' +
+          '<span class="dt-nav-icon">' + n.icon + '</span>' +
+          '<span class="dt-nav-label">' + n.label + '</span>' +
+        '</button>';
+      }).join('') +
+    '</nav>' +
+    '<div class="dt-divider"></div>' +
+    (name ? '<div class="dt-user-card">' +
+      '<div class="dt-user-avatar">' + (avatarMap[lvl] || '👤') + '</div>' +
+      '<div class="dt-user-name">' + escapeHtml(name) + '</div>' +
+      (school ? '<div class="dt-user-level">' + escapeHtml(school) + '</div>' : '') +
+      '<div class="dt-user-level">' + (levelNames[lvl] || 'Hebrew Learner') + '</div>' +
+    '</div>' +
+    '<div class="dt-stats-grid">' +
+      '<div class="dt-stat"><div class="dt-stat-val">' + streak + '</div><div class="dt-stat-lbl">🔥 Streak</div></div>' +
+      '<div class="dt-stat"><div class="dt-stat-val">' + words  + '</div><div class="dt-stat-lbl">📖 Words</div></div>' +
+      '<div class="dt-stat"><div class="dt-stat-val">' + pts    + '</div><div class="dt-stat-lbl">⭐ Points</div></div>' +
+    '</div>' : '') +
+    mcHtml +
+    '<div class="dt-sidebar-footer">' +
+      '<button class="dt-dark-toggle" onclick="toggleDarkMode()">' +
+        (isDark ? '☀️ Light mode' : '🌙 Dark mode') +
+      '</button>' +
+    '</div>';
+}
+
+function _dtRenderRight() {
+  var el = document.getElementById('dt-right');
+  if (!el) return;
+
+  // ── Today's Lesson card ──
+  var lessonHtml = '';
+  try {
+    var lessonInfo = (typeof computeTodayLesson === 'function') ? computeTodayLesson() : null;
+    if (lessonInfo) {
+      var daily = loadDailyState ? loadDailyState() : null;
+      var isCompleted = daily && daily.status === 'completed' && daily.conceptId === lessonInfo.concept.id;
+      var session = lessonInfo.reviewSession || 1;
+      var dots = '';
+      for (var d = 1; d <= 4; d++) dots += '<div class="dt-daily-dot' + (d < session ? ' done' : d === session ? ' cur' : '') + '"></div>';
+
+      lessonHtml = '<div class="dt-right-section">' +
+        '<div class="dt-right-title">📅 Today\'s Lesson</div>' +
+        '<div class="dt-daily-card">' +
+          '<div class="dt-daily-session-dots">' + dots + '</div>' +
+          '<div class="dt-daily-concept">' + escapeHtml(lessonInfo.concept.title) + '</div>' +
+          '<div class="dt-daily-sub">Session ' + session + ' of 4</div>' +
+          (isCompleted
+            ? '<div class="dt-daily-done">✓ Completed today</div>'
+            : '<button class="dt-daily-btn" onclick="startDailyLesson()">Start Today\'s Lesson →</button>') +
+        '</div>' +
+      '</div>';
+    }
+  } catch(e) {}
+
+  // ── Word of the Day ──
+  var wotdHtml = '';
+  try {
+    var w = WOTD_LIST[new Date().getDate() % WOTD_LIST.length];
+    if (w) {
+      wotdHtml = '<div class="dt-right-section">' +
+        '<div class="dt-right-title">✡ Word of the Day</div>' +
+        '<div class="dt-wotd-card">' +
+          '<div class="dt-wotd-heb">' + escapeHtml(w.hebrew) + '</div>' +
+          '<div class="dt-wotd-trans">' + escapeHtml(w.trans) + '</div>' +
+          '<div class="dt-wotd-eng">' + escapeHtml(w.english) + '</div>' +
+          (w.example ? '<div class="dt-wotd-example">' + escapeHtml(w.example) + '</div>' : '') +
+        '</div>' +
+      '</div>';
+    }
+  } catch(e) {}
+
+  // ── Quick practice ──
+  var gamesHtml = '<div class="dt-right-section" style="padding-bottom:20px;">' +
+    '<div class="dt-right-title">🎮 Quick Practice</div>' +
+    '<div class="dt-games-grid">' +
+      '<button class="dt-game-btn" onclick="openQuizMode()"><span class="dt-game-icon">🧠</span> Quiz Me</button>' +
+      '<button class="dt-game-btn" onclick="startSpeedRound()"><span class="dt-game-icon">⚡</span> Speed Round</button>' +
+      '<button class="dt-game-btn" onclick="showWordleGame()"><span class="dt-game-icon">🔠</span> Hebrew Wordle</button>' +
+      '<button class="dt-game-btn" onclick="showUnscrambleGame()"><span class="dt-game-icon">🔀</span> Unscramble</button>' +
+    '</div>' +
+  '</div>';
+
+  // ── Mini leaderboard ──
+  var lbHtml = '';
+  try {
+    var board = _buildFullBoard(null).slice(0, 5);
+    var myId  = currentUser ? (currentUser.userId || _lbId()) : null;
+    lbHtml = '<div class="dt-right-section">' +
+      '<div class="dt-right-title">🏆 Leaderboard</div>' +
+      '<div class="dt-lb-mini">' +
+      board.map(function(e, i) {
+        var isMe = e.isMe || (myId && e.id === myId);
+        return '<div class="dt-lb-row' + (isMe ? ' dt-lb-me' : '') + '">' +
+          '<span class="dt-lb-rank">' + ['🥇','🥈','🥉','4','5'][i] + '</span>' +
+          '<span class="dt-lb-name">' + escapeHtml(e.name) + '</span>' +
+          '<span class="dt-lb-pts">' + e.points + '</span>' +
+        '</div>';
+      }).join('') +
+      '</div></div>';
+  } catch(e) {}
+
+  el.innerHTML = lessonHtml + wotdHtml + gamesHtml + lbHtml;
 }
 
 function renderMobilePath() {
@@ -2484,7 +2640,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v9.2</div>';
+    '<div class="mob-me-version">Kesher Ivrit v9.3</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -3037,6 +3193,7 @@ function setupLessonScreen() {
   if (!state.userProfile) return;
   initScrollWatcher();
   initTooltips();
+  _dtUpdate();
 
   const avatarMap = {
     complete_beginner: '🌱', some_exposure: '🌿', basic: '🌳',
@@ -6855,7 +7012,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v9.2';
+  var CURRENT_VERSION = 'v9.3';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
