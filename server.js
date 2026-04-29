@@ -92,7 +92,7 @@ function dbRequired(res) {
 // Returns { userId } — stored in localStorage so the client can sync scores.
 app.post('/api/register', async (req, res) => {
   if (!dbRequired(res)) return;
-  const { firstName, lastInitial, school } = req.body || {};
+  const { firstName, lastInitial, school, level, goal } = req.body || {};
   if (!firstName || !lastInitial) {
     return res.status(400).json({ error: 'firstName and lastInitial are required' });
   }
@@ -102,14 +102,16 @@ app.post('/api/register', async (req, res) => {
   const sc  = (school || 'Independent Learner').trim().slice(0, 100) || 'Independent Learner';
   if (!/^[A-Za-z]$/.test(li)) return res.status(400).json({ error: 'lastInitial must be a single letter' });
 
+  const userRow = { first_name: fn, last_initial: li, school: sc };
+  if (level) userRow.level = String(level).slice(0, 40);
+  if (goal)  userRow.goal  = (Array.isArray(goal) ? goal.join(',') : String(goal)).slice(0, 120);
+
   try {
-    // Upsert user — returns existing row if the unique key matches
+    // Upsert user — returns existing row if the unique key matches.
+    // On conflict, update level/goal if provided (they improve over time).
     const { data: uData, error: uErr } = await supabase
       .from('users')
-      .upsert(
-        { first_name: fn, last_initial: li, school: sc },
-        { onConflict: 'first_name,last_initial,school' }
-      )
+      .upsert(userRow, { onConflict: 'first_name,last_initial,school' })
       .select('id')
       .single();
 
@@ -132,21 +134,45 @@ app.post('/api/register', async (req, res) => {
 });
 
 // ── GET /api/leaderboard ─────────────────────────────────────────────────────
-// Returns top 30 students ranked by points, shaped for the frontend.
+// Returns top 50 students ranked by points.
+// Queries the `leaderboard` VIEW defined in supabase-schema.sql.
+// Falls back to a direct join if the view doesn't exist yet.
 app.get('/api/leaderboard', async (req, res) => {
   if (!dbRequired(res)) return;
   try {
-    const { data, error } = await supabase
+    // Try the view first (created by supabase-schema.sql)
+    let { data, error } = await supabase
       .from('leaderboard')
-      .select('id, first_name, last_initial, school, points, streak, words_learned')
-      .limit(30);
+      .select('id, first_name, last_initial, school, level, points, streak, words_learned')
+      .order('points', { ascending: false })
+      .limit(50);
 
-    if (error) throw error;
+    if (error) {
+      // View doesn't exist yet — fall back to direct join via RPC or raw query
+      console.warn('[DB] leaderboard view not found, using direct query:', error.message);
+      const fb = await supabase
+        .from('scores')
+        .select('user_id, points, streak, words_learned, users(id, first_name, last_initial, school, level)')
+        .order('points', { ascending: false })
+        .limit(50);
+      if (fb.error) throw fb.error;
+      data = (fb.data || []).map(s => ({
+        id:           s.users?.id,
+        first_name:   s.users?.first_name,
+        last_initial: s.users?.last_initial,
+        school:       s.users?.school,
+        level:        s.users?.level,
+        points:       s.points,
+        streak:       s.streak,
+        words_learned: s.words_learned,
+      }));
+    }
 
     const leaderboard = (data || []).map(row => ({
       id:     row.id,
       name:   `${row.first_name} ${row.last_initial}.`,
-      school: row.school,
+      school: row.school || 'Independent Learner',
+      level:  row.level  || '',
       points: row.points        || 0,
       streak: row.streak        || 0,
       words:  row.words_learned || 0,
@@ -184,6 +210,102 @@ app.post('/api/scores', async (req, res) => {
     res.json({ ok: true });
   } catch (err) {
     console.error('[DB] /api/scores error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/clans ────────────────────────────────────────────────────────────
+// Returns all clans with member count, sorted by total clan points.
+app.get('/api/clans', async (req, res) => {
+  if (!dbRequired(res)) return;
+  try {
+    const { data, error } = await supabase
+      .from('clans')
+      .select('id, name, school, created_at, clan_members(user_id)')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+
+    const clans = (data || []).map(c => ({
+      id:      c.id,
+      name:    c.name,
+      school:  c.school || '',
+      members: (c.clan_members || []).length,
+    }));
+
+    res.json({ clans });
+  } catch (err) {
+    console.error('[DB] /api/clans error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/clan/create ─────────────────────────────────────────────────────
+// Creates a new clan and adds the creator as its first member.
+app.post('/api/clan/create', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { name, school, userId } = req.body || {};
+  if (!name || !userId) return res.status(400).json({ error: 'name and userId are required' });
+
+  const clanName = name.trim().slice(0, 60);
+  try {
+    const { data: clan, error: cErr } = await supabase
+      .from('clans')
+      .insert({ name: clanName, school: (school || '').trim().slice(0, 100) || null })
+      .select('id, name, school')
+      .single();
+
+    if (cErr) throw cErr;
+
+    await supabase
+      .from('clan_members')
+      .insert({ clan_id: clan.id, user_id: userId });
+
+    res.json({ clan });
+  } catch (err) {
+    const isDuplicate = err.message?.includes('duplicate') || err.code === '23505';
+    if (isDuplicate) return res.status(409).json({ error: 'A clan with that name already exists.' });
+    console.error('[DB] /api/clan/create error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/clan/join ───────────────────────────────────────────────────────
+// Adds a user to an existing clan (one clan per user enforced client-side).
+app.post('/api/clan/join', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { clanId, userId } = req.body || {};
+  if (!clanId || !userId) return res.status(400).json({ error: 'clanId and userId are required' });
+
+  try {
+    const { error } = await supabase
+      .from('clan_members')
+      .upsert({ clan_id: clanId, user_id: userId }, { onConflict: 'clan_id,user_id', ignoreDuplicates: true });
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[DB] /api/clan/join error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── POST /api/clan/leave ──────────────────────────────────────────────────────
+app.post('/api/clan/leave', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { clanId, userId } = req.body || {};
+  if (!clanId || !userId) return res.status(400).json({ error: 'clanId and userId are required' });
+
+  try {
+    const { error } = await supabase
+      .from('clan_members')
+      .delete()
+      .match({ clan_id: clanId, user_id: userId });
+
+    if (error) throw error;
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[DB] /api/clan/leave error:', err.message);
     res.status(500).json({ error: err.message });
   }
 });
@@ -857,7 +979,7 @@ function _rescueTextChallenge(raw) {
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v7.6', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v8.0', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {

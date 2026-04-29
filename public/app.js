@@ -887,10 +887,15 @@ function saveUser() {
 
 // ── Supabase registration (fire-and-forget — app works without it) ───────────
 function _registerWithDb(firstName, lastInitial, school) {
+  var profile = (state && state.userProfile) || {};
   fetch('/api/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ firstName, lastInitial, school })
+    body: JSON.stringify({
+      firstName, lastInitial, school,
+      level: profile.level || null,
+      goal:  profile.goal  || null
+    })
   })
   .then(function(r) { return r.ok ? r.json() : Promise.reject(r.status); })
   .then(function(data) {
@@ -1722,7 +1727,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v7.6</div>';
+    '<div class="mob-me-version">Kesher Ivrit v8.0</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -5990,7 +5995,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v7.6';
+  var CURRENT_VERSION = 'v8.0';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
