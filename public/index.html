@@ -256,7 +256,14 @@
               </div>
             </div>
             <div class="reg-field">
-              <label class="reg-label">School Name <span class="reg-label-hint">optional</span></label>
+              <label class="reg-label">School Code <span class="reg-label-hint">from your teacher — optional</span></label>
+              <input type="text" id="reg-school-code" class="quiz-name-input reg-input reg-input-code"
+                placeholder="e.g. 847293" maxlength="6" inputmode="numeric" autocomplete="off"
+                oninput="onSchoolCodeInput()" />
+              <div id="reg-code-status" class="reg-code-status"></div>
+            </div>
+            <div class="reg-field">
+              <label class="reg-label">School Name <span class="reg-label-hint">auto-filled with code, or type manually</span></label>
               <input type="text" id="reg-school" class="quiz-name-input reg-input"
                 placeholder="e.g. Ramaz, SAR, homeschool" maxlength="80" autocomplete="organization"
                 oninput="document.getElementById('reg-error').style.display='none'"

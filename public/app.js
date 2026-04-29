@@ -886,13 +886,14 @@ function saveUser() {
 }
 
 // ── Supabase registration (fire-and-forget — app works without it) ───────────
-function _registerWithDb(firstName, lastInitial, school, secretWord) {
+function _registerWithDb(firstName, lastInitial, school, secretWord, schoolCode) {
   var profile = (state && state.userProfile) || {};
   fetch('/api/register', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({
       firstName, lastInitial, school, secretWord,
+      schoolCode: schoolCode || null,
       level: profile.level || null,
       goal:  profile.goal  || null
     })
@@ -989,6 +990,46 @@ function showLoginPanel()   { _hideAllRegPanels(); document.getElementById('reg-
 function showRegisterPanel(){ _hideAllRegPanels(); document.getElementById('reg-panel-create').style.display  = ''; document.getElementById('reg-firstname').focus(); }
 function showTeacherPanel() { _hideAllRegPanels(); document.getElementById('reg-panel-teacher').style.display = ''; document.getElementById('teacher-name').focus(); }
 
+// ── School code live validation ───────────────────────────────────────────────
+var _codeCheckTimer = null;
+function onSchoolCodeInput() {
+  var inp    = document.getElementById('reg-school-code');
+  var status = document.getElementById('reg-code-status');
+  if (!inp || !status) return;
+  var code = inp.value.replace(/\D/g, '').slice(0, 6);
+  inp.value = code;
+  delete status.dataset.linkedSchool;
+  clearTimeout(_codeCheckTimer);
+  if (code.length < 6) {
+    status.textContent = ''; status.className = 'reg-code-status';
+    // restore school field editability if user cleared the code
+    var sf = document.getElementById('reg-school');
+    if (sf) sf.removeAttribute('readonly');
+    return;
+  }
+  status.textContent = 'Checking…'; status.className = 'reg-code-status';
+  _codeCheckTimer = setTimeout(async function() {
+    try {
+      var r = await fetch('/api/school-code-lookup?code=' + code);
+      var d = await r.json();
+      if (r.ok) {
+        status.textContent = '✓ Linked to ' + d.teacherName + ' at ' + d.school;
+        status.className = 'reg-code-status rc-valid';
+        status.dataset.linkedSchool = d.school;
+        var sf = document.getElementById('reg-school');
+        if (sf) { sf.value = d.school; sf.setAttribute('readonly', 'readonly'); }
+      } else {
+        status.textContent = '✗ ' + (d.error || 'Invalid code — check with your teacher');
+        status.className = 'reg-code-status rc-invalid';
+        var sf = document.getElementById('reg-school');
+        if (sf) sf.removeAttribute('readonly');
+      }
+    } catch(e) {
+      status.textContent = ''; status.className = 'reg-code-status';
+    }
+  }, 500);
+}
+
 // ── Teacher auth ──────────────────────────────────────────────────────────────
 var _currentTeacher = null;
 
@@ -1015,7 +1056,7 @@ async function submitTeacher(mode) {
     });
     var data = await r.json();
     if (!r.ok) { showErr(data.error || 'Something went wrong.'); return; }
-    _currentTeacher = { id: data.teacherId, name: data.name, school: data.school };
+    _currentTeacher = { id: data.teacherId, name: data.name, school: data.school, schoolCode: data.schoolCode || '' };
     openTeacherDashboard();
   } catch(e) {
     showErr('Connection error — check your internet and try again.');
@@ -1124,7 +1165,15 @@ function _tdRenderOverview() {
     (st.wordsData||[]).forEach(function(w){ var c = w.category||'other'; catCount[c]=(catCount[c]||0)+1; });
   });
   var topCats = Object.entries(catCount).sort(function(a,b){ return b[1]-a[1]; }).slice(0,6);
-  var html = '<div class="td-stat-grid">' +
+  var codeHtml = '';
+  if (_currentTeacher && _currentTeacher.schoolCode) {
+    codeHtml = '<div class="td-code-banner">' +
+      '<div class="td-code-banner-left"><div class="td-code-label">Share this code with your students:</div>' +
+      '<div class="td-code-display">' + _currentTeacher.schoolCode + '</div>' +
+      '<div class="td-code-hint">Students enter this when they register to appear in your dashboard</div></div>' +
+      '<button class="td-code-copy-btn" onclick="tdCopySchoolCode()">📋 Copy</button></div>';
+  }
+  var html = codeHtml + '<div class="td-stat-grid">' +
     '<div class="td-stat-card"><div class="td-stat-val">' + n + '</div><div class="td-stat-lbl">Students</div></div>' +
     '<div class="td-stat-card"><div class="td-stat-val">' + avgPts + '</div><div class="td-stat-lbl">Avg Points</div></div>' +
     '<div class="td-stat-card"><div class="td-stat-val">' + avgWords + '</div><div class="td-stat-lbl">Avg Words</div></div>' +
@@ -1142,6 +1191,24 @@ function _tdRenderOverview() {
     html += '</div>';
   }
   body.innerHTML = html;
+}
+
+function tdCopySchoolCode() {
+  var code = _currentTeacher && _currentTeacher.schoolCode;
+  if (!code) return;
+  var msg = 'School Code: ' + code + '\nEnter this when registering on Kesher Ivrit to join my class.';
+  function done() { showToast('📋 Code copied! Share it with your students.', 3000); }
+  if (navigator.clipboard && navigator.clipboard.writeText) {
+    navigator.clipboard.writeText(msg).then(done).catch(function() {
+      navigator.clipboard.writeText(code).then(done);
+    });
+  } else {
+    var ta = document.createElement('textarea');
+    ta.value = msg; ta.style.cssText = 'position:fixed;opacity:0';
+    document.body.appendChild(ta); ta.select();
+    try { document.execCommand('copy'); done(); } catch(e) {}
+    document.body.removeChild(ta);
+  }
 }
 
 // ── Rich student profile ─────────────────────────────────────────────────────
@@ -1522,6 +1589,7 @@ function submitRegistration() {
   const school      = (document.getElementById('reg-school').value           || '').trim();
   const secretWord  = (document.getElementById('reg-secret').value          || '').trim();
   const secretConf  = (document.getElementById('reg-secret-confirm').value  || '').trim();
+  const schoolCode  = (document.getElementById('reg-school-code')  ? document.getElementById('reg-school-code').value  : '').replace(/\D/g,'').slice(0,6);
   const errEl = document.getElementById('reg-error');
 
   function showErr(msg, focusId) {
@@ -1536,14 +1604,18 @@ function submitRegistration() {
   if (secretWord !== secretConf)               return showErr('Secret words don\'t match — try again.', 'reg-secret-confirm');
 
   errEl.style.display = 'none';
-  var schoolFinal = school || 'Independent Learner';
+  // If a valid school code was entered and the form shows the teacher's school, use that;
+  // otherwise fall back to whatever the user typed (or Independent Learner).
+  var codeStatusEl = document.getElementById('reg-code-status');
+  var codeLinked   = codeStatusEl && codeStatusEl.dataset.linkedSchool;
+  var schoolFinal  = codeLinked || school || 'Independent Learner';
   currentUser = { firstName, lastInitial, school: schoolFinal, joinedAt: Date.now() };
   saveUser();
   updateUserBadges();
   showScreen('screen-home');
   renderWordOfDay();
   checkReturningUser();
-  _registerWithDb(firstName, lastInitial, schoolFinal, secretWord);
+  _registerWithDb(firstName, lastInitial, schoolFinal, secretWord, schoolCode);
 }
 
 async function submitLogin() {
@@ -2415,7 +2487,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v8.5</div>';
+    '<div class="mob-me-version">Kesher Ivrit v8.6</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -6690,7 +6762,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v8.5';
+  var CURRENT_VERSION = 'v8.6';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })

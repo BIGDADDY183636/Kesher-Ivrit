@@ -133,7 +133,7 @@ app.post('/api/register', async (req, res) => {
   console.log('[register] called — body keys:', Object.keys(req.body || {}));
   if (!dbRequired(res)) return;
 
-  const { firstName, lastInitial, school, level, goal, secretWord } = req.body || {};
+  const { firstName, lastInitial, school, level, goal, secretWord, schoolCode } = req.body || {};
   if (!firstName || !lastInitial) {
     return res.status(400).json({ error: 'firstName and lastInitial are required' });
   }
@@ -143,11 +143,22 @@ app.post('/api/register', async (req, res) => {
 
   const fn = firstName.trim().slice(0, 60);
   const li = lastInitial.trim().toUpperCase().slice(0, 1);
-  const sc = (school || 'Independent Learner').trim().slice(0, 100) || 'Independent Learner';
   if (!/^[A-Za-z]$/.test(li)) return res.status(400).json({ error: 'lastInitial must be a single letter' });
 
+  // Resolve school name and code: if a valid school code is provided, derive school
+  // from the teacher's DB record so the student is cryptographically linked to that class.
+  let resolvedSchool = (school || 'Independent Learner').trim().slice(0, 100) || 'Independent Learner';
+  let resolvedCode   = null;
+  const trimmedCode  = (schoolCode || '').trim();
+  if (/^\d{6}$/.test(trimmedCode)) {
+    const { data: codeTeacher } = await supabase
+      .from('teachers').select('school').eq('school_code', trimmedCode).maybeSingle();
+    if (codeTeacher) { resolvedSchool = codeTeacher.school; resolvedCode = trimmedCode; }
+  }
+
   const secretHash = await bcrypt.hash(secretWord.trim(), 10);
-  const userRow = { first_name: fn, last_initial: li, school: sc, secret_hash: secretHash };
+  const userRow = { first_name: fn, last_initial: li, school: resolvedSchool, secret_hash: secretHash };
+  if (resolvedCode)  userRow.school_code = resolvedCode;
   if (level) userRow.level = String(level).slice(0, 40);
   if (goal)  userRow.goal  = (Array.isArray(goal) ? goal.join(',') : String(goal)).slice(0, 120);
 
@@ -366,6 +377,16 @@ app.post('/api/scores', async (req, res) => {
   }
 });
 
+// ── Helper: generate a unique 6-digit school code ────────────────────────────
+async function generateSchoolCode() {
+  for (let i = 0; i < 20; i++) {
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const { data } = await supabase.from('teachers').select('id').eq('school_code', code).maybeSingle();
+    if (!data) return code;
+  }
+  throw new Error('Could not generate a unique school code — try again.');
+}
+
 // ── POST /api/teacher/register ───────────────────────────────────────────────
 app.post('/api/teacher/register', async (req, res) => {
   if (!dbRequired(res)) return;
@@ -374,17 +395,20 @@ app.post('/api/teacher/register', async (req, res) => {
   if (secretWord.trim().length < 4) return res.status(400).json({ error: 'Secret word must be at least 4 characters.' });
 
   try {
-    const secretHash = await bcrypt.hash(secretWord.trim(), 10);
+    const [secretHash, schoolCode] = await Promise.all([
+      bcrypt.hash(secretWord.trim(), 10),
+      generateSchoolCode(),
+    ]);
     const { data, error } = await supabase
       .from('teachers')
-      .insert({ name: name.trim().slice(0, 80), school: school.trim().slice(0, 100), secret_hash: secretHash })
-      .select('id, name, school').single();
+      .insert({ name: name.trim().slice(0, 80), school: school.trim().slice(0, 100), secret_hash: secretHash, school_code: schoolCode })
+      .select('id, name, school, school_code').single();
 
     if (error) {
       if (error.code === '23505') return res.status(409).json({ error: 'A teacher account with that name and school already exists. Try logging in instead.' });
       throw error;
     }
-    res.json({ teacherId: data.id, name: data.name, school: data.school });
+    res.json({ teacherId: data.id, name: data.name, school: data.school, schoolCode: data.school_code });
   } catch (err) {
     console.error('[teacher/register]', err.message);
     res.status(500).json({ error: err.message });
@@ -400,7 +424,7 @@ app.post('/api/teacher/login', async (req, res) => {
   try {
     const { data: teacher, error } = await supabase
       .from('teachers')
-      .select('id, name, school, secret_hash')
+      .select('id, name, school, secret_hash, school_code')
       .eq('name', name.trim()).eq('school', school.trim())
       .maybeSingle();
 
@@ -408,9 +432,33 @@ app.post('/api/teacher/login', async (req, res) => {
     if (!teacher) return res.status(404).json({ error: 'No teacher account found with that name and school.' });
     const match = await bcrypt.compare(secretWord.trim(), teacher.secret_hash);
     if (!match) return res.status(401).json({ error: 'Wrong secret word.' });
-    res.json({ teacherId: teacher.id, name: teacher.name, school: teacher.school });
+
+    // Retroactively generate a code for existing accounts that pre-date this feature
+    let schoolCode = teacher.school_code;
+    if (!schoolCode) {
+      schoolCode = await generateSchoolCode();
+      await supabase.from('teachers').update({ school_code: schoolCode }).eq('id', teacher.id);
+    }
+
+    res.json({ teacherId: teacher.id, name: teacher.name, school: teacher.school, schoolCode });
   } catch (err) {
     console.error('[teacher/login]', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// ── GET /api/school-code-lookup ───────────────────────────────────────────────
+// Called by student registration form to validate a code in real time.
+app.get('/api/school-code-lookup', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { code } = req.query;
+  if (!code || !/^\d{6}$/.test(code.trim())) return res.status(400).json({ error: 'Invalid format — must be 6 digits' });
+  try {
+    const { data: teacher } = await supabase
+      .from('teachers').select('name, school').eq('school_code', code.trim()).maybeSingle();
+    if (!teacher) return res.status(404).json({ error: 'No class found with that code. Check with your teacher.' });
+    res.json({ teacherName: teacher.name, school: teacher.school });
+  } catch (err) {
     res.status(500).json({ error: err.message });
   }
 });
@@ -424,17 +472,19 @@ app.get('/api/teacher/class', async (req, res) => {
   if (!teacherId) return res.status(400).json({ error: 'teacherId required' });
 
   try {
-    // Derive school from DB — client-sent school param is intentionally ignored
+    // Derive school + code from DB — client has zero influence over which students are returned
     const { data: teacher } = await supabase
-      .from('teachers').select('id, school').eq('id', teacherId).maybeSingle();
+      .from('teachers').select('id, school, school_code').eq('id', teacherId).maybeSingle();
     if (!teacher) return res.status(403).json({ error: 'Unauthorized' });
 
-    const school = teacher.school;
+    const school     = teacher.school;
+    const schoolCode = teacher.school_code;
+    if (!schoolCode) return res.status(403).json({ error: 'No school code on this account — please log out and log back in to generate one.' });
 
     const { data: students, error } = await supabase
       .from('users')
       .select('id, first_name, last_initial, level, goal, created_at, scores(points, streak, words_learned, words_data, updated_at)')
-      .eq('school', school)
+      .eq('school_code', schoolCode)
       .order('first_name');
 
     if (error) throw error;
@@ -474,14 +524,19 @@ app.get('/api/teacher/student/:userId', async (req, res) => {
 
   try {
     const { data: student, error: sErr } = await supabase
-      .from('users').select('id, first_name, last_initial, school, level, goal, created_at')
+      .from('users').select('id, first_name, last_initial, school, school_code, level, goal, created_at')
       .eq('id', userId).maybeSingle();
     if (sErr) throw sErr;
     if (!student) return res.status(404).json({ error: 'Student not found' });
 
     const { data: teacher } = await supabase
-      .from('teachers').select('id, school').eq('id', teacherId).maybeSingle();
-    if (!teacher || teacher.school !== student.school) return res.status(403).json({ error: 'Unauthorized' });
+      .from('teachers').select('id, school, school_code').eq('id', teacherId).maybeSingle();
+    // Authorize by school_code (preferred) or school name (fallback for legacy accounts)
+    const authorized = teacher && (
+      (teacher.school_code && teacher.school_code === student.school_code) ||
+      (!student.school_code && teacher.school === student.school)
+    );
+    if (!authorized) return res.status(403).json({ error: 'Unauthorized' });
 
     const { data: scores } = await supabase
       .from('scores').select('points, streak, words_learned, words_data, progress_blob, updated_at')
@@ -518,14 +573,16 @@ app.post('/api/teacher/notes', async (req, res) => {
   const { teacherId, studentId, notes } = req.body || {};
   if (!teacherId || !studentId) return res.status(400).json({ error: 'teacherId and studentId required' });
   try {
-    // Verify teacher and student are at the same school before allowing write
+    // Verify teacher and student share the same school_code before allowing write
     const [{ data: teacher }, { data: student }] = await Promise.all([
-      supabase.from('teachers').select('school').eq('id', teacherId).maybeSingle(),
-      supabase.from('users').select('school').eq('id', studentId).maybeSingle(),
+      supabase.from('teachers').select('school, school_code').eq('id', teacherId).maybeSingle(),
+      supabase.from('users').select('school, school_code').eq('id', studentId).maybeSingle(),
     ]);
-    if (!teacher || !student || teacher.school !== student.school) {
-      return res.status(403).json({ error: 'Unauthorized' });
-    }
+    const authorized = teacher && student && (
+      (teacher.school_code && teacher.school_code === student.school_code) ||
+      (!student.school_code && teacher.school === student.school)
+    );
+    if (!authorized) return res.status(403).json({ error: 'Unauthorized' });
 
     const { error } = await supabase.from('teacher_notes')
       .upsert({ teacher_id: teacherId, student_id: studentId, notes: (notes || '').slice(0, 4000), updated_at: new Date().toISOString() },
@@ -1303,7 +1360,7 @@ function _rescueTextChallenge(raw) {
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v8.5', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v8.6', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {

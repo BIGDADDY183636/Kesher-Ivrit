@@ -31,8 +31,12 @@ CREATE TABLE IF NOT EXISTS scores (
 );
 
 -- If the table already exists, add the column safely:
-ALTER TABLE scores ADD COLUMN IF NOT EXISTS words_data   JSONB;
+ALTER TABLE scores ADD COLUMN IF NOT EXISTS words_data    JSONB;
 ALTER TABLE scores ADD COLUMN IF NOT EXISTS progress_blob JSONB; -- rich progress data for teacher dashboard
+
+-- ── USERS extra columns ───────────────────────────────────────
+ALTER TABLE users ADD COLUMN IF NOT EXISTS school_code TEXT;    -- links student to a specific teacher's class
+CREATE INDEX IF NOT EXISTS users_school_code_idx ON users(school_code);
 
 -- ── TEACHER NOTES ─────────────────────────────────────────────
 CREATE TABLE IF NOT EXISTS teacher_notes (
@@ -61,9 +65,12 @@ CREATE TABLE IF NOT EXISTS teachers (
   name        TEXT        NOT NULL,
   school      TEXT        NOT NULL,
   secret_hash TEXT        NOT NULL,
+  school_code CHAR(6)     UNIQUE,               -- 6-digit code shared with students
   created_at  TIMESTAMPTZ DEFAULT NOW(),
   UNIQUE (name, school)
 );
+ALTER TABLE teachers ADD COLUMN IF NOT EXISTS school_code CHAR(6) UNIQUE;
+CREATE INDEX IF NOT EXISTS teachers_school_code_idx ON teachers(school_code);
 ALTER TABLE teachers ENABLE ROW LEVEL SECURITY;
 DROP POLICY IF EXISTS "anon_manage_teachers" ON teachers;
 CREATE POLICY "anon_manage_teachers" ON teachers FOR ALL USING (true);
