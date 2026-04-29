@@ -703,43 +703,71 @@ function buildSystemPrompt(userProfile, myClass) {
 
   // ── ABSOLUTE CHALLENGE RULE — prepended to every prompt ────────────────────
   const CHALLENGE_RULE = `
-████████████████████████████████████████████████████████████
-ABSOLUTE RULE — READ BEFORE EVERYTHING ELSE — NO EXCEPTIONS
-████████████████████████████████████████████████████████████
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+RULE #1 — ABSOLUTE — READ THIS BEFORE ANYTHING ELSE — ZERO EXCEPTIONS
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 
-THE RENDERING PIPELINE:
-  [TEACH] block   → renders as TEXT only. Student CANNOT tap it.
-  [CHALLENGE] block → renders as INTERACTIVE BUTTONS with green/red feedback.
-  Plain text options → renders as DEAD TEXT. Student sees it but cannot tap it.
-                       The lesson breaks. The student is stuck. Do NOT do this.
+YOU MUST NEVER WRITE MULTIPLE CHOICE OPTIONS AS TEXT. NEVER.
+NOT AS A) B) C) D). NOT AS 1. 2. 3. 4. NOT AS (a) (b) (c) (d).
+NOT AS "Option A:" NOT AS "Choice 1:" NOT AS BULLET POINTS.
+NOT IN BOLD. NOT IN ITALICS. NOT IN ANY TEXT FORMAT WHATSOEVER.
+IF YOU DO THIS, THE APP BREAKS AND THE STUDENT IS STUCK FOREVER.
 
-CHALLENGES MUST ALWAYS USE ONE OF THESE 4 INTERACTIVE FORMATS:
+HOW THE RENDERING PIPELINE WORKS:
+  [TEACH]...[/TEACH]       → displays as TEXT. Student cannot tap it.
+  [CHALLENGE]...[/CHALLENGE] → displays as INTERACTIVE BUTTONS. Student taps.
+  PLAIN TEXT OPTIONS        → displays as DEAD UNCLICKABLE TEXT. Lesson breaks.
 
-  1. multiple_choice  — 4 large tappable answer boxes (DEFAULT — use this most)
-  2. fill_blank       — student types the answer into an input field
-  3. match            — tap to connect Hebrew↔English pairs (3–4 pairs)
-  4. true_false       — statement + ✅ True / ❌ False buttons
-
-EVERY challenge = valid JSON on ONE LINE inside [CHALLENGE]...[/CHALLENGE].
-
-YOU MUST NEVER WRITE QUIZ OPTIONS AS PLAIN TEXT. EVER. IN ANY FORMAT.
-This means: never use A), a), 1), 1., Option A:, Choice A:, • with options,
-numbered lists, or any other text-based option format — ANYWHERE in your response.
-
-❌ FORBIDDEN — kills the lesson, breaks the app:
-A) שָׁלוֹם  B) תּוֹדָה  C) לֹא  D) בְּבַקָשָׁה
-1. שָׁלוֹם  2. תּוֹדָה  3. לֹא
-Option A: shalom  Option B: toda
-(a) shalom  (b) toda  (c) lo
-
-✅ ONLY VALID FORM — JSON inside [CHALLENGE]:
+THE ONLY WAY TO ASK A MULTIPLE CHOICE QUESTION IS THIS EXACT FORMAT:
 [CHALLENGE]
-{"type":"multiple_choice","question":"Which word means peace?","options":["שָׁלוֹם (shalom)","תּוֹדָה (toda)","לֹא (lo)","בְּבַקָשָׁה (bevakasha)"],"correct":0,"explanation":"שָׁלוֹם (shalom) means peace, hello, and goodbye — root שׁ-ל-מ (wholeness)."}
+{"type":"multiple_choice","question":"...","options":["...","...","...","..."],"correct":0,"explanation":"..."}
 [/CHALLENGE]
 
-IF YOU CANNOT EXPRESS A CHALLENGE AS JSON, DO NOT POSE THAT CHALLENGE.
-Rephrase it into multiple_choice, fill_blank, match, or true_false. No exceptions.
-████████████████████████████████████████████████████████████
+❌ FORBIDDEN EXAMPLE 1 — kills the app instantly:
+Which word means peace?
+A) שָׁלוֹם
+B) תּוֹדָה
+C) לֹא
+D) בְּבַקָשָׁה
+
+❌ FORBIDDEN EXAMPLE 2 — also kills the app:
+Choose the correct answer:
+1. shalom  2. toda  3. lo  4. bevakasha
+
+❌ FORBIDDEN EXAMPLE 3 — still forbidden even with bold:
+**A)** שָׁלוֹם  **B)** תּוֹדָה  **C)** לֹא  **D)** בְּבַקָשָׁה
+
+❌ FORBIDDEN EXAMPLE 4 — forbidden even inside [CHALLENGE]:
+[CHALLENGE]
+Which word means peace?
+A) שָׁלוֹם
+B) תּוֹדָה
+[/CHALLENGE]
+
+❌ FORBIDDEN EXAMPLE 5 — forbidden even with Option labels:
+Option A: shalom (peace)
+Option B: toda (thank you)
+Option C: lo (no)
+
+✅ CORRECT EXAMPLE 1 — multiple choice:
+[CHALLENGE]
+{"type":"multiple_choice","question":"Which word means peace?","options":["שָׁלוֹם — shalom","תּוֹדָה — toda","לֹא — lo","בְּבַקָשָׁה — bevakasha"],"correct":0,"explanation":"שָׁלוֹם (shalom) = peace, hello, goodbye. Root: שׁ-ל-מ (wholeness)."}
+[/CHALLENGE]
+
+✅ CORRECT EXAMPLE 2 — fill blank (when you want student to type):
+[CHALLENGE]
+{"type":"fill_blank","question":"How do you say 'thank you' in Hebrew?","answer":"toda","hint":"תּוֹדָה","explanation":"תּוֹדָה (toda) — thank you. Related to הוֹדָאָה (acknowledgment)."}
+[/CHALLENGE]
+
+✅ CORRECT EXAMPLE 3 — true/false:
+[CHALLENGE]
+{"type":"true_false","statement":"הוּא (hu) means 'she' in Hebrew.","answer":false,"explanation":"הוּא (hu) means HE. הִיא (hi) means SHE."}
+[/CHALLENGE]
+
+EVERY [CHALLENGE] block MUST contain valid JSON. If you cannot write valid JSON
+for a challenge, use fill_blank instead — it is always safe. Never, ever, under
+any circumstances, write options as plain text. This rule has no exceptions.
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 `;
 
   // ── ASK ANYTHING MODE — expert open Q&A, no lesson format ──────────────────
@@ -1287,80 +1315,154 @@ ${
 
 // ── Safety net: convert plain-text quiz options to [CHALLENGE] JSON ──────────
 // Called on every /api/chat response before sending to the client.
-// Returns the original string unchanged if a [CHALLENGE] block already exists
-// or if no 3+ consecutive option lines are detected.
-function _rescueTextChallenge(raw) {
-  if (/\[CHALLENGE\]/.test(raw)) return raw;
+// ─────────────────────────────────────────────────────────────────────────────
+// THREE-LAYER NUCLEAR RESCUE — runs on EVERY AI response before it hits client.
+//
+// Layer 1 — scan every [CHALLENGE] block; if content is not valid JSON, extract
+//            text options and convert to JSON. If extraction fails → fill_blank.
+// Layer 2 — scan body (no [CHALLENGE] tag) for bare text options; wrap in JSON.
+// Layer 3 — strip any residual option text that leaked into [TEACH] blocks.
+//
+// Logs every interception to Vercel console so issues are visible.
+// ─────────────────────────────────────────────────────────────────────────────
 
-  const lines    = raw.split('\n');
-  const OPTION_RE = /^[ \t]*\(?[ \t]*([A-Da-d1-4])[ \t]*[.)]\s*(.+)$/;
+// Matches: "A) text", "a. text", "1) text", "(A) text", "**A)** text",
+//          "A: text", "Option A: text", "Choice 1: text"
+const _OPT_RE = /^[ \t]*(?:\*{0,2}[ \t]*)?(?:\(?[ \t]*)?([A-Da-d1-4])(?:[ \t]*\)?)?[ \t]*[.):\-][ \t]*\*{0,2}(.+)$/;
 
-  // Find a run of 3+ consecutive option lines
-  let blockStart = -1, blockEnd = -1, runLen = 0;
+function _parseOptionKey(k) {
+  k = k.toLowerCase();
+  return /[a1]/.test(k) ? 0 : /[b2]/.test(k) ? 1 : /[c3]/.test(k) ? 2 : 3;
+}
+
+function _extractOptions(text) {
+  const lines = text.split('\n');
+  const opts = []; let blockStart = -1, blockEnd = -1, run = 0;
   for (let i = 0; i < lines.length; i++) {
-    if (OPTION_RE.test(lines[i])) {
-      if (runLen === 0) blockStart = i;
-      runLen++;
-      blockEnd = i;
+    // Also catch "Option A: text" and "Choice 1: text" variants
+    const optionLabel = /^[ \t]*(?:option|choice)[ \t]+([A-Da-d1-4])[.):\s][ \t]*(.+)$/i.exec(lines[i]);
+    const standard    = _OPT_RE.exec(lines[i]);
+    const m = optionLabel || standard;
+    if (m) {
+      if (run === 0) blockStart = i;
+      run++; blockEnd = i;
+      opts.push((optionLabel ? m[2] : m[2]).replace(/\*+/g, '').trim());
     } else {
-      if (runLen >= 3) break;
-      runLen = 0; blockStart = -1; blockEnd = -1;
+      if (run >= 2) break;
+      run = 0; blockStart = -1; blockEnd = -1; opts.length = 0;
     }
   }
-  if (runLen < 3 || blockStart === -1) return raw;
-
-  // Extract question from last non-empty line before the block
+  if (opts.length < 2) return null;
   let question = 'Choose the correct answer:';
   for (let i = blockStart - 1; i >= 0; i--) {
-    const t = lines[i].trim();
-    if (t) { question = t.replace(/^\*+|\*+$/g, '').trim(); break; }
+    const t = lines[i].replace(/^\*+|\*+$/g, '').trim();
+    if (t && !_OPT_RE.test(lines[i])) { question = t; break; }
   }
-
-  // Extract up to 4 options
-  const options = [];
-  for (let i = blockStart; i <= blockEnd && options.length < 4; i++) {
-    const m = OPTION_RE.exec(lines[i]);
-    if (m) options.push(m[2].trim());
-  }
-  if (options.length < 2) return raw;
-
-  // Detect correct answer from text after options block
-  let correct = 0;
   const afterText = lines.slice(blockEnd + 1).join('\n');
-  const cm = afterText.match(/(?:correct(?:\s+answer)?|answer)\s*[:\-]?\s*([A-Da-d1-4])/i);
-  if (cm) {
-    const k = cm[1].toLowerCase();
-    correct = /[a1]/.test(k) ? 0 : /[b2]/.test(k) ? 1 : /[c3]/.test(k) ? 2 : 3;
-  }
+  const cm = afterText.match(/(?:correct(?:\s+answer)?|answer)\s*[:\-]?\s*\**([A-Da-d1-4])\**/i);
+  const correct = cm ? _parseOptionKey(cm[1]) : 0;
+  return { blockStart, blockEnd, question, options: opts.slice(0, 4), correct };
+}
 
-  const challengeJSON = JSON.stringify({
-    type: 'multiple_choice', question, options, correct,
+function _buildMCJson(question, options, correct) {
+  return JSON.stringify({
+    type: 'multiple_choice', question,
+    options, correct,
     explanation: options[correct] || ''
   });
+}
 
-  // Rebuild: content before question + [CHALLENGE] block + content after options
-  const linesBefore  = lines.slice(0, Math.max(0, blockStart - 1));
-  const linesAfter   = lines.slice(blockEnd + 1)
-    .filter(l => !/(?:correct(?:\s+answer)?|answer)\s*[:\-]?\s*[A-Da-d1-4]/i.test(l));
+function _rescueTextChallenge(raw) {
+  let result = raw;
+  let interceptCount = 0;
 
-  const teachContent = linesBefore.join('\n').trim();
-  const afterContent = linesAfter.join('\n').trim();
+  // ── LAYER 1: Fix every [CHALLENGE] block that lacks valid JSON ───────────────
+  result = result.replace(/\[CHALLENGE\]([\s\S]*?)\[\/CHALLENGE\]/g, (match, inner) => {
+    const trimmed = inner.trim();
 
-  const parts = [];
-  if (teachContent) {
-    parts.push(/^\[TEACH\]/.test(teachContent)
-      ? teachContent
-      : `[TEACH]\n${teachContent}\n[/TEACH]`);
+    // Already valid JSON with a type field → untouched
+    try {
+      const parsed = JSON.parse(trimmed);
+      if (parsed && parsed.type) return match;
+    } catch (_) {}
+
+    // JSON object buried in surrounding prose
+    const jm = trimmed.match(/\{[\s\S]*?"type"[\s\S]*?\}/);
+    if (jm) {
+      try {
+        const parsed = JSON.parse(jm[0]);
+        if (parsed && parsed.type) {
+          interceptCount++;
+          console.log('[RESCUE-L1] Extracted buried JSON from [CHALLENGE] block');
+          return `[CHALLENGE]\n${jm[0]}\n[/CHALLENGE]`;
+        }
+      } catch (_) {}
+    }
+
+    // Plain text options inside [CHALLENGE]
+    const extracted = _extractOptions(trimmed);
+    if (extracted) {
+      interceptCount++;
+      const json = _buildMCJson(extracted.question, extracted.options, extracted.correct);
+      console.log(`[RESCUE-L1] Converted text options inside [CHALLENGE] → MC JSON. Q="${extracted.question.slice(0,60)}"`);
+      return `[CHALLENGE]\n${json}\n[/CHALLENGE]`;
+    }
+
+    // Cannot rescue — replace with safe fill_blank
+    interceptCount++;
+    const qLine = trimmed.split('\n').find(l => l.trim().length > 8) || 'What did you just learn?';
+    const json = JSON.stringify({ type: 'fill_blank', question: qLine.replace(/^\*+|\*+$/g,'').trim(), answer: '__any__', explanation: '' });
+    console.log(`[RESCUE-L1] Unrescueable [CHALLENGE] → fill_blank. Content was: ${trimmed.slice(0,80)}`);
+    return `[CHALLENGE]\n${json}\n[/CHALLENGE]`;
+  });
+
+  // ── LAYER 2: Convert bare text options (no [CHALLENGE] wrapper at all) ───────
+  if (!/\[CHALLENGE\]/.test(result)) {
+    const extracted = _extractOptions(result);
+    if (extracted) {
+      interceptCount++;
+      const { blockStart, blockEnd, question, options, correct } = extracted;
+      const lines = result.split('\n');
+      let endLine = blockEnd + 1;
+      while (endLine < lines.length && /(?:correct|answer)\s*[:\-]?\s*[A-Da-d1-4]/i.test(lines[endLine])) endLine++;
+      const teachLines = lines.slice(0, Math.max(0, blockStart - 1));
+      const afterLines = lines.slice(endLine).filter(l => !/^[ \t]*(?:answer|correct)\s*[:\-]/i.test(l));
+      const json = _buildMCJson(question, options, correct);
+      console.log(`[RESCUE-L2] Bare text options → [CHALLENGE] JSON. Q="${question.slice(0,60)}"`);
+      const teachContent = teachLines.join('\n').trim();
+      const afterContent = afterLines.join('\n').trim();
+      const parts = [];
+      if (teachContent) parts.push(/^\[TEACH\]/.test(teachContent) ? teachContent : `[TEACH]\n${teachContent}\n[/TEACH]`);
+      parts.push(`[CHALLENGE]\n${json}\n[/CHALLENGE]`);
+      if (afterContent) parts.push(afterContent);
+      result = parts.join('\n');
+    }
   }
-  parts.push(`[CHALLENGE]\n${challengeJSON}\n[/CHALLENGE]`);
-  if (afterContent) parts.push(afterContent);
 
-  return parts.join('\n');
+  // ── LAYER 3: Strip option residue from [TEACH] sections ─────────────────────
+  result = result.replace(/\[TEACH\]([\s\S]*?)\[\/TEACH\]/g, (match, inner) => {
+    const cleaned = inner
+      .replace(/^[ \t]*\*{0,2}[ \t]*[A-Da-d1-4][ \t]*\*{0,2}[.):\-][ \t]*\*{0,2}.+$/gm, '')
+      .replace(/^[ \t]*\(?[A-Da-d1-4]\)[ \t]+.+$/gm, '')
+      .replace(/^[ \t]*(?:option|choice)[ \t]+[A-Da-d1-4][.):\s].+$/gim, '')
+      .replace(/^[ \t]*(?:answer|correct\s+answer)\s*[:\-]\s*[A-Da-d1-4].*/gim, '')
+      .replace(/\n{3,}/g, '\n\n').trim();
+    if (cleaned !== inner.trim()) {
+      interceptCount++;
+      console.log('[RESCUE-L3] Stripped option text from [TEACH] block');
+    }
+    return `[TEACH]\n${cleaned}\n[/TEACH]`;
+  });
+
+  if (interceptCount > 0) {
+    console.log(`[RESCUE] ✓ ${interceptCount} interception(s) — response sanitized before delivery`);
+  }
+  return result;
 }
 
 // ── GET /api/version — instant deployment check ─────────────────────────────
 app.get('/api/version', (req, res) => {
-  res.json({ version: 'v9.0', deployed: new Date().toISOString(), ok: true });
+  res.json({ version: 'v9.1', deployed: new Date().toISOString(), ok: true });
 });
 
 app.post('/api/chat', async (req, res) => {

@@ -2484,7 +2484,7 @@ function renderMobileProfile() {
         '</button>';
       })() +
     '</div>' +
-    '<div class="mob-me-version">Kesher Ivrit v9.0</div>';
+    '<div class="mob-me-version">Kesher Ivrit v9.1</div>';
 }
 
 // ─── LEADERBOARD OVERLAY ─────────────────────────────────────────────────────
@@ -3482,46 +3482,124 @@ function autoScroll() {
 const challengeStore = {};  // challengeId -> { challenge, answered }
 let challengeCounter = 0;
 
+// ── CLIENT-SIDE NUCLEAR OPTION SCRUBBER ──────────────────────────────────────
+// Second line of defence after server rescue. Strips every known text-option
+// pattern so they can never reach the DOM regardless of what slips through.
+var _OPTION_STRIP_PATTERNS = [
+  // "A) text"  "a) text"  "1) text"  with optional bold markers
+  /^[ \t]*\*{0,2}[ \t]*[A-Da-d1-4][ \t]*\*{0,2}[ \t]*[.)]\*{0,2}[ \t]+.+$/gm,
+  // "A. text"  "1. text"
+  /^[ \t]*[A-Da-d1-4]\.[ \t]+.+$/gm,
+  // "A: text"  "1: text"
+  /^[ \t]*[A-Da-d1-4]:[ \t]+.+$/gm,
+  // "(A) text"  "(1) text"
+  /^[ \t]*\([A-Da-d1-4]\)[ \t]+.+$/gm,
+  // "Option A: text"  "Choice B: text"
+  /^[ \t]*(?:option|choice)[ \t]+[A-Da-d1-4][.):\s].+$/gim,
+  // "Answer: A"  "Correct answer: B"
+  /^[ \t]*(?:answer|correct\s+answer)\s*[:\-]\s*[A-Da-d1-4].*/gim,
+  // "Which is correct?" followed by inline options
+  /which\s+is\s+correct[^?]*\?[^\n]*/gi,
+  // Inline options after question mark: "? a) opt b) opt"
+  /\?[ \t]*[a-d][)][ \t]+\S[^\n]*/g,
+  // "- A) text"  "• A) text" (bullet + option)
+  /^[ \t]*[-•*][ \t]*[A-Da-d1-4][.):][ \t]+.+$/gm,
+  // Inline "(a) text (b) text" sequences
+  /\([ABCDabcd]\)[ \t]+[^(\n]{2,60}/g,
+];
+
+function _scrubOptions(text) {
+  var out = text;
+  _OPTION_STRIP_PATTERNS.forEach(function(re) {
+    out = out.replace(re, '');
+  });
+  return out.replace(/\n{3,}/g, '\n\n').trim();
+}
+
 function parseMorahResponse(raw) {
   var teachMatch     = raw.match(/\[TEACH\]([\s\S]*?)\[\/TEACH\]/);
   var challengeMatch = raw.match(/\[CHALLENGE\]([\s\S]*?)\[\/CHALLENGE\]/);
+
+  // ── Build teach text ────────────────────────────────────────────────────────
   var teach = teachMatch
     ? teachMatch[1].trim()
     : raw.replace(/📚 WORDS LEARNED:.*$/s, '').replace(/\[SKIP:[^\]]*\]/gi, '').trim();
 
-  // Aggressively strip ALL plain-text quiz option patterns from teach.
-  // The server's _rescueTextChallenge is the first layer; this is the second.
-  // Together they ensure no unclickable option text ever reaches the DOM.
-  teach = teach
-    // Standalone letter/number option lines: "A) text", "a. text", "1) text", "1. text"
-    .replace(/^[ \t]*\*{0,2}[A-Da-d1-4][.)]\*{0,2}\s+.+$/gm, '')
-    // Colon-separated: "A: text", "1: text"
-    .replace(/^[ \t]*[A-Da-d1-4]:\s+.+$/gm, '')
-    // "Option A: / Choice B:" patterns
-    .replace(/^[ \t]*(?:option|choice)\s+[A-Da-d1-4][.):\s].+$/gim, '')
-    // Inline parenthesized: "(A) text (B) text"
-    .replace(/\([A-Da-d]\)\s*[^()\n]{1,80}/g, '')
-    // "Which is correct: a) x b) y" / "Answer: a)" lines
-    .replace(/which\s+is\s+correct[^?]*\?[^\n]*/gi, '')
-    .replace(/^[ \t]*(?:answer|correct\s+answer)\s*[:\-]\s*[A-Da-d1-4][^\n]*/gim, '')
-    // Option labels after a question mark
-    .replace(/\?\s*[a-d][)]\s*\S[^\n]*/g, '?')
-    // Collapse excess blank lines
-    .replace(/\n{3,}/g, '\n\n')
-    .trim();
+  // Strip any challenge block text from teach (it's rendered separately)
+  if (!teachMatch && challengeMatch) {
+    teach = teach.replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '').trim();
+  }
 
+  // Nuclear scrub — remove all text option patterns
+  teach = _scrubOptions(teach);
+
+  // ── Parse challenge ─────────────────────────────────────────────────────────
   var challenge = null;
   if (challengeMatch) {
     var rawC = challengeMatch[1].trim();
-    try {
-      challenge = JSON.parse(rawC);
-    } catch (e) {
-      // Tolerate extra prose before/after the JSON object
-      var m = rawC.match(/\{[\s\S]*\}/);
-      if (m) try { challenge = JSON.parse(m[0]); } catch (e2) {}
+
+    // Attempt 1: direct parse
+    try { challenge = JSON.parse(rawC); } catch (_) {}
+
+    // Attempt 2: find JSON object buried in prose
+    if (!challenge) {
+      var jm = rawC.match(/\{[\s\S]*?"type"[\s\S]*?\}/);
+      if (jm) try { challenge = JSON.parse(jm[0]); } catch (_) {}
+    }
+
+    // Attempt 3: any JSON object at all
+    if (!challenge) {
+      var jm2 = rawC.match(/\{[\s\S]*\}/);
+      if (jm2) try { challenge = JSON.parse(jm2[0]); } catch (_) {}
+    }
+
+    // Attempt 4: AI wrote text options inside [CHALLENGE] — rescue client-side
+    if (!challenge) {
+      var rescued = _clientRescueOptions(rawC);
+      if (rescued) { challenge = rescued; console.warn('[parseMorah] Client rescued text options from [CHALLENGE]'); }
+    }
+
+    // Attempt 5: complete fallback — create fill_blank from first question-like line
+    if (!challenge) {
+      var qLine = rawC.split('\n').find(function(l) { return l.trim().length > 8; }) || 'What did you just learn?';
+      challenge = { type: 'fill_blank', question: qLine.replace(/^\*+|\*+$/g,'').trim(), answer: '__any__', explanation: '' };
+      console.warn('[parseMorah] Fallback fill_blank — could not parse [CHALLENGE] content');
+    }
+
+    // Normalise field aliases (some models write "answer" instead of "correct")
+    if (challenge && challenge.answer !== undefined && challenge.correct === undefined) {
+      if (typeof challenge.answer === 'number') challenge.correct = challenge.answer;
+    }
+    // Normalise type alias "mcq" → "multiple_choice"
+    if (challenge && challenge.type === 'mcq') challenge.type = 'multiple_choice';
+  }
+
+  return { teach: teach, challenge: challenge };
+}
+
+// Client-side option extractor (mirrors server _extractOptions for defence-in-depth)
+function _clientRescueOptions(text) {
+  var lines = text.split('\n');
+  var opts = [], blockStart = -1, blockEnd = -1, run = 0;
+  var optRe = /^[ \t]*(?:\*{0,2}[ \t]*)?(?:\(?[ \t]*)?([A-Da-d1-4])(?:[ \t]*\)?)?[ \t]*[.):\-][ \t]*\*{0,2}(.+)$/;
+  for (var i = 0; i < lines.length; i++) {
+    var m = optRe.exec(lines[i]);
+    if (m) {
+      if (run === 0) blockStart = i;
+      run++; blockEnd = i;
+      opts.push(m[2].replace(/\*+/g,'').trim());
+    } else {
+      if (run >= 2) break;
+      run = 0; blockStart = -1; blockEnd = -1; opts.length = 0;
     }
   }
-  return { teach: teach, challenge: challenge };
+  if (opts.length < 2) return null;
+  var question = 'Choose the correct answer:';
+  for (var j = blockStart - 1; j >= 0; j--) {
+    var t = lines[j].replace(/^\*+|\*+$/g,'').trim();
+    if (t) { question = t; break; }
+  }
+  return { type: 'multiple_choice', question: question, options: opts.slice(0,4), correct: 0, explanation: '' };
 }
 
 // ─── RENDERING ───────────────────────────────────────────
@@ -3619,12 +3697,23 @@ function appendMessage(role, content, wordBadges, instant) {
       autoScroll();
     }
 
+    // ── Final DOM safety check — scan rendered HTML for option patterns ────────
+    function _safeTeachHtml(text) {
+      var html = formatMessage(text);
+      // If rendered HTML contains option-like lines, scrub from source and re-render
+      if (/^[A-Da-d1-4][.)]\s+\S/m.test(html) || /\([ABCDabcd]\)\s+\S/.test(html)) {
+        console.warn('[DOM-GUARD] Option text detected in rendered HTML — re-scrubbing');
+        html = formatMessage(_scrubOptions(text));
+      }
+      return html;
+    }
+
     if (instant) {
-      teachBubble.innerHTML = formatMessage(teach);
+      teachBubble.innerHTML = _safeTeachHtml(teach);
       _attachExtras();
     } else {
       autoScroll();
-      _streamBlocks(teachBubble, formatMessage(teach), _attachExtras);
+      _streamBlocks(teachBubble, _safeTeachHtml(teach), _attachExtras);
     }
 
   } else {
@@ -3742,15 +3831,22 @@ function renderChallenge(cId) {
   const container = document.getElementById(`challenge-${cId}`);
   if (!container || !challenge) return;
 
-  switch (challenge.type) {
+  // Normalise type aliases so every variant from the AI renders correctly
+  var type = (challenge.type || '').toLowerCase().replace(/[-_ ]/g, '');
+  if (type === 'mcq' || type === 'multiplechoice' || type === 'mc') type = 'multiple_choice';
+  if (type === 'fillblank' || type === 'fillin' || type === 'fill') type = 'fill_blank';
+  if (type === 'truefalse' || type === 'tf' || type === 'boolean') type = 'true_false';
+
+  switch (type) {
     case 'multiple_choice': renderMultipleChoice(cId, challenge, container); break;
     case 'fill_blank':      renderFillBlank(cId, challenge, container);      break;
     case 'true_false':      renderTrueFalse(cId, challenge, container);      break;
     case 'match':           renderMatch(cId, challenge, container);          break;
     default:
-      // Unknown type: coerce to fill_blank so something interactive always renders
+      // Absolute fallback — always renders something interactive
+      console.warn('[renderChallenge] Unknown type "' + challenge.type + '" → fill_blank');
       renderFillBlank(cId, {
-        question: challenge.question || challenge.statement || 'What is your answer?',
+        question: challenge.question || challenge.statement || 'What did you just learn?',
         answer:   '__any__',
         explanation: challenge.explanation || ''
       }, container);
@@ -6759,7 +6855,7 @@ function _dlAddDays(dateStr, days) {
 
 // ── Version check — forces reload if server has a newer build ─────────────
 (function checkAppVersion() {
-  var CURRENT_VERSION = 'v9.0';
+  var CURRENT_VERSION = 'v9.1';
   if (sessionStorage.getItem('_kv_checked')) return;
   fetch('/api/version')
     .then(function(r) { return r.json(); })
