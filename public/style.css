@@ -10091,6 +10091,11 @@ p, li, .mob-action-title { font-weight: 500; }
 [data-theme="dark"] .ki-letter { color: #4F8EF7; }
 [data-theme="dark"] .ki-loader-text { color: #6878A0; }
 
+/* ── Home screen scroll fix — flex-start prevents top-clipping when content > 100dvh ── */
+#screen-home.active {
+  justify-content: flex-start !important;
+}
+
 /* ── Login screen scroll fix ────────────────────────────────────────────── */
 /* Screen stays height:100dvh (from .screen rule) and IS the scroll container */
 #screen-register.active {
