@@ -594,6 +594,8 @@ body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+/* Prevent flex-shrink from compressing the card — lets it overflow the screen so overflow-y:auto kicks in */
+#screen-quiz .quiz-container { flex-shrink: 0; }
 
 .quiz-container {
   background: var(--white);
