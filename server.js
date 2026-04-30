@@ -162,14 +162,14 @@ app.post('/api/register', async (req, res) => {
   if (level) userRow.level = String(level).slice(0, 40);
   if (goal)  userRow.goal  = (Array.isArray(goal) ? goal.join(',') : String(goal)).slice(0, 120);
 
-  console.log('[register] upserting user:', fn, li, sc);
+  console.log('[register] upserting user:', fn, li, resolvedSchool);
 
   try {
     // Check if user already exists (can't update secret_hash on conflict for security)
     const { data: existing } = await supabase
       .from('users')
       .select('id, secret_hash')
-      .eq('first_name', fn).eq('last_initial', li).eq('school', sc)
+      .eq('first_name', fn).eq('last_initial', li).eq('school', resolvedSchool)
       .maybeSingle();
 
     let userId;

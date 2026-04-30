@@ -1007,7 +1007,7 @@ function onSchoolCodeInput() {
     if (sf) sf.removeAttribute('readonly');
     return;
   }
-  status.textContent = 'Checking…'; status.className = 'reg-code-status';
+  status.innerHTML = '<span class="ki-loader ki-loader-sm"><span class="ki-letters"><span class="ki-letter">א</span><span class="ki-letter">ב</span><span class="ki-letter">ג</span></span></span>'; status.className = 'reg-code-status';
   _codeCheckTimer = setTimeout(async function() {
     try {
       var r = await fetch('/api/school-code-lookup?code=' + code);
@@ -1048,7 +1048,8 @@ async function submitTeacher(mode) {
   errEl.style.display = 'none';
   loginBtn.disabled = regBtn.disabled = true;
   var origLogin = loginBtn.textContent, origReg = regBtn.textContent;
-  loginBtn.textContent = regBtn.textContent = mode === 'login' ? 'Logging in…' : 'Creating account…';
+  var _kiLoader = '<span class="ki-loader ki-loader-sm"><span class="ki-letters"><span class="ki-letter">א</span><span class="ki-letter">ב</span><span class="ki-letter">ג</span></span></span>';
+  loginBtn.innerHTML = regBtn.innerHTML = _kiLoader;
   try {
     var r = await fetch('/api/teacher/' + mode, {
       method: 'POST', headers: { 'Content-Type': 'application/json' },
@@ -1636,7 +1637,7 @@ async function submitLogin() {
 
   errEl.style.display = 'none';
   btn.disabled = true;
-  btn.textContent = 'Logging in…';
+  btn.innerHTML = '<span class="ki-loader ki-loader-sm"><span class="ki-letters"><span class="ki-letter">א</span><span class="ki-letter">ב</span><span class="ki-letter">ג</span></span></span>';
 
   try {
     var r = await fetch('/api/login', {
@@ -2709,7 +2710,7 @@ function renderLeaderboardScreen(dbBoard, loading) {
   if (!body) return;
 
   if (loading) {
-    body.innerHTML = '<div class="lb-loading"><div class="lb-spinner"></div><div class="lb-loading-text">Loading leaderboard…</div></div>';
+    body.innerHTML = '<div class="ki-loader ki-loader-lg"><div class="ki-letters"><span class="ki-letter">א</span><span class="ki-letter">ב</span><span class="ki-letter">ג</span></div><div class="ki-loader-text">Loading leaderboard…</div></div>';
     return;
   }
 
@@ -3286,7 +3287,7 @@ async function startLesson() {
       localStorage.removeItem('kesher_review');
     }
   } catch(e) {}
-  document.getElementById('chat-messages').innerHTML = '';
+  document.getElementById('chat-messages').innerHTML = '<div class="ki-loader ki-loader-lg" id="ki-lesson-loader"><div class="ki-letters"><span class="ki-letter">א</span><span class="ki-letter">ב</span><span class="ki-letter">ג</span></div><div class="ki-loader-text">Starting your lesson…</div></div>';
   setMorahStatus('Starting your lesson...');
 
   var VALID_LEVELS = ['complete_beginner','some_exposure','basic','intermediate','advanced'];
@@ -3456,6 +3457,8 @@ async function sendToMorah(messages) {
   sendBtn.classList.add('is-loading');
   typingIndicator.style.display = 'flex';
   setMorahStatus('Morah is thinking…');
+  var _lessonLoader = document.getElementById('ki-lesson-loader');
+  if (_lessonLoader) _lessonLoader.remove();
 
   // After 8 s with no response, update status so user knows we haven't frozen
   var slowTimer = setTimeout(function() {

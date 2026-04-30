@@ -10029,13 +10029,80 @@ p, li, .mob-action-title { font-weight: 500; }
   }
 }
 
+/* ══════════════════════════════════════════════════════════════════════════
+   KI-LOADER — Hebrew letter bounce loader (א ב ג)
+   Matches the existing Morah typing indicator bounce pattern.
+   Sizes: default | .ki-loader-sm (inline/button) | .ki-loader-lg (full panel)
+   ══════════════════════════════════════════════════════════════════════════ */
+.ki-loader {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ki-loader-lg {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 48px 20px;
+  width: 100%;
+}
+.ki-loader-lg .ki-letters {
+  gap: 8px;
+}
+.ki-loader-sm .ki-letter {
+  font-size: 16px;
+  width: 20px;
+  height: 20px;
+}
+.ki-letters {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.ki-letter {
+  font-family: var(--font-heb);
+  font-size: 24px;
+  font-weight: 700;
+  color: #003399;
+  line-height: 1;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: kiLetterBounce 1.5s ease-in-out infinite;
+  opacity: 0.6;
+}
+.ki-letter:nth-child(1) { animation-delay: 0s; }
+.ki-letter:nth-child(2) { animation-delay: 0.17s; }
+.ki-letter:nth-child(3) { animation-delay: 0.34s; }
+@keyframes kiLetterBounce {
+  0%, 55%, 100% { transform: translateY(0) scale(1);    opacity: 0.6; }
+  28%           { transform: translateY(-9px) scale(1.2); opacity: 1; }
+}
+.ki-loader-text {
+  font-size: 0.82rem;
+  font-weight: 700;
+  color: var(--text-light);
+  letter-spacing: 0.03em;
+}
+[data-theme="dark"] .ki-letter { color: #4F8EF7; }
+[data-theme="dark"] .ki-loader-text { color: #6878A0; }
+
 /* ── Login screen scroll fix ────────────────────────────────────────────── */
 #screen-register.active {
   height: auto !important;
   min-height: 100dvh !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
+  justify-content: flex-start !important;
+  padding-top: 24px;
+  padding-bottom: 24px;
 }
 #app-root:has(#screen-register.active) {
+  height: auto !important;
+  min-height: 100dvh !important;
   overflow-y: auto !important;
 }
