@@ -10092,17 +10092,15 @@ p, li, .mob-action-title { font-weight: 500; }
 [data-theme="dark"] .ki-loader-text { color: #6878A0; }
 
 /* ── Login screen scroll fix ────────────────────────────────────────────── */
+/* Screen stays height:100dvh (from .screen rule) and IS the scroll container */
 #screen-register.active {
-  height: auto !important;
-  min-height: 100dvh !important;
   overflow-y: auto !important;
   -webkit-overflow-scrolling: touch !important;
   justify-content: flex-start !important;
-  padding-top: 24px;
-  padding-bottom: 24px;
 }
-#app-root:has(#screen-register.active) {
-  height: auto !important;
-  min-height: 100dvh !important;
-  overflow-y: auto !important;
+/* Reduce reg-bg top padding — 80px was pushing card far down causing void */
+#screen-register .reg-bg {
+  align-items: flex-start !important;
+  padding-top: 24px !important;
+  padding-bottom: 40px !important;
 }
