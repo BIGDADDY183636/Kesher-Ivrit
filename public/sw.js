@@ -1,9 +1,9 @@
 /* ═══════════════════════════════════════════════════════════
-   Kesher Ivrit — Service Worker v2
+   Kesher Ivrit — Service Worker v3
    Strategy: network-only for everything.
    No caching. Always fresh. Notifies the page on update.
 ═══════════════════════════════════════════════════════════ */
-const SW_VERSION = 'kesher-v30';
+const SW_VERSION = 'kesher-v31';
 
 // Install: skip waiting immediately so this SW activates without delay
 self.addEventListener('install', () => {
@@ -17,11 +17,11 @@ self.addEventListener('activate', event => {
   event.waitUntil(
     caches.keys()
       .then(keys => Promise.all(keys.map(k => {
-        console.log('[SW v2] Deleted cache:', k);
+        console.log('[SW v3] Deleted cache:', k);
         return caches.delete(k);
       })))
       .then(() => {
-        console.log('[SW v2] All caches cleared, claiming clients');
+        console.log('[SW v3] All caches cleared, claiming clients');
         return self.clients.claim();
       })
       .then(() => {
@@ -39,8 +39,14 @@ self.addEventListener('fetch', event => {
   // Only handle http/https, skip chrome-extension etc.
   if (!event.request.url.startsWith('http')) return;
 
+  // For page navigations, bypass the browser HTTP cache entirely so index.html
+  // is always fresh — prevents users getting stuck on old versions via HTTP cache.
+  const req = event.request.mode === 'navigate'
+    ? new Request(event.request, { cache: 'no-store' })
+    : event.request;
+
   event.respondWith(
-    fetch(event.request, {
+    fetch(req, {
       // Pass through credentials for API calls
       credentials: event.request.credentials
     }).catch(err => {
