@@ -1642,6 +1642,7 @@ app.get('/api/status', (req, res) => {
     configured:       !!(groqKey || anthropicKey),
     groq:             { configured: !!groqKey,      model: 'llama-3.3-70b-versatile',    routes: 'standard lessons' },
     anthropic:        { configured: !!anthropicKey, model: 'claude-sonnet-4-6',  routes: 'QA mode, bar_mitzvah, bible, prayer' },
+    push:             { ready: webpushReady, vapidPublicKey: !!_vapidPublic, vapidPrivateKey: !!_vapidPrivate, vapidEmail: !!_vapidEmail },
     nodeVersion:      process.version,
     environment:      process.env.VERCEL ? 'vercel' : 'local',
     timestamp:        new Date().toISOString()
