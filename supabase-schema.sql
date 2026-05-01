@@ -130,3 +130,35 @@ CREATE POLICY "anon_insert_users"        ON users        FOR INSERT WITH CHECK (
 CREATE POLICY "anon_upsert_scores"       ON scores       FOR ALL    USING (true);
 CREATE POLICY "anon_manage_clans"        ON clans        FOR ALL    USING (true);
 CREATE POLICY "anon_manage_clan_members" ON clan_members FOR ALL    USING (true);
+
+-- ── PUSH SUBSCRIPTIONS ────────────────────────────────────────
+-- Web Push API subscriptions: one row per browser/device per user.
+-- The endpoint is browser-generated and unique per device+app combination.
+-- p256dh and auth are the encryption keys from PushSubscription.keys —
+-- both are required by web-push to encrypt the payload server-side.
+--
+-- How to run: paste this block into Supabase Dashboard → SQL Editor.
+-- Safe to re-run (IF NOT EXISTS + DROP POLICY IF EXISTS).
+CREATE TABLE IF NOT EXISTS push_subscriptions (
+  id           UUID        DEFAULT gen_random_uuid() PRIMARY KEY,
+  user_id      UUID        REFERENCES users(id) ON DELETE CASCADE,
+  endpoint     TEXT        NOT NULL,
+  p256dh       TEXT        NOT NULL,
+  auth         TEXT        NOT NULL,
+  user_agent   TEXT,
+  created_at   TIMESTAMPTZ DEFAULT NOW(),
+  last_used_at TIMESTAMPTZ DEFAULT NOW(),
+  UNIQUE (endpoint)
+);
+
+CREATE INDEX IF NOT EXISTS push_subs_user_idx ON push_subscriptions(user_id);
+
+ALTER TABLE push_subscriptions ENABLE ROW LEVEL SECURITY;
+DROP POLICY IF EXISTS "anon_manage_push_subs" ON push_subscriptions;
+
+-- TODO (App Store / production hardening): tighten this policy before submission.
+-- Replace FOR ALL USING (true) with row-level ownership checks so users can only
+-- read/delete their own subscriptions. Requires user identity in the request context
+-- (e.g. Supabase Auth JWT, or a signed token tied to user_id).
+-- For now this matches the existing pattern used by all other tables.
+CREATE POLICY "anon_manage_push_subs" ON push_subscriptions FOR ALL USING (true);
