@@ -3670,8 +3670,13 @@ var _OPTION_STRIP_PATTERNS = [
 
 function _scrubOptions(text) {
   var out = text;
-  _OPTION_STRIP_PATTERNS.forEach(function(re) {
+  _OPTION_STRIP_PATTERNS.forEach(function(re, i) {
+    var before = out;
     out = out.replace(re, '');
+    if (out !== before) {
+      var matched = before.match(new RegExp(re.source, re.flags));
+      console.warn('[SCRUB] Pattern', i, 'stripped:', matched ? matched[0].slice(0, 80) : '(match)');
+    }
   });
   return out.replace(/\n{3,}/g, '\n\n').trim();
 }
@@ -3691,7 +3696,10 @@ function parseMorahResponse(raw) {
   }
 
   // Nuclear scrub — remove all text option patterns
+  var preScrubb = teach;
   teach = _scrubOptions(teach);
+  if (teach !== preScrubb) console.warn('[PARSE] teach scrubbed — before:', preScrubb.slice(0, 200), '| after:', teach.slice(0, 200));
+  else console.log('[PARSE] teach clean after scrub (first 200):', teach.slice(0, 200));
 
   // ── Parse challenge ─────────────────────────────────────────────────────────
   var challenge = null;
@@ -3860,9 +3868,13 @@ function appendMessage(role, content, wordBadges, instant) {
     // ── Final DOM safety check — scan rendered HTML for option patterns ────────
     function _safeTeachHtml(text) {
       var html = formatMessage(text);
-      // If rendered HTML contains option-like lines, scrub from source and re-render
-      if (/^[A-Da-d1-4][.)]\s+\S/m.test(html) || /\([ABCDabcd]\)\s+\S/.test(html)) {
-        console.warn('[DOM-GUARD] Option text detected in rendered HTML — re-scrubbing');
+      // Strip all HTML tags to get plain text, then test — the previous regex used ^
+      // with multiline which only matched start-of-string in HTML, missing options
+      // inside <p> or after <br> tags.
+      var plain = html.replace(/<[^>]+>/g, '\n').replace(/&nbsp;/g, ' ');
+      console.log('[DOM-GUARD] plain text sample (first 300):', plain.slice(0, 300));
+      if (/^[ \t]*[A-Da-d1-4][.)]\s+\S/m.test(plain) || /\([ABCDabcd]\)\s+\S/.test(plain)) {
+        console.warn('[DOM-GUARD] Option text detected after HTML-strip — re-scrubbing source');
         html = formatMessage(_scrubOptions(text));
       }
       return html;
