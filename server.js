@@ -2,6 +2,7 @@
 const express    = require('express');
 const Groq       = require('groq-sdk');
 const Anthropic  = require('@anthropic-ai/sdk');
+const webpush    = require('web-push');
 const path       = require('path');
 const bcrypt     = require('bcryptjs');
 const { createClient } = require('@supabase/supabase-js');
@@ -100,6 +101,23 @@ function dbRequired(res) {
     return false;
   }
   return true;
+}
+
+// ── VAPID / web-push setup ────────────────────────────────────────────────────
+const _vapidPublic  = process.env.VAPID_PUBLIC_KEY  || '';
+const _vapidPrivate = process.env.VAPID_PRIVATE_KEY || '';
+const _vapidEmail   = process.env.VAPID_EMAIL       || '';
+let webpushReady = false;
+if (_vapidPublic && _vapidPrivate && _vapidEmail) {
+  try {
+    webpush.setVapidDetails(_vapidEmail, _vapidPublic, _vapidPrivate);
+    webpushReady = true;
+    console.log('[Push] VAPID keys loaded OK');
+  } catch (e) {
+    console.error('[Push] VAPID setup failed:', e.message);
+  }
+} else {
+  console.warn('[Push] Web push disabled — VAPID_PUBLIC_KEY / VAPID_PRIVATE_KEY / VAPID_EMAIL not set');
 }
 
 // ── GET /api/db-status — env var + connectivity check ────────────────────────
@@ -1630,6 +1648,129 @@ app.get('/api/status', (req, res) => {
   });
 });
 
+
+// ── PUSH NOTIFICATIONS ───────────────────────────────────────────────────────
+
+// GET /api/push/vapid-public-key
+// Returns the VAPID public key so the frontend can call pushManager.subscribe().
+app.get('/api/push/vapid-public-key', (req, res) => {
+  if (!webpushReady) return res.status(503).json({ error: 'Push not configured' });
+  res.json({ publicKey: _vapidPublic });
+});
+
+// POST /api/push/subscribe
+// Saves (or refreshes) a browser push subscription for a user.
+// Body: { subscription: { endpoint, keys: { p256dh, auth } }, userId: "uuid-or-null" }
+app.post('/api/push/subscribe', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { subscription, userId } = req.body || {};
+  if (!subscription || !subscription.endpoint || !subscription.keys) {
+    return res.status(400).json({ error: 'subscription.endpoint and subscription.keys are required' });
+  }
+  const { p256dh, auth } = subscription.keys;
+  if (!p256dh || !auth) {
+    return res.status(400).json({ error: 'subscription.keys.p256dh and .auth are required' });
+  }
+
+  const row = {
+    endpoint:     subscription.endpoint,
+    p256dh:       p256dh,
+    auth:         auth,
+    user_agent:   (req.headers['user-agent'] || '').slice(0, 300),
+    last_used_at: new Date().toISOString(),
+  };
+  if (userId) row.user_id = userId;
+
+  const { error } = await supabase
+    .from('push_subscriptions')
+    .upsert(row, { onConflict: 'endpoint' });
+
+  if (error) {
+    console.error('[Push] subscribe upsert error:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+  console.log('[Push] subscription saved, userId:', userId || '(anonymous)');
+  res.json({ ok: true });
+});
+
+// DELETE /api/push/unsubscribe
+// Removes a push subscription by endpoint.
+// Body: { endpoint: "https://..." }
+app.delete('/api/push/unsubscribe', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { endpoint } = req.body || {};
+  if (!endpoint) return res.status(400).json({ error: 'endpoint is required' });
+
+  const { error } = await supabase
+    .from('push_subscriptions')
+    .delete()
+    .eq('endpoint', endpoint);
+
+  if (error) {
+    console.error('[Push] unsubscribe delete error:', error.message);
+    return res.status(500).json({ error: error.message });
+  }
+  console.log('[Push] subscription removed');
+  res.json({ ok: true });
+});
+
+// POST /api/push/test
+// Sends a test push notification to all subscriptions for a given userId.
+// GATED: requires x-test-push-secret header matching TEST_PUSH_SECRET env var.
+// We use a secret header rather than NODE_ENV because Vercel always sets
+// NODE_ENV=production, which would make a NODE_ENV check useless on the deployed app.
+// Body: { userId: "uuid", title: "...", body: "..." }
+app.post('/api/push/test', async (req, res) => {
+  const secret = process.env.TEST_PUSH_SECRET || '';
+  if (!secret || req.headers['x-test-push-secret'] !== secret) {
+    return res.status(401).json({ error: 'Unauthorized' });
+  }
+  if (!dbRequired(res)) return;
+  if (!webpushReady) return res.status(503).json({ error: 'Push not configured — VAPID keys missing' });
+
+  const { userId, title, body } = req.body || {};
+  if (!userId) return res.status(400).json({ error: 'userId is required' });
+
+  const { data: subs, error } = await supabase
+    .from('push_subscriptions')
+    .select('endpoint, p256dh, auth')
+    .eq('user_id', userId);
+
+  if (error) return res.status(500).json({ error: error.message });
+  if (!subs || subs.length === 0) return res.json({ sent: 0, failed: 0, message: 'No subscriptions found for this user' });
+
+  const payload = JSON.stringify({
+    title: title || 'Kesher Ivrit — Test',
+    body:  body  || 'Push notifications are working! 🇮🇱',
+    tag:   'test',
+    url:   '/',
+  });
+
+  let sent = 0, failed = 0;
+  const errors = [];
+  await Promise.all(subs.map(async sub => {
+    try {
+      await webpush.sendNotification(
+        { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+        payload
+      );
+      sent++;
+    } catch (e) {
+      failed++;
+      errors.push({ endpoint: sub.endpoint.slice(0, 60) + '...', error: e.message });
+      // 410 Gone = browser unregistered the subscription; clean it up
+      if (e.statusCode === 410) {
+        await supabase.from('push_subscriptions').delete().eq('endpoint', sub.endpoint);
+        console.log('[Push] auto-removed stale subscription (410)');
+      }
+    }
+  }));
+
+  console.log(`[Push] test result: ${sent} sent, ${failed} failed`);
+  res.json({ sent, failed, errors });
+});
+
+// ── end push notifications ────────────────────────────────────────────────────
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {

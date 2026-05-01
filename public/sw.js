@@ -3,7 +3,7 @@
    Strategy: network-only for everything.
    No caching. Always fresh. Notifies the page on update.
 ═══════════════════════════════════════════════════════════ */
-const SW_VERSION = 'kesher-v37';
+const SW_VERSION = 'kesher-v38';
 
 // Install: skip waiting immediately so this SW activates without delay
 self.addEventListener('install', () => {
@@ -30,6 +30,40 @@ self.addEventListener('activate', event => {
       })
       .then(clients => {
         clients.forEach(client => client.postMessage({ type: 'SW_UPDATED', version: SW_VERSION }));
+      })
+  );
+});
+
+// ── PUSH: display a notification ─────────────────────────────────────────────
+self.addEventListener('push', event => {
+  let data = {};
+  try { data = event.data ? event.data.json() : {}; } catch (e) {}
+
+  const title   = data.title || 'Kesher Ivrit';
+  const options = {
+    body:  data.body  || 'Time to practice Hebrew! 🇮🇱',
+    icon:  '/icon-192.png',
+    badge: '/icon-192.png',
+    // tag collapses duplicate notifications of the same type (no pile-up)
+    tag:   data.tag   || 'kesher-default',
+    data:  { url: data.url || '/' },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+// ── NOTIFICATIONCLICK: focus existing tab or open the app ────────────────────
+self.addEventListener('notificationclick', event => {
+  event.notification.close();
+  const targetUrl = (event.notification.data && event.notification.data.url) || '/';
+  event.waitUntil(
+    clients.matchAll({ type: 'window', includeUncontrolled: true })
+      .then(clientList => {
+        // If the app is already open anywhere, just focus it
+        for (const client of clientList) {
+          if ('focus' in client) return client.focus();
+        }
+        // Otherwise open a new tab
+        return clients.openWindow(targetUrl);
       })
   );
 });
