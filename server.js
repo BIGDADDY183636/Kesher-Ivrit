@@ -104,8 +104,9 @@ function dbRequired(res) {
 }
 
 // ── VAPID / web-push setup ────────────────────────────────────────────────────
-const _vapidPublic  = process.env.VAPID_PUBLIC_KEY  || '';
-const _vapidPrivate = process.env.VAPID_PRIVATE_KEY || '';
+// Strip any accidental Base64 padding ('=') — VAPID keys must be unpadded URL-safe Base64
+const _vapidPublic  = (process.env.VAPID_PUBLIC_KEY  || '').replace(/=+$/, '');
+const _vapidPrivate = (process.env.VAPID_PRIVATE_KEY || '').replace(/=+$/, '');
 const _vapidEmail   = process.env.VAPID_EMAIL       || '';
 // web-push requires subject to start with mailto: or https://
 const _vapidSubject = _vapidEmail && !_vapidEmail.startsWith('mailto:') && !_vapidEmail.startsWith('https://')
