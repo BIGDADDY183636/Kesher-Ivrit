@@ -107,13 +107,19 @@ function dbRequired(res) {
 const _vapidPublic  = process.env.VAPID_PUBLIC_KEY  || '';
 const _vapidPrivate = process.env.VAPID_PRIVATE_KEY || '';
 const _vapidEmail   = process.env.VAPID_EMAIL       || '';
-let webpushReady = false;
-if (_vapidPublic && _vapidPrivate && _vapidEmail) {
+// web-push requires subject to start with mailto: or https://
+const _vapidSubject = _vapidEmail && !_vapidEmail.startsWith('mailto:') && !_vapidEmail.startsWith('https://')
+  ? 'mailto:' + _vapidEmail
+  : _vapidEmail;
+let webpushReady  = false;
+let webpushError  = null;
+if (_vapidPublic && _vapidPrivate && _vapidSubject) {
   try {
-    webpush.setVapidDetails(_vapidEmail, _vapidPublic, _vapidPrivate);
+    webpush.setVapidDetails(_vapidSubject, _vapidPublic, _vapidPrivate);
     webpushReady = true;
-    console.log('[Push] VAPID keys loaded OK');
+    console.log('[Push] VAPID keys loaded OK, subject:', _vapidSubject);
   } catch (e) {
+    webpushError = e.message;
     console.error('[Push] VAPID setup failed:', e.message);
   }
 } else {
@@ -1642,7 +1648,7 @@ app.get('/api/status', (req, res) => {
     configured:       !!(groqKey || anthropicKey),
     groq:             { configured: !!groqKey,      model: 'llama-3.3-70b-versatile',    routes: 'standard lessons' },
     anthropic:        { configured: !!anthropicKey, model: 'claude-sonnet-4-6',  routes: 'QA mode, bar_mitzvah, bible, prayer' },
-    push:             { ready: webpushReady, vapidPublicKey: !!_vapidPublic, vapidPrivateKey: !!_vapidPrivate, vapidEmail: !!_vapidEmail },
+    push:             { ready: webpushReady, vapidPublicKey: !!_vapidPublic, vapidPrivateKey: !!_vapidPrivate, vapidEmail: !!_vapidEmail, setupError: webpushError },
     nodeVersion:      process.version,
     environment:      process.env.VERCEL ? 'vercel' : 'local',
     timestamp:        new Date().toISOString()
