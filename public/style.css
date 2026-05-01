@@ -9306,6 +9306,8 @@ p, li, .mob-action-title { font-weight: 500; }
 /* ── Daily lesson card on home: never clip ──────────────────── */
 .home-container   { overflow: visible; }
 .returning-card, .daily-lesson-card { overflow: visible; }
+/* Prevent flex-shrink from capping home-container at 100dvh — same fix as quiz in v9.11 */
+#screen-home .home-container { flex-shrink: 0; }
 
 /* ── Message bubble table: mobile scroll rules ───────────────── */
 /* Constrain message width on mobile so wide tables scroll inside the bubble */
