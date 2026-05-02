@@ -5455,7 +5455,7 @@ function speakHebrew(text) {
 // Returns a 🔊 span (not button — avoids nested-button invalid HTML in game cards).
 // Empty string if speechSynthesis unsupported.
 function speakerBtn(hebrewText) {
-  if (!window.speechSynthesis) return '';
+  if (typeof window === 'undefined' || !window.speechSynthesis) return '';
   var safe = (hebrewText || '').replace(/\\/g, '\\\\').replace(/'/g, '\\x27');
   return '<span class="speak-btn" role="button" tabindex="0" ' +
     'onclick="event.stopPropagation();speakHebrew(\'' + safe + '\')" ' +

@@ -10555,7 +10555,7 @@ p, li, .mob-action-title { font-weight: 500; }
   vertical-align: middle;
   font-size: 0.72rem;
   line-height: 1;
-  opacity: 0.45;
+  opacity: 0.7;
   cursor: pointer;
   border-radius: 3px;
   transition: opacity 0.15s, transform 0.12s;
@@ -10564,3 +10564,5 @@ p, li, .mob-action-title { font-weight: 500; }
 }
 .speak-btn:hover  { opacity: 1; }
 .speak-btn:active { opacity: 1; transform: scale(0.82); }
+/* Dark-background contexts need higher opacity — badge is dark blue gradient */
+.word-badge .speak-btn { opacity: 0.8; }
