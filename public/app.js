@@ -4152,6 +4152,29 @@ function _translitMatch(userInput, expected) {
   return _translitNormalize(userInput) === _translitNormalize(expected);
 }
 
+function _expectsEnglishAnswer(c) {
+  var q = ((c && c.question) || '').toLowerCase();
+  return /what does .+ mean|what.s the meaning|translate .+ to english|\bin english\b|what.s the english/.test(q);
+}
+
+function _stripNikud(s) {
+  return (s || '').replace(/[֑-ׇ]/g, '');
+}
+
+function _hebrewAnswerMatch(val, c) {
+  if (!/[֐-׿]/.test(val))           return false;
+  if (/[֐-׿]/.test(c.answer || '')) return false;
+  var stripped = _stripNikud(val.trim());
+  var sources  = [c.hint, c.explanation, c.question];
+  for (var i = 0; i < sources.length; i++) {
+    var words = (sources[i] || '').match(/[֐-׿][֑-ׇ֐-׿]*/g) || [];
+    for (var j = 0; j < words.length; j++) {
+      if (words[j].length >= 2 && _stripNikud(words[j]) === stripped) return true;
+    }
+  }
+  return false;
+}
+
 function answerFill(cId) {
   const { challenge, answered } = challengeStore[cId];
   if (answered) return;
@@ -4163,7 +4186,9 @@ function answerFill(cId) {
   // '__any__' = fallback coercion — any non-empty answer is accepted
   const correct = expected === '__any__'
     ? val.length > 0
-    : (val.toLowerCase() === expected.toLowerCase() || _translitMatch(val, expected));
+    : (val.toLowerCase() === expected.toLowerCase()
+       || _translitMatch(val, expected)
+       || _hebrewAnswerMatch(val, challenge));
 
   challengeStore[cId].answered = true;
   input.disabled = true;
@@ -4227,7 +4252,7 @@ async function toggleVoiceInput(cId) {
       reader.onload = function() {
         var base64 = reader.result.split(',')[1];
         var _ch = (challengeStore[cId] || {}).challenge;
-        var _lang = (_ch && /[֐-׿]/.test(_ch.answer || '')) ? 'he' : 'en';
+        var _lang = _expectsEnglishAnswer(_ch) ? 'en' : 'he';
         fetch('/api/transcribe', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
