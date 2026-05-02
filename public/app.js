@@ -5443,19 +5443,26 @@ function _initSpeechSynth() {
 }
 
 function speakHebrew(text) {
-  if (!window.speechSynthesis || !text) return;
-  window.speechSynthesis.cancel();
-  var u = new SpeechSynthesisUtterance(text);
-  u.lang = 'he-IL';
-  if (_hebrewVoice) u.voice = _hebrewVoice;
-  u.rate = 0.85;
-  window.speechSynthesis.speak(u);
+  console.log('[TTS] speakHebrew called, text:', text,
+    '| speechSynthesis:', typeof window !== 'undefined' ? typeof window.speechSynthesis : 'no window',
+    '| _hebrewVoice:', _hebrewVoice ? _hebrewVoice.name : 'null');
+  try {
+    if (!text) return;
+    window.speechSynthesis.cancel();
+    var u = new SpeechSynthesisUtterance(text);
+    u.lang = 'he-IL';
+    if (_hebrewVoice) u.voice = _hebrewVoice;
+    u.rate = 0.85;
+    window.speechSynthesis.speak(u);
+    console.log('[TTS] speak() called OK');
+  } catch (e) {
+    console.log('[TTS] speak() failed:', e && e.message);
+  }
 }
 
-// Returns a 🔊 span (not button — avoids nested-button invalid HTML in game cards).
-// Empty string if speechSynthesis unsupported.
+// Always renders the 🔊 button — speakHebrew() handles missing API gracefully.
+// Using <span role=button> not <button> to avoid nested-button invalid HTML in game cards.
 function speakerBtn(hebrewText) {
-  if (typeof window === 'undefined' || !window.speechSynthesis) return '';
   var safe = (hebrewText || '').replace(/\\/g, '\\\\').replace(/'/g, '\\x27');
   return '<span class="speak-btn" role="button" tabindex="0" ' +
     'onclick="event.stopPropagation();speakHebrew(\'' + safe + '\')" ' +
