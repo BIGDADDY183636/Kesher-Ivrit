@@ -1818,6 +1818,41 @@ app.post('/api/transcribe', async (req, res) => {
   }
 });
 
+// ── DELETE /api/account — permanent account deletion ─────────────────────────
+// Body: { userId, secretWord }
+// Verifies secret_hash before deleting. All child rows cascade automatically.
+app.delete('/api/account', async (req, res) => {
+  if (!dbRequired(res)) return;
+  const { userId, secretWord } = req.body || {};
+  if (!userId || !secretWord) {
+    return res.status(400).json({ error: 'userId and secretWord are required' });
+  }
+
+  try {
+    const { data: user, error: fetchErr } = await supabase
+      .from('users')
+      .select('id, first_name, secret_hash')
+      .eq('id', userId)
+      .maybeSingle();
+
+    if (fetchErr) throw fetchErr;
+    if (!user)            return res.status(404).json({ error: 'Account not found' });
+    if (!user.secret_hash) return res.status(401).json({ error: 'Account has no secret word set' });
+
+    const match = await bcrypt.compare(secretWord.trim(), user.secret_hash);
+    if (!match) return res.status(401).json({ error: 'Wrong secret word — try again' });
+
+    const { error: delErr } = await supabase.from('users').delete().eq('id', userId);
+    if (delErr) throw delErr;
+
+    console.log(`[Account Delete] userId=${userId} (${user.first_name}) deleted at ${new Date().toISOString()}`);
+    res.json({ ok: true });
+  } catch (err) {
+    console.error('[Account Delete] error:', err.message);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
   console.log(`\n🇮🇱 Kesher Ivrit is running!`);

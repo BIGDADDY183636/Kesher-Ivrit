@@ -10606,3 +10606,131 @@ p, li, .mob-action-title { font-weight: 500; }
 .speak-btn:active { opacity: 1; transform: scale(0.82); }
 /* Dark-background contexts need higher opacity — badge is dark blue gradient */
 .word-badge .speak-btn { opacity: 0.8; }
+
+/* ── Account deletion ────────────────────────────────────────────────────── */
+.st-account-body {
+  padding: 12px 0 4px;
+}
+.st-delete-btn {
+  width: 100%;
+  padding: 12px;
+  background: #DC2626;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.9rem;
+  font-weight: 700;
+  font-family: var(--font-eng);
+  cursor: pointer;
+  transition: background 0.15s, transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+}
+.st-delete-btn:hover  { background: #B91C1C; }
+.st-delete-btn:active { transform: scale(0.98); }
+
+.st-del-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.55);
+  z-index: 9000;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transition: opacity 0.2s;
+  padding: 20px;
+}
+.st-del-modal-overlay.st-del-modal-visible { opacity: 1; }
+
+.st-del-modal {
+  background: var(--white);
+  border-radius: 16px;
+  padding: 28px 24px 22px;
+  max-width: 380px;
+  width: 100%;
+  box-shadow: 0 8px 40px rgba(0,0,0,0.22);
+}
+[data-theme="dark"] .st-del-modal { background: #12121A; }
+
+.st-del-title {
+  font-size: 1.1rem;
+  font-weight: 800;
+  color: #DC2626;
+  margin: 0 0 12px;
+}
+.st-del-body {
+  font-size: 0.88rem;
+  color: var(--text-dark);
+  line-height: 1.5;
+  margin: 0 0 18px;
+}
+[data-theme="dark"] .st-del-body { color: #C8D4F0; }
+
+.st-del-label {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-light);
+  margin-bottom: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.st-del-input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 10px 12px;
+  border: 2px solid var(--border);
+  border-radius: 10px;
+  font-size: 0.95rem;
+  font-family: var(--font-eng);
+  color: var(--text-dark);
+  background: var(--white);
+  outline: none;
+  transition: border-color 0.2s;
+}
+.st-del-input:focus { border-color: #DC2626; }
+[data-theme="dark"] .st-del-input { background: #0A0A0F; border-color: #2A2A40; color: #E8EAFF; }
+
+.st-del-error {
+  font-size: 0.82rem;
+  color: #DC2626;
+  margin: 10px 0 0;
+  font-weight: 600;
+}
+
+.st-del-actions {
+  display: flex;
+  gap: 10px;
+  margin-top: 20px;
+}
+.st-del-cancel {
+  flex: 1;
+  padding: 11px;
+  background: var(--border);
+  color: var(--text-dark);
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: var(--font-eng);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.st-del-cancel:hover { background: #D0D5DD; }
+[data-theme="dark"] .st-del-cancel { background: #1E1E30; color: #C8D4F0; }
+
+.st-del-confirm {
+  flex: 2;
+  padding: 11px;
+  background: #DC2626;
+  color: #fff;
+  border: none;
+  border-radius: 10px;
+  font-size: 0.88rem;
+  font-weight: 700;
+  font-family: var(--font-eng);
+  cursor: pointer;
+  transition: background 0.15s;
+}
+.st-del-confirm:hover:not(:disabled) { background: #B91C1C; }
+.st-del-confirm:disabled { opacity: 0.4; cursor: default; }

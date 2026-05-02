@@ -7781,3 +7781,97 @@ function _toggleSubPref(key) {
   if (el) prefs[key] = el.checked;
   _savePushPrefs(prefs);
 }
+
+// ── ACCOUNT DELETION ──────────────────────────────────────────────────────────
+
+function showDeleteAccountModal() {
+  if (document.getElementById('del-acct-modal')) return;
+
+  var overlay = document.createElement('div');
+  overlay.id        = 'del-acct-modal';
+  overlay.className = 'st-del-modal-overlay';
+  overlay.innerHTML = `
+    <div class="st-del-modal">
+      <h2 class="st-del-title">Permanently delete account?</h2>
+      <p class="st-del-body">
+        Deleting your account will remove your name, all progress, streaks,
+        earned points, and notification settings.
+        <strong>This cannot be undone.</strong>
+      </p>
+
+      <label class="st-del-label">Type <strong>DELETE</strong> to confirm</label>
+      <input id="del-confirm-text" class="st-del-input" type="text"
+             autocomplete="off" autocorrect="off" spellcheck="false"
+             placeholder="DELETE" oninput="_delCheckReady()" />
+
+      <label class="st-del-label" style="margin-top:14px;">Enter your secret word</label>
+      <input id="del-secret-input" class="st-del-input" type="password"
+             autocomplete="current-password"
+             placeholder="Secret word" oninput="_delCheckReady()" />
+
+      <p id="del-error-msg" class="st-del-error" style="display:none;"></p>
+
+      <div class="st-del-actions">
+        <button class="st-del-cancel" onclick="_closeDeleteModal()">Cancel</button>
+        <button id="del-confirm-btn" class="st-del-confirm" disabled
+                onclick="_executeAccountDeletion()">Delete My Account Forever</button>
+      </div>
+    </div>`;
+
+  document.body.appendChild(overlay);
+  setTimeout(function() { overlay.classList.add('st-del-modal-visible'); }, 10);
+  document.getElementById('del-confirm-text').focus();
+}
+
+function _delCheckReady() {
+  var txt    = (document.getElementById('del-confirm-text')  || {}).value || '';
+  var secret = (document.getElementById('del-secret-input')  || {}).value || '';
+  var btn    = document.getElementById('del-confirm-btn');
+  if (btn) btn.disabled = !(txt === 'DELETE' && secret.trim().length > 0);
+}
+
+function _closeDeleteModal() {
+  var el = document.getElementById('del-acct-modal');
+  if (!el) return;
+  el.classList.remove('st-del-modal-visible');
+  setTimeout(function() { if (el.parentNode) el.parentNode.removeChild(el); }, 250);
+}
+
+async function _executeAccountDeletion() {
+  var btn    = document.getElementById('del-confirm-btn');
+  var errEl  = document.getElementById('del-error-msg');
+  var secret = (document.getElementById('del-secret-input') || {}).value || '';
+  var userId = currentUser && currentUser.userId;
+
+  if (!userId) { if (errEl) { errEl.textContent = 'No account found — please reload and try again.'; errEl.style.display = 'block'; } return; }
+
+  if (btn) { btn.disabled = true; btn.textContent = 'Deleting…'; }
+  if (errEl) errEl.style.display = 'none';
+
+  try {
+    var res  = await fetch('/api/account', {
+      method:  'DELETE',
+      headers: { 'Content-Type': 'application/json' },
+      body:    JSON.stringify({ userId: userId, secretWord: secret.trim() })
+    });
+    var data = await res.json();
+
+    if (res.status === 401) {
+      if (errEl) { errEl.textContent = data.error || 'Wrong secret word — try again'; errEl.style.display = 'block'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Delete My Account Forever'; }
+      return;
+    }
+    if (!res.ok) {
+      if (errEl) { errEl.textContent = data.error || 'Deletion failed — please try again.'; errEl.style.display = 'block'; }
+      if (btn) { btn.disabled = false; btn.textContent = 'Delete My Account Forever'; }
+      return;
+    }
+
+    // Success — wipe local state and reload to login screen
+    localStorage.clear();
+    location.reload();
+  } catch (e) {
+    if (errEl) { errEl.textContent = 'Network error — check your connection and try again.'; errEl.style.display = 'block'; }
+    if (btn) { btn.disabled = false; btn.textContent = 'Delete My Account Forever'; }
+  }
+}
