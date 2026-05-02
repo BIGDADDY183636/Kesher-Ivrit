@@ -1101,6 +1101,7 @@ body {
   display: flex;
   gap: 12px;
   max-width: 85%;
+  flex-shrink: 0;   /* prevent message compression in scrolling flex column */
   animation: msgIn 0.28s cubic-bezier(0.22, 1, 0.36, 1);
 }
 @keyframes msgIn {
@@ -2065,6 +2066,7 @@ body {
 
 /* ── Challenge bubble: warm amber, clearly separate from teach content ── */
 .challenge-bubble {
+  flex-shrink: 0;   /* Check button must never be clipped — no compression allowed */
   background: linear-gradient(160deg, #FFFBF0 0%, #FFF6DC 100%);
   border: 1.5px solid rgba(251, 191, 36, 0.35);
   box-shadow:
