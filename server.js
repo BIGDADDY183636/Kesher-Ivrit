@@ -45,7 +45,10 @@ const anthropic  = new Anthropic({ apiKey: process.env.ANTHROPIC_API_KEY });
 
 // ── Provider routing ──────────────────────────────────────────────────────────
 // Anthropic (claude-sonnet-4-6): QA mode, bar/bat mitzvah, Bible, prayer
-// Groq (llama-3.3-70b-versatile):        all standard Hebrew lessons
+// Groq (llama-3.3-70b-versatile / llama-3.1-8b-instant): all standard Hebrew lessons
+const GROQ_CHAT_MODEL  = 'llama-3.3-70b-versatile';
+const GROQ_LIGHT_MODEL = 'llama-3.1-8b-instant';
+
 const ANTHROPIC_GOALS = new Set(['bar_mitzvah', 'bible', 'prayer']);
 
 function selectProvider(userProfile) {
@@ -68,7 +71,7 @@ async function callAI(provider, systemPrompt, messages, maxTokens) {
     return r.content[0].text;
   }
   const r = await groq.chat.completions.create({
-    model:      'llama-3.3-70b-versatile',
+    model:      GROQ_CHAT_MODEL,
     max_tokens: maxTokens,
     messages:   [{ role: 'system', content: systemPrompt }, ...messages]
   });
@@ -1596,7 +1599,7 @@ Generate 10 high-quality, linguistically accurate questions. Return ONLY the JSO
 
   try {
     const r = await groq.chat.completions.create({
-      model:       'llama-3.3-70b-versatile',
+      model:       GROQ_CHAT_MODEL,
       max_tokens:  2000,
       temperature: 0.3,
       messages:    [{ role: 'user', content: prompt }]
@@ -1629,7 +1632,7 @@ app.post('/api/tooltip', async (req, res) => {
   try {
     const client = apiKey === process.env.GROQ_API_KEY ? groq : new Groq({ apiKey });
     const response = await client.chat.completions.create({
-      model:      'llama-3.3-70b-versatile',
+      model:      GROQ_LIGHT_MODEL,
       max_tokens: 80,
       messages: [{
         role: 'user',
@@ -1650,7 +1653,7 @@ app.get('/api/status', (req, res) => {
   const anthropicKey = process.env.ANTHROPIC_API_KEY || '';
   res.json({
     configured:       !!(groqKey || anthropicKey),
-    groq:             { configured: !!groqKey,      model: 'llama-3.3-70b-versatile',    routes: 'standard lessons' },
+    groq:             { configured: !!groqKey,      model: `${GROQ_CHAT_MODEL} / ${GROQ_LIGHT_MODEL}`, routes: 'standard lessons / tooltip' },
     anthropic:        { configured: !!anthropicKey, model: 'claude-sonnet-4-6',  routes: 'QA mode, bar_mitzvah, bible, prayer' },
     push:             { ready: webpushReady, vapidPublicKey: !!_vapidPublic, vapidPrivateKey: !!_vapidPrivate, vapidEmail: !!_vapidEmail, setupError: webpushError },
     nodeVersion:      process.version,
