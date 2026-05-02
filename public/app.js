@@ -3349,8 +3349,9 @@ function newLesson() {
 }
 
 // ─── MESSAGE HANDLING ─────────────────────────────────────
-var _isSending   = false;
-var _lastBody    = null;  // last request body — stored for one-tap retry
+var _isSending        = false;
+var _lastBody         = null;  // last request body — stored for one-tap retry
+var _rateLimitStrikes = 0;     // consecutive rate-limit hits — drives backoff
 
 // ── Response cache — last 5 successful Morah responses (in-memory) ────────────
 var _respCache   = [];
@@ -3505,6 +3506,7 @@ async function sendToMorah(messages) {
     if (wordsData.length > 0) addWordsToProgress(wordsData);
 
     updateStreak();
+    _rateLimitStrikes = 0;  // successful response — reset backoff
     setMorahStatus('Ready to teach! 🇮🇱');
 
   } catch (error) {
@@ -3514,6 +3516,7 @@ async function sendToMorah(messages) {
     if (error.message === 'no_api_key') {
       appendErrorMessage('no_api_key');
     } else if (error.message === 'rate_limit') {
+      _rateLimitStrikes++;
       appendErrorMessage('rate_limit');
     } else {
       // Try cached fallback before showing error
@@ -3952,7 +3955,7 @@ function _streamBlocks(bubble, htmlContent, onDone) {
 function appendErrorMessage(errCode, serverDetail) {
   var MSGS = {
     no_api_key:   { emoji: '🛠️', title: 'Service temporarily unavailable', body: 'Morah is having trouble connecting right now. Please try again in a moment.', retry: true },
-    rate_limit:   { emoji: '⏳', title: 'Too many messages!',          body: 'Morah\'s free API limit was hit. She\'ll be ready again shortly — the timer will re-enable Retry automatically.', retry: true  },
+    rate_limit:   { emoji: '⏳', title: 'Too many messages!',          body: _rateLimitStrikes >= 3 ? 'We\'ve hit a temporary limit. Try again in 5 minutes.' : 'Morah\'s free API limit was hit. The timer will re-enable Retry automatically.', retry: true  },
     timeout:      { emoji: '⏱️', title: 'Morah is taking too long',    body: 'The response timed out. Tap Retry — she\'ll be right back!',  retry: true  },
     server_error: { emoji: '🛠️', title: 'Server hiccup',               body: 'Something glitched on our end. Already retried 3×. Tap Retry when ready.', retry: true },
   };
@@ -3969,15 +3972,17 @@ function appendErrorMessage(errCode, serverDetail) {
     ? '<div class="error-detail">' + escapeHtml(serverDetail) + '</div>'
     : '';
 
-  // Rate-limit gets a 60-second countdown; all others get immediate retry
+  // Rate-limit gets an exponential-backoff countdown; all others get immediate retry
+  // Strike 1 → 90s | Strike 2 → 180s | Strike 3+ → 300s (5 min)
   var retryBtn = '';
   var countdownId = '';
   if (m.retry && errCode === 'rate_limit') {
+    var _delay = _rateLimitStrikes >= 3 ? 300 : _rateLimitStrikes === 2 ? 180 : 90;
     var uid = 'rl' + Date.now();
     countdownId = uid;
     retryBtn =
-      '<div class="rl-countdown" id="' + uid + '-msg">Retry available in <span id="' + uid + '-secs">60</span>s</div>' +
-      '<button class="reconnect-btn" id="' + uid + '-btn" onclick="retryLastMessage()" disabled>🔄 Retry (60s)</button>';
+      '<div class="rl-countdown" id="' + uid + '-msg">Retry available in <span id="' + uid + '-secs">' + _delay + '</span>s</div>' +
+      '<button class="reconnect-btn" id="' + uid + '-btn" onclick="retryLastMessage()" disabled>🔄 Retry (' + _delay + 's)</button>';
   } else if (m.retry) {
     retryBtn = '<button class="reconnect-btn" onclick="retryLastMessage()">🔄 Retry</button>';
   }
@@ -3999,7 +4004,7 @@ function appendErrorMessage(errCode, serverDetail) {
 
   // Start countdown after element is in DOM
   if (countdownId) {
-    var _secs = 60;
+    var _secs = _delay;
     var _iv = setInterval(function() {
       _secs--;
       var secsEl = document.getElementById(countdownId + '-secs');
