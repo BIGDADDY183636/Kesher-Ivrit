@@ -4473,7 +4473,7 @@ function _buildMsgTable(lines) {
     cells.forEach(cell => {
       const c = cell.trim();
       const isHeb = /[֐-׿]/.test(c);
-      out += `<${tag}>${isHeb ? `<span class="tbl-heb" dir="rtl">${escapeHtml(c)}</span>` : _msgInline(c)}</${tag}>`;
+      out += `<${tag}>${isHeb ? `<span class="tbl-heb" dir="rtl">${escapeHtml(c)}</span>${speakerBtn(c)}` : _msgInline(c)}</${tag}>`;
     });
     out += '</tr>';
   });
