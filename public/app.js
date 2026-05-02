@@ -248,7 +248,7 @@ function renderWordOfDay() {
   const card = document.getElementById('wotd-card');
   if (!card) return;
   document.getElementById('wotd-hebrew').textContent  = word.hebrew;
-  document.getElementById('wotd-trans').textContent   = word.trans;
+  document.getElementById('wotd-trans').innerHTML = escapeHtml(word.trans) + speakerBtn(word.hebrew);
   document.getElementById('wotd-english').textContent = word.english;
   document.getElementById('wotd-example').textContent = word.example;
   card.style.display = 'block';
@@ -1983,6 +1983,7 @@ function _afterOnboarding() {
 }
 
 document.addEventListener('DOMContentLoaded', async () => {
+  _initSpeechSynth();
   loadUser();
   loadMyClass();
   loadProgress();
@@ -2446,7 +2447,7 @@ function _dtRenderRight() {
         '<div class="dt-right-title">✡ Word of the Day</div>' +
         '<div class="dt-wotd-card">' +
           '<div class="dt-wotd-heb">' + escapeHtml(w.hebrew) + '</div>' +
-          '<div class="dt-wotd-trans">' + escapeHtml(w.trans) + '</div>' +
+          '<div class="dt-wotd-trans">' + escapeHtml(w.trans) + speakerBtn(w.hebrew) + '</div>' +
           '<div class="dt-wotd-eng">' + escapeHtml(w.english) + '</div>' +
           (w.example ? '<div class="dt-wotd-example">' + escapeHtml(w.example) + '</div>' : '') +
         '</div>' +
@@ -3268,7 +3269,7 @@ function renderWordsList() {
   container.innerHTML = recent.map(w => `
     <div class="word-chip" title="${escapeHtml(w.english)}">
       <span class="word-chip-heb">${escapeHtml(w.hebrew)}</span>
-      <span class="word-chip-info">${escapeHtml(w.transliteration)} — ${escapeHtml(w.english)}</span>
+      <span class="word-chip-info">${escapeHtml(w.transliteration)}${speakerBtn(w.hebrew)} — ${escapeHtml(w.english)}</span>
     </div>
   `).join('');
 }
@@ -3850,7 +3851,7 @@ function appendMessage(role, content, wordBadges, instant) {
           if (!instant) { b.classList.add('msg-block-in'); b.style.cssText = 'animation-delay:' + (i * 0.07) + 's;--bd:0.35s'; }
           b.innerHTML =
             '<span class="word-badge-heb">'   + escapeHtml(w.hebrew)          + '</span>' +
-            '<span class="word-badge-trans">'  + escapeHtml(w.transliteration) + '</span>' +
+            '<span class="word-badge-trans">'  + escapeHtml(w.transliteration) + speakerBtn(w.hebrew) + '</span>' +
             '<span class="word-badge-eng">'    + escapeHtml(w.english)         + '</span>';
           badgeWrap.appendChild(b);
         });
@@ -4175,7 +4176,7 @@ function renderMatch(cId, c, container) {
         ${pairs.map((p, i) => `
           <button class="match-btn match-heb" data-idx="${i}" data-cid="${cId}" onclick="selectMatch(this,'heb')">
             <span class="match-heb-word">${escapeHtml(p.hebrew)}</span>
-            <span class="match-trans">${escapeHtml(p.transliteration)}</span>
+            <span class="match-trans">${escapeHtml(p.transliteration)}${speakerBtn(p.hebrew)}</span>
           </button>`).join('')}
       </div>
       <div class="match-col" id="match-eng-${cId}">
@@ -4915,7 +4916,7 @@ function renderSRWord() {
   // Animate card in
   if (card) { card.classList.remove('sr-slide-in'); void card.offsetWidth; card.classList.add('sr-slide-in'); }
   document.getElementById('sr-hebrew').textContent = word.hebrew;
-  document.getElementById('sr-trans').textContent  = word.transliteration;
+  document.getElementById('sr-trans').innerHTML = escapeHtml(word.transliteration) + speakerBtn(word.hebrew);
 
   // Build 4 options: 1 correct + 3 distractors
   const distractors = shuffle(sr.pool.filter(function(w) { return w.hebrew !== word.hebrew; })).slice(0, 3);
@@ -5063,7 +5064,7 @@ function renderNotebook(query) {
     groups[cat].forEach(function(w) {
       html += '<div class="nb-word">' +
         '<span class="nb-heb">' + escapeHtml(w.hebrew || '') + '</span>' +
-        '<span class="nb-trans">' + escapeHtml(w.transliteration || '') + '</span>' +
+        '<span class="nb-trans">' + escapeHtml(w.transliteration || '') + speakerBtn(w.hebrew || '') + '</span>' +
         '<span class="nb-eng">' + escapeHtml(w.english || '') + '</span>' +
         '</div>';
     });
@@ -5411,7 +5412,7 @@ async function showTooltip(word, rect) {
     const data = await res.json();
 
     if (!tooltipVisible) return; // closed while loading
-    document.getElementById('tt-trans').textContent = data.transliteration || '';
+    document.getElementById('tt-trans').innerHTML = escapeHtml(data.transliteration || '') + speakerBtn(word);
     document.getElementById('tt-english').textContent = data.english || '';
     document.getElementById('tt-pos').textContent = data.partOfSpeech || '';
   } catch (e) {
@@ -5427,6 +5428,39 @@ function closeTooltip() {
 }
 
 // API key management removed — keys are server-side only
+
+// ─── SPEECH SYNTHESIS (TTS) ───────────────────────────────
+var _hebrewVoice = null;
+function _initSpeechSynth() {
+  if (!window.speechSynthesis) return;
+  function pick() {
+    var voices = window.speechSynthesis.getVoices();
+    _hebrewVoice = voices.find(function(v) { return v.lang === 'he-IL'; }) ||
+                   voices.find(function(v) { return v.lang.startsWith('he'); }) || null;
+  }
+  pick();
+  window.speechSynthesis.onvoiceschanged = pick; // Chrome/Firefox load voices async
+}
+
+function speakHebrew(text) {
+  if (!window.speechSynthesis || !text) return;
+  window.speechSynthesis.cancel();
+  var u = new SpeechSynthesisUtterance(text);
+  u.lang = 'he-IL';
+  if (_hebrewVoice) u.voice = _hebrewVoice;
+  u.rate = 0.85;
+  window.speechSynthesis.speak(u);
+}
+
+// Returns a 🔊 span (not button — avoids nested-button invalid HTML in game cards).
+// Empty string if speechSynthesis unsupported.
+function speakerBtn(hebrewText) {
+  if (!window.speechSynthesis) return '';
+  var safe = (hebrewText || '').replace(/\\/g, '\\\\').replace(/'/g, '\\x27');
+  return '<span class="speak-btn" role="button" tabindex="0" ' +
+    'onclick="event.stopPropagation();speakHebrew(\'' + safe + '\')" ' +
+    'aria-label="Hear pronunciation" title="Hear pronunciation">🔊</span>';
+}
 
 // ─── UTILITY ──────────────────────────────────────────────
 function escapeHtml(str) {
@@ -5690,7 +5724,7 @@ function _wlShowResult(won) {
   var stk  = _wlLoadStreak();
   el.innerHTML =
     '<div class="wl-res-word">' + word.display + '</div>' +
-    '<div class="wl-res-translit">' + escapeHtml(word.translit) + '</div>' +
+    '<div class="wl-res-translit">' + escapeHtml(word.translit) + speakerBtn(word.display) + '</div>' +
     '<div class="wl-res-english">' + escapeHtml(word.english) + '</div>' +
     '<div class="wl-res-fact">' + escapeHtml(word.fact) + '</div>' +
     (won

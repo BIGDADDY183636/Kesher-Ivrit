@@ -10538,3 +10538,29 @@ p, li, .mob-action-title { font-weight: 500; }
 .st-toggle input:disabled + .st-toggle-track { opacity: 0.35; cursor: default; }
 [data-theme="dark"] .st-toggle-track { background: #2A2A40; }
 [data-theme="dark"] .st-toggle input:checked + .st-toggle-track { background: #1B5EE0; }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SPEAKER BUTTON (.speak-btn)  v9.18
+   Inline 🔊 next to every transliteration. Implemented as <span role=button>
+   rather than <button> to avoid invalid nested-button HTML in game cards.
+   ══════════════════════════════════════════════════════════════════════════ */
+.speak-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  margin-left: 4px;
+  vertical-align: middle;
+  font-size: 0.72rem;
+  line-height: 1;
+  opacity: 0.45;
+  cursor: pointer;
+  border-radius: 3px;
+  transition: opacity 0.15s, transform 0.12s;
+  -webkit-tap-highlight-color: transparent;
+  user-select: none;
+}
+.speak-btn:hover  { opacity: 1; }
+.speak-btn:active { opacity: 1; transform: scale(0.82); }
