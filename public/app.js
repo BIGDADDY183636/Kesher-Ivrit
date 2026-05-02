@@ -7438,3 +7438,47 @@ function _qmReviewMorah() {
   showToast('Morah will focus on your quiz mistakes this lesson!');
   continueLearning();
 }
+
+// ── TEMPORARY: push notification test subscribe button ────────────────────────
+// Remove this function (and the #push-test-btn HTML) once push is fully wired up.
+async function subscribeToPushTest() {
+  var btn = document.getElementById('push-test-btn');
+  function setBtn(txt, disabled) { if (btn) { btn.textContent = txt; btn.disabled = !!disabled; } }
+
+  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+    alert('Push notifications are not supported on this browser/device.');
+    return;
+  }
+
+  setBtn('Requesting…');
+  try {
+    var perm = await Notification.requestPermission();
+    if (perm !== 'granted') {
+      alert('Permission denied — please allow notifications in your device settings.');
+      setBtn('🔔 Enable Notifications');
+      return;
+    }
+
+    setBtn('Subscribing…');
+    var kvRes = await fetch('/api/push/vapid-public-key');
+    var kv    = await kvRes.json();
+    if (!kv.publicKey) throw new Error('Could not fetch VAPID key');
+
+    var reg = await navigator.serviceWorker.ready;
+    var sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: kv.publicKey });
+
+    var res  = await fetch('/api/push/subscribe', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ subscription: sub, userId: null })
+    });
+    var data = await res.json();
+    if (!data.ok) throw new Error(data.error || 'Subscribe failed');
+
+    setBtn('✓ Subscribed!', true);
+    alert('Subscribed! Test push coming shortly.');
+  } catch (e) {
+    alert('Push subscribe error: ' + e.message);
+    setBtn('🔔 Enable Notifications');
+  }
+}

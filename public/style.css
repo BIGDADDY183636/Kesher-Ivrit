@@ -10332,3 +10332,24 @@ p, li, .mob-action-title { font-weight: 500; }
   background: rgba(255,255,255,0.1);
   color: #fff;
 }
+
+/* ── TEMPORARY: push test button ─────────────────────────────────────────────
+   Remove this block once push notifications are fully wired up.           */
+.btn-push-test {
+  display: block;
+  margin: 10px auto 0;
+  padding: 8px 18px;
+  background: transparent;
+  border: 1px solid rgba(255,255,255,0.35);
+  border-radius: 20px;
+  color: rgba(255,255,255,0.7);
+  font-family: var(--font-eng);
+  font-size: 0.8rem;
+  font-weight: 600;
+  cursor: pointer;
+  letter-spacing: 0.02em;
+  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.btn-push-test:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.6); }
+.btn-push-test:disabled { opacity: 0.6; cursor: default; }
