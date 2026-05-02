@@ -2235,6 +2235,7 @@ body {
 /* Fill in the blank */
 .fill-row {
   display: flex;
+  flex-wrap: wrap;
   gap: 8px;
   margin-bottom: 10px;
 }
@@ -2265,6 +2266,7 @@ body {
   font-family: var(--font-eng);
   transition: all 0.2s;
   white-space: nowrap;
+  flex-basis: 100%;
 }
 .fill-submit:hover:not(:disabled) { transform: translateY(-2px); }
 .fill-submit:disabled { opacity: 0.5; cursor: default; }
