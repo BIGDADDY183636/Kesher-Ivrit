@@ -3353,6 +3353,11 @@ var _isSending        = false;
 var _lastBody         = null;  // last request body — stored for one-tap retry
 var _rateLimitStrikes = 0;     // consecutive rate-limit hits — drives backoff
 
+// Voice input for challenges (MediaRecorder → Groq Whisper via /api/transcribe)
+var _micState      = {};   // { [cId]: 'idle' | 'requesting' | 'recording' | 'transcribing' }
+var _mediaRecorder = null;
+var _audioChunks   = [];
+
 // ── Response cache — last 5 successful Morah responses (in-memory) ────────────
 var _respCache   = [];
 var _CACHE_MAX   = 5;
@@ -4100,11 +4105,14 @@ function answerMC(cId, selected) {
 }
 
 function renderFillBlank(cId, c, container) {
+  _micState[cId] = 'idle';  // always reset on (re)render
   container.innerHTML = `
     <div class="challenge-question">${escapeHtml(c.question)}</div>
     ${c.hint ? `<div class="challenge-hint">💡 Hint: ${escapeHtml(c.hint)}</div>` : ''}
     <div class="fill-row">
-      <input class="fill-input" id="fill-${cId}" placeholder="Type your answer…"
+      <button class="fill-mic-btn" id="mic-${cId}" onclick="toggleVoiceInput(${cId})"
+        title="Speak your answer" aria-label="Voice input">🎤</button>
+      <input class="fill-input" id="fill-${cId}" placeholder="Type or speak your answer…"
         onkeydown="if(event.key==='Enter') answerFill(${cId})" autocomplete="off" />
       <button class="fill-submit" onclick="answerFill(${cId})">Check →</button>
     </div>
@@ -4164,7 +4172,115 @@ function answerFill(cId) {
 
   showChallengeFeedback(cId, correct, challenge.explanation);
   awardChallengePoints(correct, 10);
+  // Disable mic too once challenge is answered
+  var micBtn = document.getElementById('mic-' + cId);
+  if (micBtn) micBtn.disabled = true;
   setTimeout(function() { sendChallengeResult(correct, challenge, val); }, 800);
+}
+
+// ─── VOICE INPUT FOR CHALLENGES ───────────────────────────────────────────────
+// MediaRecorder → base64 blob → POST /api/transcribe (Groq Whisper) → fill input.
+// Covers fill_blank and translate challenges (translate falls back to fill_blank).
+
+async function toggleVoiceInput(cId) {
+  var state = _micState[cId] || 'idle';
+
+  if (state === 'recording') {
+    // Second tap → stop and transcribe
+    if (_mediaRecorder && _mediaRecorder.state !== 'inactive') _mediaRecorder.stop();
+    return;
+  }
+  if (state !== 'idle') return; // busy (requesting / transcribing)
+
+  if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+    showToast('Voice input is not supported on this browser.');
+    return;
+  }
+
+  try {
+    _micState[cId] = 'requesting';
+    _setMicBtn(cId, '⏳', true);
+
+    var stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _audioChunks = [];
+
+    // Let the browser choose its preferred format:
+    //   iOS (Safari/PWA) → audio/mp4    Chrome/Android → audio/webm
+    //   Firefox          → audio/ogg    All accepted by Groq Whisper.
+    _mediaRecorder = new MediaRecorder(stream);
+
+    _mediaRecorder.ondataavailable = function(e) {
+      if (e.data && e.data.size > 0) _audioChunks.push(e.data);
+    };
+
+    _mediaRecorder.onstop = function() {
+      stream.getTracks().forEach(function(t) { t.stop(); }); // release mic
+
+      var mimeType = _mediaRecorder.mimeType || 'audio/webm';
+      var blob = new Blob(_audioChunks, { type: mimeType });
+      _audioChunks = [];
+
+      _micState[cId] = 'transcribing';
+      _setMicBtn(cId, '⏳', true);
+
+      var reader = new FileReader();
+      reader.onload = function() {
+        var base64 = reader.result.split(',')[1];
+        fetch('/api/transcribe', {
+          method:  'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body:    JSON.stringify({ audio: base64, mimeType: mimeType })
+        })
+        .then(function(r) { return r.json(); })
+        .then(function(data) {
+          if (data.text && data.text.length > 0) {
+            var input = document.getElementById('fill-' + cId);
+            if (input && !input.disabled) { input.value = data.text; input.focus(); }
+          } else {
+            showToast('Could not hear audio clearly — please try again.');
+          }
+        })
+        .catch(function() {
+          showToast('Transcription failed. Check your connection and try again.');
+        })
+        .finally(function() {
+          _micState[cId] = 'idle';
+          _setMicBtn(cId, '🎤', false);
+        });
+      };
+      reader.onerror = function() {
+        showToast('Could not read audio recording.');
+        _micState[cId] = 'idle';
+        _setMicBtn(cId, '🎤', false);
+      };
+      reader.readAsDataURL(blob);
+    };
+
+    _mediaRecorder.start();
+    _micState[cId] = 'recording';
+    var micBtn = document.getElementById('mic-' + cId);
+    if (micBtn) micBtn.classList.add('fill-mic-recording');
+    _setMicBtn(cId, '🔴', false);
+
+  } catch (e) {
+    _micState[cId] = 'idle';
+    _setMicBtn(cId, '🎤', false);
+    if (e.name === 'NotAllowedError' || e.name === 'PermissionDeniedError') {
+      showToast('🎤 Mic permission denied — allow microphone access in your device settings.');
+    } else if (e.name === 'NotFoundError') {
+      showToast('No microphone found on this device.');
+    } else {
+      showToast('Could not start recording: ' + (e.message || e.name));
+    }
+  }
+}
+
+function _setMicBtn(cId, emoji, disabled) {
+  var btn = document.getElementById('mic-' + cId);
+  if (!btn) return;
+  btn.textContent = emoji;
+  btn.disabled    = !!disabled;
+  if (emoji !== '🔴') btn.classList.remove('fill-mic-recording');
 }
 
 function renderTrueFalse(cId, c, container) {

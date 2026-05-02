@@ -1,6 +1,7 @@
 ﻿require('dotenv').config();
 const express    = require('express');
 const Groq       = require('groq-sdk');
+const { toFile } = require('groq-sdk');
 const Anthropic  = require('@anthropic-ai/sdk');
 const webpush    = require('web-push');
 const path       = require('path');
@@ -1781,6 +1782,38 @@ app.post('/api/push/test', async (req, res) => {
 });
 
 // ── end push notifications ────────────────────────────────────────────────────
+
+// ── POST /api/transcribe — Groq Whisper STT for challenge voice input ─────────
+// Body (JSON): { audio: "<base64>", mimeType: "audio/mp4" | "audio/webm" | ... }
+// Response:   { text: "שָׁלוֹם" }
+// Accepts whatever MediaRecorder outputs — iOS → mp4, Chrome/FF → webm/ogg.
+app.post('/api/transcribe', async (req, res) => {
+  const { audio, mimeType } = req.body || {};
+  if (!audio)                    return res.status(400).json({ error: 'audio is required' });
+  if (!process.env.GROQ_API_KEY) return res.status(503).json({ error: 'Transcription not configured' });
+
+  try {
+    const buffer = Buffer.from(audio, 'base64');
+    const ext = mimeType && mimeType.includes('mp4') ? 'mp4'
+              : mimeType && mimeType.includes('ogg') ? 'ogg'
+              : mimeType && mimeType.includes('wav') ? 'wav'
+              : 'webm';
+    const file   = await toFile(buffer, `recording.${ext}`, { type: mimeType || 'audio/webm' });
+    const result = await groq.audio.transcriptions.create({
+      file,
+      model:           'whisper-large-v3-turbo',
+      response_format: 'json',
+      // No language hint — auto-detect handles Hebrew and English answers
+    });
+    const text = (result.text || '').trim();
+    console.log(`[Transcribe] OK — ${buffer.length}B ${ext} → "${text.slice(0, 60)}${text.length > 60 ? '…' : ''}"`);
+    res.json({ text });
+  } catch (e) {
+    const status = e.status === 429 ? 429 : 500;
+    console.error('[Transcribe] error:', e.status, e.message);
+    res.status(status).json({ error: e.message || 'Transcription failed' });
+  }
+});
 
 const PORT = process.env.PORT || 3000;
 app.listen(PORT, () => {
