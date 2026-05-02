@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Kesher Ivrit v9.16 | קשר עברית</title>
+  <title>Kesher Ivrit v9.17 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=953" />
+  <link rel="stylesheet" href="style.css?v=954" />
 </head>
 <body>
 <div id="dt-shell">
@@ -465,6 +465,7 @@
 ═══════════════════════════════════════════ -->
 <div id="screen-home" class="screen active">
   <div class="stars-bg"></div>
+  <!-- Badge moved to top-LEFT; gear icon occupies top-RIGHT (settings convention) -->
   <div id="home-user-badge" class="home-user-badge" style="display:none;">
     <span class="hub-avatar" id="hub-avatar">👤</span>
     <div class="hub-info">
@@ -472,6 +473,7 @@
       <div class="hub-school" id="hub-school"></div>
     </div>
   </div>
+  <button class="home-settings-btn" onclick="showSettings()" aria-label="Open settings">⚙️</button>
   <div class="home-container">
     <div class="flag-stripe top"></div>
     <div class="home-hero">
@@ -487,9 +489,6 @@
       </button>
 
       <button class="btn-myclass-home" onclick="showMyClass()">My Class</button>
-
-      <!-- TEMPORARY: push test subscribe button — remove after push is fully wired -->
-      <button id="push-test-btn" class="btn-push-test" onclick="subscribeToPushTest()">🔔 Enable Notifications</button>
 
       <div id="returning-user-section" style="display:none;">
         <div class="divider-or">— or —</div>
@@ -627,7 +626,7 @@
           <span class="cub-school" id="cub-school"></span>
         </div>
         <div class="cub-right">
-          <span class="cub-version">v9.16</span>
+          <span class="cub-version">v9.17</span>
           <button class="cub-restart-btn" onclick="newLesson()" title="New conversation">↺</button>
         </div>
       </div>
@@ -648,7 +647,7 @@
             <span class="typing-dot"></span>
           </div>
           <span class="typing-text">Morah is thinking…</span>
-          <span class="typing-version">v9.16</span>
+          <span class="typing-version">v9.17</span>
         </div>
         <div class="input-row">
           <button class="btn-mic" id="btn-mic" onclick="toggleVoiceInput()" title="Speak your answer">
@@ -1330,7 +1329,7 @@
 
 </div>
 
-<script src="app.js?v=953"></script>
+<script src="app.js?v=954"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">
@@ -1473,6 +1472,107 @@
   });
 })();
 </script>
+
+<!-- ═══════════════════════════════════════════
+     SETTINGS OVERLAY
+     position:fixed, contained by #app-root transform.
+     Accessible from any screen.
+═══════════════════════════════════════════ -->
+<div id="settings-overlay" class="settings-overlay st-hidden">
+  <div class="settings-screen">
+
+    <div class="settings-header">
+      <div class="settings-header-left">
+        <div class="settings-title">Settings</div>
+        <div class="settings-subtitle">הגדרות</div>
+      </div>
+      <button class="settings-close" onclick="hideSettings()" aria-label="Close">✕</button>
+    </div>
+
+    <div class="settings-body" id="settings-body">
+
+      <!-- ── Notifications ── -->
+      <div class="st-section" id="st-notif-section">
+        <div class="st-section-hdr">🔔 Notifications</div>
+
+        <div class="st-row st-row-master">
+          <div class="st-row-info">
+            <div class="st-row-label">Allow Notifications</div>
+            <div class="st-row-sub">Enable push notifications from Kesher Ivrit</div>
+          </div>
+          <label class="st-toggle">
+            <input type="checkbox" id="pref-master" onchange="_toggleMasterPush()">
+            <span class="st-toggle-track"></span>
+          </label>
+        </div>
+
+        <div class="st-divider"></div>
+
+        <div class="st-row st-row-sub">
+          <div class="st-row-label"><span class="st-row-icon">📅</span> Daily lesson reminder</div>
+          <label class="st-toggle">
+            <input type="checkbox" id="pref-daily" onchange="_toggleSubPref('daily')">
+            <span class="st-toggle-track"></span>
+          </label>
+        </div>
+        <div class="st-row st-row-sub">
+          <div class="st-row-label"><span class="st-row-icon">🔥</span> Streak warning</div>
+          <label class="st-toggle">
+            <input type="checkbox" id="pref-streak" onchange="_toggleSubPref('streak')">
+            <span class="st-toggle-track"></span>
+          </label>
+        </div>
+        <div class="st-row st-row-sub">
+          <div class="st-row-label"><span class="st-row-icon">🏫</span> Teacher posts</div>
+          <label class="st-toggle">
+            <input type="checkbox" id="pref-teacher" onchange="_toggleSubPref('teacher')">
+            <span class="st-toggle-track"></span>
+          </label>
+        </div>
+        <div class="st-row st-row-sub">
+          <div class="st-row-label"><span class="st-row-icon">🏆</span> Leaderboard pass</div>
+          <label class="st-toggle">
+            <input type="checkbox" id="pref-leaderboard" onchange="_toggleSubPref('leaderboard')">
+            <span class="st-toggle-track"></span>
+          </label>
+        </div>
+        <div class="st-row st-row-sub">
+          <div class="st-row-label"><span class="st-row-icon">📜</span> Parasha reminder</div>
+          <label class="st-toggle">
+            <input type="checkbox" id="pref-parasha" onchange="_toggleSubPref('parasha')">
+            <span class="st-toggle-track"></span>
+          </label>
+        </div>
+        <div class="st-row st-row-sub">
+          <div class="st-row-label"><span class="st-row-icon">👥</span> Friend beats your score</div>
+          <label class="st-toggle">
+            <input type="checkbox" id="pref-friend" onchange="_toggleSubPref('friend')">
+            <span class="st-toggle-track"></span>
+          </label>
+        </div>
+
+        <div class="st-note" id="st-notif-note">Enable "Allow Notifications" above to customize alerts</div>
+      </div>
+
+      <!-- ── Account (future) ── -->
+      <div class="st-section st-section-future">
+        <div class="st-section-hdr">👤 Account <span class="st-badge-soon">Coming soon</span></div>
+      </div>
+
+      <!-- ── Appearance (future) ── -->
+      <div class="st-section st-section-future">
+        <div class="st-section-hdr">🎨 Appearance <span class="st-badge-soon">Coming soon</span></div>
+      </div>
+
+      <!-- ── About (future) ── -->
+      <div class="st-section st-section-future">
+        <div class="st-section-hdr">ℹ️ About <span class="st-badge-soon">Coming soon</span></div>
+      </div>
+
+    </div><!-- /settings-body -->
+  </div><!-- /settings-screen -->
+</div><!-- /settings-overlay -->
+
 </div><!-- /#app-root -->
 </div><!-- /#dt-shell -->
 </body>

@@ -7439,46 +7439,128 @@ function _qmReviewMorah() {
   continueLearning();
 }
 
-// ── TEMPORARY: push notification test subscribe button ────────────────────────
-// Remove this function (and the #push-test-btn HTML) once push is fully wired up.
-async function subscribeToPushTest() {
-  var btn = document.getElementById('push-test-btn');
-  function setBtn(txt, disabled) { if (btn) { btn.textContent = txt; btn.disabled = !!disabled; } }
+// ── SETTINGS OVERLAY ─────────────────────────────────────────────────────────
 
-  if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
-    alert('Push notifications are not supported on this browser/device.');
-    return;
+function showSettings() {
+  var el = document.getElementById('settings-overlay');
+  if (el) { el.classList.remove('st-hidden'); el.classList.add('st-visible'); }
+  _renderSettings();
+}
+
+function hideSettings() {
+  var el = document.getElementById('settings-overlay');
+  if (el) { el.classList.remove('st-visible'); el.classList.add('st-hidden'); }
+}
+
+// ── Push preference storage (localStorage, synced to Supabase in future session)
+var _PUSH_PREFS_KEY = 'ki_push_prefs';
+var _PUSH_PREFS_DEFAULTS = {
+  master: false, endpoint: null,
+  daily: true, streak: true, teacher: true,
+  leaderboard: false, parasha: false, friend: false
+};
+
+function _loadPushPrefs() {
+  try {
+    var raw = localStorage.getItem(_PUSH_PREFS_KEY);
+    return raw ? Object.assign({}, _PUSH_PREFS_DEFAULTS, JSON.parse(raw)) : Object.assign({}, _PUSH_PREFS_DEFAULTS);
+  } catch (e) { return Object.assign({}, _PUSH_PREFS_DEFAULTS); }
+}
+
+function _savePushPrefs(prefs) {
+  try { localStorage.setItem(_PUSH_PREFS_KEY, JSON.stringify(prefs)); } catch (e) {}
+}
+
+function _renderSettings() {
+  var prefs = _loadPushPrefs();
+
+  // Reconcile: if device permission was revoked externally, reset master
+  if (typeof Notification !== 'undefined' && Notification.permission !== 'granted' && prefs.master) {
+    prefs.master = false;
+    prefs.endpoint = null;
+    _savePushPrefs(prefs);
   }
 
-  setBtn('Requesting…');
-  try {
-    var perm = await Notification.requestPermission();
-    if (perm !== 'granted') {
-      alert('Permission denied — please allow notifications in your device settings.');
-      setBtn('🔔 Enable Notifications');
+  var master = document.getElementById('pref-master');
+  if (master) master.checked = !!prefs.master;
+
+  var subKeys = ['daily', 'streak', 'teacher', 'leaderboard', 'parasha', 'friend'];
+  subKeys.forEach(function(k) {
+    var el = document.getElementById('pref-' + k);
+    if (!el) return;
+    el.checked  = !!prefs[k];
+    el.disabled = !prefs.master;
+  });
+
+  var note = document.getElementById('st-notif-note');
+  if (note) note.style.opacity = prefs.master ? '0' : '1';
+}
+
+async function _toggleMasterPush() {
+  var el = document.getElementById('pref-master');
+  var wantOn = el ? el.checked : false;
+  var prefs = _loadPushPrefs();
+
+  if (wantOn) {
+    if (!('serviceWorker' in navigator) || !('PushManager' in window)) {
+      showToast('Push notifications not supported on this browser.');
+      if (el) el.checked = false;
       return;
     }
+    try {
+      var perm = await Notification.requestPermission();
+      if (perm !== 'granted') {
+        showToast('Permission denied — allow notifications in device settings.');
+        if (el) el.checked = false;
+        return;
+      }
+      var kvRes = await fetch('/api/push/vapid-public-key');
+      var kv    = await kvRes.json();
+      if (!kv.publicKey) throw new Error('Could not fetch VAPID key');
 
-    setBtn('Subscribing…');
-    var kvRes = await fetch('/api/push/vapid-public-key');
-    var kv    = await kvRes.json();
-    if (!kv.publicKey) throw new Error('Could not fetch VAPID key');
+      var reg = await navigator.serviceWorker.ready;
+      var sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: kv.publicKey });
 
-    var reg = await navigator.serviceWorker.ready;
-    var sub = await reg.pushManager.subscribe({ userVisibleOnly: true, applicationServerKey: kv.publicKey });
+      var userId = (typeof currentUser !== 'undefined' && currentUser) ? (currentUser.userId || null) : null;
+      var res  = await fetch('/api/push/subscribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ subscription: sub, userId: userId })
+      });
+      var data = await res.json();
+      if (!data.ok) throw new Error(data.error || 'Subscribe failed');
 
-    var res  = await fetch('/api/push/subscribe', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ subscription: sub, userId: null })
-    });
-    var data = await res.json();
-    if (!data.ok) throw new Error(data.error || 'Subscribe failed');
-
-    setBtn('✓ Subscribed!', true);
-    alert('Subscribed! Test push coming shortly.');
-  } catch (e) {
-    alert('Push subscribe error: ' + e.message);
-    setBtn('🔔 Enable Notifications');
+      prefs.master   = true;
+      prefs.endpoint = sub.endpoint;
+      _savePushPrefs(prefs);
+      showToast('🔔 Notifications enabled!');
+    } catch (e) {
+      showToast('Could not enable notifications: ' + e.message);
+      if (el) el.checked = false;
+      prefs.master = false;
+      _savePushPrefs(prefs);
+    }
+  } else {
+    // Unsubscribe
+    if (prefs.endpoint) {
+      fetch('/api/push/unsubscribe', {
+        method: 'DELETE',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ endpoint: prefs.endpoint })
+      }).catch(function() {});
+    }
+    prefs.master   = false;
+    prefs.endpoint = null;
+    _savePushPrefs(prefs);
+    showToast('Notifications disabled.');
   }
+
+  _renderSettings();
+}
+
+function _toggleSubPref(key) {
+  var prefs = _loadPushPrefs();
+  var el = document.getElementById('pref-' + key);
+  if (el) prefs[key] = el.checked;
+  _savePushPrefs(prefs);
 }

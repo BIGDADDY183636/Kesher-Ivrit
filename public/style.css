@@ -509,7 +509,7 @@ body {
 .home-user-badge {
   position: absolute;
   top: 90px;
-  right: 24px;
+  left: 20px;
   z-index: 10;
   display: flex;
   align-items: center;
@@ -10333,23 +10333,208 @@ p, li, .mob-action-title { font-weight: 500; }
   color: #fff;
 }
 
-/* ── TEMPORARY: push test button ─────────────────────────────────────────────
-   Remove this block once push notifications are fully wired up.           */
-.btn-push-test {
-  display: block;
-  margin: 10px auto 0;
-  padding: 8px 18px;
-  background: transparent;
+/* ══════════════════════════════════════════════════════════════════════════
+   HOME SCREEN — GEAR / SETTINGS BUTTON
+   Top-right, mirrors the user badge (now top-left). Gear = conventional
+   settings placement (iOS/Android). Badge moved left for user identity.
+   ══════════════════════════════════════════════════════════════════════════ */
+.home-settings-btn {
+  position: absolute;
+  top: 90px;
+  right: 20px;
+  z-index: 10;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: rgba(255,255,255,0.18);
   border: 1px solid rgba(255,255,255,0.35);
-  border-radius: 20px;
-  color: rgba(255,255,255,0.7);
-  font-family: var(--font-eng);
-  font-size: 0.8rem;
-  font-weight: 600;
+  backdrop-filter: blur(8px);
+  font-size: 1.15rem;
+  line-height: 1;
   cursor: pointer;
-  letter-spacing: 0.02em;
-  transition: background 0.15s, color 0.15s, border-color 0.15s;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background 0.15s, transform 0.15s;
   -webkit-tap-highlight-color: transparent;
 }
-.btn-push-test:hover { background: rgba(255,255,255,0.1); color: #fff; border-color: rgba(255,255,255,0.6); }
-.btn-push-test:disabled { opacity: 0.6; cursor: default; }
+.home-settings-btn:hover  { background: rgba(255,255,255,0.28); }
+.home-settings-btn:active { transform: scale(0.92); }
+
+/* ══════════════════════════════════════════════════════════════════════════
+   SETTINGS OVERLAY  v9.17
+   Follows same architecture as .progress-overlay and .leaderboard-overlay:
+   position:fixed, contained by #app-root transform, show/hide via classes.
+   ══════════════════════════════════════════════════════════════════════════ */
+.settings-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2500;
+  background: var(--blue-bg);
+  display: flex;
+  flex-direction: column;
+  transition: opacity 0.22s, transform 0.22s;
+}
+[data-theme="dark"] .settings-overlay { background: #0A0A0F; }
+.st-hidden  { opacity: 0; pointer-events: none; transform: translateY(24px); }
+.st-visible { opacity: 1; pointer-events: all;  transform: translateY(0); }
+
+.settings-screen {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* Header */
+.settings-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px 14px;
+  background: linear-gradient(135deg, #000D44 0%, #003399 100%);
+  flex-shrink: 0;
+  box-shadow: 0 4px 16px rgba(0,30,120,0.3);
+}
+.settings-header-left { display: flex; flex-direction: column; gap: 2px; }
+.settings-title    { font-size: 1.3rem; font-weight: 800; color: #fff; }
+.settings-subtitle { font-size: 0.78rem; color: rgba(255,255,255,0.65); font-family: var(--font-heb); }
+.settings-close {
+  width: 36px; height: 36px; border-radius: 50%;
+  border: 2px solid rgba(255,255,255,0.35);
+  background: rgba(255,255,255,0.15);
+  color: #fff; font-size: 1rem; font-weight: 700;
+  cursor: pointer;
+  display: flex; align-items: center; justify-content: center;
+  transition: background 0.15s;
+  -webkit-tap-highlight-color: transparent;
+}
+.settings-close:hover { background: rgba(255,255,255,0.28); }
+
+/* Body */
+.settings-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0 40px;
+}
+
+/* Sections */
+.st-section {
+  padding: 20px 20px 12px;
+  border-bottom: 1px solid var(--border);
+}
+[data-theme="dark"] .st-section { border-bottom-color: #1E1E30; }
+
+.st-section-hdr {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  color: var(--blue-deep);
+  margin-bottom: 14px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+[data-theme="dark"] .st-section-hdr { color: #4F8EF7; }
+
+.st-section-future .st-section-hdr { color: var(--text-light); }
+[data-theme="dark"] .st-section-future .st-section-hdr { color: #3A4060; }
+
+.st-badge-soon {
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  background: var(--border);
+  color: var(--text-light);
+  border-radius: 20px;
+  padding: 2px 8px;
+  margin-left: auto;
+}
+
+/* Rows */
+.st-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 0;
+  gap: 12px;
+}
+.st-row-master { padding: 12px 0; }
+.st-row-sub { padding: 9px 0 9px 4px; }
+
+.st-row-info { display: flex; flex-direction: column; gap: 3px; flex: 1; }
+.st-row-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+[data-theme="dark"] .st-row-label { color: #C8D4F0; }
+.st-row-sub {
+  font-size: 0.75rem;
+  color: var(--text-light);
+  line-height: 1.3;
+}
+[data-theme="dark"] .st-row.st-row-master .st-row-sub { color: #6878A0; }
+.st-row-icon { font-size: 1rem; width: 20px; text-align: center; }
+
+.st-divider {
+  height: 1px;
+  background: var(--border);
+  margin: 4px 0 8px;
+}
+[data-theme="dark"] .st-divider { background: #1E1E30; }
+
+.st-note {
+  font-size: 0.72rem;
+  color: var(--text-light);
+  text-align: center;
+  padding: 10px 0 4px;
+  transition: opacity 0.2s;
+}
+[data-theme="dark"] .st-note { color: #3A4060; }
+
+/* iOS-style toggle switch */
+.st-toggle {
+  position: relative;
+  display: inline-block;
+  width: 48px;
+  height: 28px;
+  flex-shrink: 0;
+  cursor: pointer;
+}
+.st-toggle input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+  position: absolute;
+}
+.st-toggle-track {
+  position: absolute;
+  inset: 0;
+  background: #C8D0E0;
+  border-radius: 28px;
+  transition: background 0.22s;
+}
+.st-toggle-track::before {
+  content: '';
+  position: absolute;
+  width: 22px;
+  height: 22px;
+  left: 3px;
+  top: 3px;
+  background: #fff;
+  border-radius: 50%;
+  box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  transition: transform 0.22s;
+}
+.st-toggle input:checked + .st-toggle-track { background: var(--blue-deep); }
+.st-toggle input:checked + .st-toggle-track::before { transform: translateX(20px); }
+.st-toggle input:disabled + .st-toggle-track { opacity: 0.35; cursor: default; }
+[data-theme="dark"] .st-toggle-track { background: #2A2A40; }
+[data-theme="dark"] .st-toggle input:checked + .st-toggle-track { background: #1B5EE0; }
