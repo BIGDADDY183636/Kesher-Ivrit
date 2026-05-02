@@ -3952,7 +3952,7 @@ function _streamBlocks(bubble, htmlContent, onDone) {
 function appendErrorMessage(errCode, serverDetail) {
   var MSGS = {
     no_api_key:   { emoji: '🛠️', title: 'Service temporarily unavailable', body: 'Morah is having trouble connecting right now. Please try again in a moment.', retry: true },
-    rate_limit:   { emoji: '⏳', title: 'Too many messages!',          body: 'Take a breath for a few seconds, then tap Retry.',            retry: true  },
+    rate_limit:   { emoji: '⏳', title: 'Too many messages!',          body: 'Morah\'s free API limit was hit. She\'ll be ready again shortly — the timer will re-enable Retry automatically.', retry: true  },
     timeout:      { emoji: '⏱️', title: 'Morah is taking too long',    body: 'The response timed out. Tap Retry — she\'ll be right back!',  retry: true  },
     server_error: { emoji: '🛠️', title: 'Server hiccup',               body: 'Something glitched on our end. Already retried 3×. Tap Retry when ready.', retry: true },
   };
@@ -3968,9 +3968,19 @@ function appendErrorMessage(errCode, serverDetail) {
   var detailHtml = (serverDetail && m.retry)
     ? '<div class="error-detail">' + escapeHtml(serverDetail) + '</div>'
     : '';
-  var retryBtn = m.retry
-    ? '<button class="reconnect-btn" onclick="retryLastMessage()">🔄 Retry</button>'
-    : '';
+
+  // Rate-limit gets a 60-second countdown; all others get immediate retry
+  var retryBtn = '';
+  var countdownId = '';
+  if (m.retry && errCode === 'rate_limit') {
+    var uid = 'rl' + Date.now();
+    countdownId = uid;
+    retryBtn =
+      '<div class="rl-countdown" id="' + uid + '-msg">Retry available in <span id="' + uid + '-secs">60</span>s</div>' +
+      '<button class="reconnect-btn" id="' + uid + '-btn" onclick="retryLastMessage()" disabled>🔄 Retry (60s)</button>';
+  } else if (m.retry) {
+    retryBtn = '<button class="reconnect-btn" onclick="retryLastMessage()">🔄 Retry</button>';
+  }
 
   var time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
   el.innerHTML =
@@ -3986,6 +3996,24 @@ function appendErrorMessage(errCode, serverDetail) {
     '</div>';
   container.appendChild(el);
   autoScroll();
+
+  // Start countdown after element is in DOM
+  if (countdownId) {
+    var _secs = 60;
+    var _iv = setInterval(function() {
+      _secs--;
+      var secsEl = document.getElementById(countdownId + '-secs');
+      var btn    = document.getElementById(countdownId + '-btn');
+      if (secsEl) secsEl.textContent = _secs;
+      if (btn)    btn.textContent = '🔄 Retry (' + _secs + 's)';
+      if (_secs <= 0) {
+        clearInterval(_iv);
+        if (btn) { btn.disabled = false; btn.textContent = '🔄 Retry'; }
+        var msgEl = document.getElementById(countdownId + '-msg');
+        if (msgEl) msgEl.style.display = 'none';
+      }
+    }, 1000);
+  }
 }
 
 function renderAllMessages() {

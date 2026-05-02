@@ -1522,8 +1522,10 @@ app.post('/api/chat', async (req, res) => {
     return res.status(500).json({ error: 'server_error', message: 'Failed to build system prompt: ' + promptErr.message });
   }
 
-  const msgList = messages.map(m => ({ role: m.role, content: m.content }));
-  console.log(`[API] provider=${provider} level=${userProfile.level} qaMode=${!!userProfile.qaMode} msgs=${messages.length} topic=${userProfile.currentTopic||'none'}`);
+  // Trim to last 8 messages — system prompt is ~10 800 tokens; sending full history
+  // on long sessions pushes total tokens to 20 k+ and hits Groq free-tier limits.
+  const msgList = messages.slice(-8).map(m => ({ role: m.role, content: m.content }));
+  console.log(`[API] provider=${provider} level=${userProfile.level} qaMode=${!!userProfile.qaMode} msgs=${messages.length} sent=${msgList.length} topic=${userProfile.currentTopic||'none'}`);
 
   try {
     const raw     = await callAI(provider, systemPrompt, msgList, 500);

@@ -3301,6 +3301,13 @@ body {
 }
 .reconnect-btn:hover  { transform: translateY(-1px); box-shadow: 0 4px 14px rgba(27,94,224,0.32); }
 .reconnect-btn:active { transform: translateY(0); }
+.reconnect-btn:disabled { opacity: 0.45; cursor: default; transform: none !important; box-shadow: none !important; }
+.rl-countdown {
+  font-size: 0.8rem;
+  color: #92400E;
+  margin-bottom: 8px;
+  font-weight: 600;
+}
 
 /* ── Send button loading spinner ── */
 .btn-send { position: relative; }
