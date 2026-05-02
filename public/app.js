@@ -4226,10 +4226,12 @@ async function toggleVoiceInput(cId) {
       var reader = new FileReader();
       reader.onload = function() {
         var base64 = reader.result.split(',')[1];
+        var _ch = (challengeStore[cId] || {}).challenge;
+        var _lang = (_ch && /[֐-׿]/.test(_ch.answer || '')) ? 'he' : 'en';
         fetch('/api/transcribe', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
-          body:    JSON.stringify({ audio: base64, mimeType: mimeType })
+          body:    JSON.stringify({ audio: base64, mimeType: mimeType, language: _lang })
         })
         .then(function(r) { return r.json(); })
         .then(function(data) {

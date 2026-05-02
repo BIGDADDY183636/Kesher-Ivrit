@@ -1791,7 +1791,7 @@ app.post('/api/push/test', async (req, res) => {
 // Response:   { text: "שָׁלוֹם" }
 // Accepts whatever MediaRecorder outputs — iOS → mp4, Chrome/FF → webm/ogg.
 app.post('/api/transcribe', async (req, res) => {
-  const { audio, mimeType } = req.body || {};
+  const { audio, mimeType, language } = req.body || {};
   if (!audio)                    return res.status(400).json({ error: 'audio is required' });
   if (!process.env.GROQ_API_KEY) return res.status(503).json({ error: 'Transcription not configured' });
 
@@ -1806,7 +1806,7 @@ app.post('/api/transcribe', async (req, res) => {
       file,
       model:           'whisper-large-v3-turbo',
       response_format: 'json',
-      // No language hint — auto-detect handles Hebrew and English answers
+      ...(language ? { language } : {}),
     });
     const text = (result.text || '').trim();
     console.log(`[Transcribe] OK — ${buffer.length}B ${ext} → "${text.slice(0, 60)}${text.length > 60 ? '…' : ''}"`);
