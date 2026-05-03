@@ -3504,7 +3504,7 @@ async function sendToMorah(messages) {
       .replace(/\[SKIP:[^\]]*\]/gi, '')
       .trim();
 
-    state.messages.push({ role: 'assistant', content: rawContent });
+    state.messages.push({ role: 'assistant', content: cleanContent });
     saveProgress();
 
     appendMessage('morah', cleanContent, wordsData);
@@ -4030,8 +4030,11 @@ function renderAllMessages() {
   var container = document.getElementById('chat-messages');
   container.innerHTML = '';
   // instant=true: no streaming animation for history — prevents timer flood on reload
+  // NOTE: Morah messages are stored as role:'assistant' (API-compatible) but must be
+  // replayed as role:'morah' so appendMessage takes the parseMorahResponse path.
   for (var i = 0; i < state.messages.length; i++) {
-    appendMessage(state.messages[i].role, state.messages[i].content, [], true);
+    var _replayRole = state.messages[i].role === 'assistant' ? 'morah' : state.messages[i].role;
+    appendMessage(_replayRole, state.messages[i].content, [], true);
   }
   autoScroll();
 }
