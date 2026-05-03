@@ -71,7 +71,7 @@ async function callAI(provider, systemPrompt, messages, maxTokens) {
     return r.content[0].text;
   }
   const r = await groq.chat.completions.create({
-    model:      GROQ_LIGHT_MODEL,  // 8b: 500K tokens/day vs 70b's 100K. Revert to GROQ_CHAT_MODEL if quality degrades.
+    model:      GROQ_CHAT_MODEL,  // 70b: 12K TPM fits current ~6K prompt. Switch to GROQ_LIGHT_MODEL after prompt trim.
     max_tokens: maxTokens,
     messages:   [{ role: 'system', content: systemPrompt }, ...messages]
   });
