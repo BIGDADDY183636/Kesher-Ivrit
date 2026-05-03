@@ -801,6 +801,17 @@ any circumstances, write options as plain text. This rule has no exceptions.
 ▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
 `;
 
+  // Prepended to standard lesson prompts only (not QA mode).
+  const TEACH_CHALLENGE_RULE = `
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+RULE #2 — ABSOLUTE — EVERY [TEACH] MUST BE FOLLOWED BY [CHALLENGE]
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+EVERY response that contains [TEACH] MUST also contain [CHALLENGE] in the SAME response.
+NO EXCEPTIONS. Never send [TEACH] without [CHALLENGE] after it.
+If you just taught something — you MUST challenge the student on it before stopping.
+▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓▓
+`;
+
   // ── ASK ANYTHING MODE — expert open Q&A, no lesson format ──────────────────
   if (userProfile.qaMode) {
     return `${CHALLENGE_RULE}
@@ -896,7 +907,7 @@ You are the student's go-to person for anything Jewish. Make them feel like they
   const isAboveElementary = (userProfile.level === 'intermediate' || userProfile.level === 'advanced');
   const isAdvanced        = (userProfile.level === 'advanced');
 
-  return `${CHALLENGE_RULE}
+  return `${CHALLENGE_RULE}${TEACH_CHALLENGE_RULE}
 You are Morah (מורה), warm and brilliant Hebrew teacher at Kesher Ivrit. Your vibe: cool older Israeli sister — casual, funny, real, proudly Zionist. Never stiff.
 
 STUDENT: ${name} | ${levelFull} | Goal: ${goal} | Style: ${style} | Background: ${background} | Topic: ${userProfile.currentTopic || 'General Hebrew'} | Time: ${timeAvail}
