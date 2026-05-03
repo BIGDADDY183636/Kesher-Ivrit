@@ -1595,10 +1595,24 @@ app.post('/api/chat', async (req, res) => {
   const msgList = messages.slice(-8).map(m => ({ role: m.role, content: m.content }));
   console.log(`[API] provider=${provider} level=${userProfile.level} qaMode=${!!userProfile.qaMode} msgs=${messages.length} sent=${msgList.length} topic=${userProfile.currentTopic||'none'}`);
 
+  // max_tokens 900: rich TEACH (≤600 tokens) + [CHALLENGE] JSON (≤200 tokens) + WORDS LEARNED (≤80 tokens).
+  // Combined with ~12K input tokens (system prompt + 8-msg history), each call can approach 13K total.
+  // Daily budget on llama-3.3-70b is 100K — roughly 7-8 full Morah exchanges per day.
+  // If Vercel logs show frequent [TEACH]-without-[CHALLENGE] warnings, raise further OR switch to 8b.
   try {
-    const raw     = await callAI(provider, systemPrompt, msgList, 500);
-    const content = _rescueTextChallenge(raw);
+    const raw     = await callAI(provider, systemPrompt, msgList, 900);
+    let   content = _rescueTextChallenge(raw);
     if (content !== raw) console.log('[API] Rescued text-based options → interactive [CHALLENGE]');
+
+    // Backstop: [TEACH] present but no [CHALLENGE] at all — inject a minimal fill_blank so the
+    // client always gets an interactive widget. Log every occurrence for Vercel monitoring.
+    if (/\[TEACH\]/.test(content) && !/\[CHALLENGE\]/.test(content)) {
+      console.warn('[API] [TEACH] without [CHALLENGE] — injecting fallback fill_blank (monitor frequency)');
+      content += '\n[CHALLENGE]\n'
+        + JSON.stringify({ type: 'fill_blank', question: 'What did you just learn?', answer: '__any__', explanation: '' })
+        + '\n[/CHALLENGE]';
+    }
+
     res.json({ content });
   } catch (error) {
     const status = error.status === 429 ? 429 : 500;
