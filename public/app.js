@@ -4175,6 +4175,12 @@ function _hebrewAnswerMatch(val, c) {
   return false;
 }
 
+function _hebrewToHebrewMatch(val, c) {
+  if (!/[֐-׿]/.test(val))            return false;
+  if (!/[֐-׿]/.test(c.answer || '')) return false;
+  return _stripNikud(val.trim()) === _stripNikud((c.answer || '').trim());
+}
+
 function answerFill(cId) {
   const { challenge, answered } = challengeStore[cId];
   if (answered) return;
@@ -4188,7 +4194,8 @@ function answerFill(cId) {
     ? val.length > 0
     : (val.toLowerCase() === expected.toLowerCase()
        || _translitMatch(val, expected)
-       || _hebrewAnswerMatch(val, challenge));
+       || _hebrewAnswerMatch(val, challenge)
+       || _hebrewToHebrewMatch(val, challenge));
 
   challengeStore[cId].answered = true;
   input.disabled = true;

@@ -894,6 +894,7 @@ You are the student's go-to person for anything Jewish. Make them feel like they
   const timeAvail   = userProfile.timeAvailable || '10-15 minutes';
 
   const isAboveElementary = (userProfile.level === 'intermediate' || userProfile.level === 'advanced');
+  const isAdvanced        = (userProfile.level === 'advanced');
 
   return `${CHALLENGE_RULE}
 You are Morah (מורה), warm and brilliant Hebrew teacher at Kesher Ivrit. Your vibe: cool older Israeli sister — casual, funny, real, proudly Zionist. Never stiff.
@@ -1356,7 +1357,14 @@ CHALLENGE TYPES:
 - 3+ words → match (pairs array: [{heb:"...",eng:"..."}])
 JSON on ONE line inside [CHALLENGE]. Nothing else in that block.
 
-FILL_BLANK ANSWER FIELD — MUST BE TYPEABLE:
+${isAdvanced
+  ? `FILL_BLANK ANSWER FIELD — ADVANCED STUDENTS:
+For this advanced student, fill_blank "answer" fields MAY be Hebrew script — they are expected to type or speak Hebrew directly.
+• Production drills ("Write the Pa'al past of כ-ת-ב, 1sg") → answer: "כָּתַבְתִּי"
+• Always include the transliteration in "hint": {"answer":"כָּתַבְתִּי","hint":"katavti"}
+• The app accepts Hebrew input and strips nikud for comparison — minor vowel-point differences are forgiven.
+• Still use Latin/English for pure-meaning questions ("What does X mean?" → answer: "he wrote").`
+  : `FILL_BLANK ANSWER FIELD — MUST BE TYPEABLE:
 The "answer" field must contain only text the student can physically type on a Latin/English keyboard.
 • Transliteration question ("How do you say X in Hebrew?") → answer is Latin: "toda", "shalom"
 • Meaning question ("What does X mean?") → answer is English: "peace", "thank you"
@@ -1366,7 +1374,8 @@ The "answer" field must contain only text the student can physically type on a L
 {"type":"fill_blank","question":"How do you say 'peace' in Hebrew?","answer":"שָׁלוֹם"}
 
 ✅ CORRECT — Latin in answer, Hebrew in hint:
-{"type":"fill_blank","question":"How do you say 'peace' in Hebrew?","answer":"shalom","hint":"שָׁלוֹם","explanation":"שָׁלוֹם (shalom) — peace, hello, goodbye."}
+{"type":"fill_blank","question":"How do you say 'peace' in Hebrew?","answer":"shalom","hint":"שָׁלוֹם","explanation":"שָׁלוֹם (shalom) — peace, hello, goodbye."}`
+}
 
 RESULTS:
 [RESULT: correct] → 1 short warm line + [TEACH] next concept + [CHALLENGE]
