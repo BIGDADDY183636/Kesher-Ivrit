@@ -1816,6 +1816,8 @@ app.post('/api/push/test', async (req, res) => {
 // Accepts whatever MediaRecorder outputs — iOS → mp4, Chrome/FF → webm/ogg.
 app.post('/api/transcribe', async (req, res) => {
   const { audio, mimeType, language } = req.body || {};
+  // ── DIAGNOSTIC v9.42 — remove after mic bug confirmed fixed ──
+  console.log(`[Transcribe-DIAG] received language="${language}" mimeType="${mimeType}" audioBytes=${audio ? Buffer.from(audio,'base64').length : 0}`);
   if (!audio)                    return res.status(400).json({ error: 'audio is required' });
   if (!process.env.GROQ_API_KEY) return res.status(503).json({ error: 'Transcription not configured' });
 
@@ -1826,12 +1828,9 @@ app.post('/api/transcribe', async (req, res) => {
               : mimeType && mimeType.includes('wav') ? 'wav'
               : 'webm';
     const file   = await toFile(buffer, `recording.${ext}`, { type: mimeType || 'audio/webm' });
-    const result = await groq.audio.transcriptions.create({
-      file,
-      model:           'whisper-large-v3-turbo',
-      response_format: 'json',
-      ...(language ? { language } : {}),
-    });
+    const whisperParams = { file, model: 'whisper-large-v3-turbo', response_format: 'json', ...(language ? { language } : {}) };
+    console.log(`[Transcribe-DIAG] calling Whisper with language="${whisperParams.language || 'auto'}" ext=${ext}`);
+    const result = await groq.audio.transcriptions.create(whisperParams);
     const text = (result.text || '').trim();
     console.log(`[Transcribe] OK — ${buffer.length}B ${ext} → "${text.slice(0, 60)}${text.length > 60 ? '…' : ''}"`);
     res.json({ text });

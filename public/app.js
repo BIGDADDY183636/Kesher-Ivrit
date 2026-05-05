@@ -4264,7 +4264,16 @@ async function toggleVoiceInput(cId) {
       reader.onload = function() {
         var base64 = reader.result.split(',')[1];
         var _ch = (challengeStore[cId] || {}).challenge;
-        var _lang = _expectsEnglishAnswer(_ch) ? 'en' : 'he';
+        var _expectsEn = _expectsEnglishAnswer(_ch);
+        var _lang = _expectsEn ? 'en' : 'he';
+        // ── DIAGNOSTIC v9.42 — remove after mic bug confirmed fixed ──
+        console.log('[MIC-DIAG] cId=' + cId
+          + ' | storeHasChallenge=' + !!(challengeStore[cId] && challengeStore[cId].challenge)
+          + ' | question=' + JSON.stringify((_ch || {}).question || 'NULL')
+          + ' | answer=' + JSON.stringify((_ch || {}).answer || 'NULL')
+          + ' | expectsEn=' + _expectsEn
+          + ' | lang=' + _lang
+          + ' | mimeType=' + mimeType);
         fetch('/api/transcribe', {
           method:  'POST',
           headers: { 'Content-Type': 'application/json' },
