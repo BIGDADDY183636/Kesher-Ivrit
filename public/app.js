@@ -4157,7 +4157,9 @@ function _translitMatch(userInput, expected) {
 
 function _expectsEnglishAnswer(c) {
   var q = ((c && c.question) || '').toLowerCase();
-  return /what does .+ mean|what.s the meaning|translate .+ to english|\bin english\b|what.s the english/.test(q);
+  // Matches meaning/translation questions only — NOT transliteration.
+  // Removed \bin english\b: too broad, fires on "write X in English letters" (transliteration → should be 'he').
+  return /what does .+ mean|what.s the meaning|translate .+ to english|english meaning|the english (word|for|translation)/.test(q);
 }
 
 function _stripNikud(s) {
