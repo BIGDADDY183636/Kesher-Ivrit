@@ -71,7 +71,7 @@ async function callAI(provider, systemPrompt, messages, maxTokens) {
     return r.content[0].text;
   }
   const r = await groq.chat.completions.create({
-    model:      GROQ_LIGHT_MODEL,  // 8b: 500K/day, 6K TPM. Revert to GROQ_CHAT_MODEL if quality degrades or TPM errors appear.
+    model:      GROQ_CHAT_MODEL,  // 70b: reverted — 8b produces sofit letter errors mid-word (Hebrew teaching regression).
     max_tokens: maxTokens,
     messages:   [{ role: 'system', content: systemPrompt }, ...messages]
   });
