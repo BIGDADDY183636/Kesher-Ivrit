@@ -71,7 +71,7 @@ async function callAI(provider, systemPrompt, messages, maxTokens) {
     return r.content[0].text;
   }
   const r = await groq.chat.completions.create({
-    model:      GROQ_CHAT_MODEL,  // 70b: 12K TPM fits current ~6K prompt. Switch to GROQ_LIGHT_MODEL after prompt trim.
+    model:      GROQ_LIGHT_MODEL,  // 8b: 500K/day, 6K TPM. Revert to GROQ_CHAT_MODEL if quality degrades or TPM errors appear.
     max_tokens: maxTokens,
     messages:   [{ role: 'system', content: systemPrompt }, ...messages]
   });
@@ -1536,9 +1536,9 @@ app.post('/api/chat', async (req, res) => {
     return res.status(500).json({ error: 'server_error', message: 'Failed to build system prompt: ' + promptErr.message });
   }
 
-  // Trim to last 8 messages — system prompt is ~10 800 tokens; sending full history
-  // on long sessions pushes total tokens to 20 k+ and hits Groq free-tier limits.
-  const msgList = messages.slice(-8).map(m => ({ role: m.role, content: m.content }));
+  // Trim to last 6 messages — system prompt is ~3 100 tokens (post-v9.38 trim);
+  // 6 msgs (~1 350 tokens) + prompt + 900 output ≈ 5 400 total, under 8b TPM=6 000.
+  const msgList = messages.slice(-6).map(m => ({ role: m.role, content: m.content }));
   console.log(`[API] provider=${provider} level=${userProfile.level} qaMode=${!!userProfile.qaMode} msgs=${messages.length} sent=${msgList.length} topic=${userProfile.currentTopic||'none'}`);
 
   // max_tokens 900: rich TEACH (≤600 tokens) + [CHALLENGE] JSON (≤200 tokens) + WORDS LEARNED (≤80 tokens).
