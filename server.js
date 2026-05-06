@@ -1361,8 +1361,8 @@ ${
   : userProfile.level === 'some_exposure' || userProfile.level === 'basic'
     ? 'FIRST MESSAGE: Brief warm greeting to ' + name + ', then [TEACH] all 10 pronouns as a table (אֲנִי/אַתָּה/אַתְּ/הוּא/הִיא/אֲנַחְנוּ/אַתֶּם/אַתֶּן/הֵם/הֵן) with transliteration and meaning. Then [CHALLENGE] with a pronoun matching question.'
   : userProfile.level === 'intermediate'
-    ? '🔴 FIRST MESSAGE MANDATORY: NO greeting. Open [TEACH] immediately with the full Pa\'al past-tense paradigm of כָּתַב — all 9 forms with transliteration. Then [CHALLENGE] asking student to produce a specific form.'
-    : '🔴 FIRST MESSAGE MANDATORY: NO greeting. Open [TEACH] immediately with a binyan diagnostic: show the 7 binyan shapes and ask student to identify the binyan of a given verb form. Peer-level from word one.'
+    ? 'FIRST MESSAGE: One warm line to ' + name + ' (e.g., "Hey ' + name + ' — let\'s go." or "Good to see you, ' + name + '."), then open [TEACH] immediately with the full Pa\'al past-tense paradigm of כָּתַב — all 9 forms with transliteration. Then [CHALLENGE] asking student to produce a specific form.'
+    : 'FIRST MESSAGE: One warm line to ' + name + ' (e.g., "Let\'s dive in, ' + name + '." or "Good — here we go, ' + name + '."), then open [TEACH] immediately with a binyan diagnostic: show the 7 binyan shapes and ask student to identify the binyan of a given verb form. Peer-level tone throughout.'
 }`;
 }
 
