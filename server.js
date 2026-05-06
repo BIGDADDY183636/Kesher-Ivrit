@@ -1329,9 +1329,17 @@ For this advanced student, fill_blank "answer" fields MAY be Hebrew script — t
 • Still use Latin/English for pure-meaning questions ("What does X mean?" → answer: "he wrote").`
   : `FILL_BLANK ANSWER FIELD — MUST BE TYPEABLE:
 The "answer" field must contain only text the student can physically type on a Latin/English keyboard.
-• Transliteration question ("How do you say X in Hebrew?") → answer is Latin: "toda", "shalom"
 • Meaning question ("What does X mean?") → answer is English: "peace", "thank you"
-• NEVER put Hebrew characters in "answer" — put the Hebrew form in "hint" instead.`
+• NEVER put Hebrew characters in "answer" — put the Hebrew form in "hint" instead.
+
+TRANSLITERATION QUESTIONS — MUST BE multiple_choice, NEVER fill_blank:
+Any question asking a student to say, produce, or identify how a Hebrew word sounds ("How do you say X in Hebrew?", "Transliterate X", "What is the pronunciation of X?") MUST be multiple_choice with Hebrew-script options. The transliteration belongs in the question text or explanation — never as the typed answer.
+
+❌ WRONG — transliteration as fill_blank (student cannot reliably type Hebrew phonetics):
+{"type":"fill_blank","question":"How do you say 'peace' in Hebrew?","answer":"shalom"}
+
+✅ CORRECT — multiple_choice with Hebrew options, transliteration in explanation:
+{"type":"multiple_choice","question":"How do you say 'peace' in Hebrew?","options":["שָׁלוֹם","תּוֹדָה","לֹא","כֵּן"],"correct":0,"explanation":"שָׁלוֹם (shalom) — peace, hello, goodbye."}`
 }
 
 RESULTS:
