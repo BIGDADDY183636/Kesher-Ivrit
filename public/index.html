@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Kesher Ivrit v9.49 | קשר עברית</title>
+  <title>Kesher Ivrit v9.50 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -24,14 +24,9 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=986" />
+  <link rel="stylesheet" href="style.css?v=987" />
 </head>
 <body>
-<!-- TEMPORARY — remove after debugging the v9.47/9.48 banner issue -->
-<div id="pwa-debug-strip" style="position:fixed;top:0;left:0;right:0;z-index:99999;background:#1a1a2e;color:#e0e0ff;font:12px/1.6 monospace;padding:6px 10px;word-break:break-all;border-bottom:2px solid #f97316;">
-  PWA diag loading…
-</div>
-<!-- /TEMPORARY -->
 <div id="dt-shell">
 <div id="dt-left" class="dt-left"></div>
 <div id="app-root">
@@ -495,6 +490,17 @@
 
       <button class="btn-myclass-home" onclick="showMyClass()">My Class</button>
 
+      <!-- iOS install card — shown by JS when isSafari && !standalone -->
+      <div id="ios-install-card" class="ios-install-card" style="display:none;">
+        <div class="iic-inner">
+          <div class="iic-text">
+            <div class="iic-title">📲 Add Kesher to your phone</div>
+            <div class="iic-sub">Tap 📤 in Safari, then "Add to Home Screen"</div>
+          </div>
+          <button class="iic-dismiss" onclick="this.closest('.ios-install-card').style.display='none'" aria-label="Dismiss">✕</button>
+        </div>
+      </div>
+
       <div id="returning-user-section" style="display:none;">
         <div class="divider-or">— or —</div>
 
@@ -631,7 +637,7 @@
           <span class="cub-school" id="cub-school"></span>
         </div>
         <div class="cub-right">
-          <span class="cub-version">v9.49</span>
+          <span class="cub-version">v9.50</span>
           <button class="cub-restart-btn" onclick="newLesson()" title="New conversation">↺</button>
         </div>
       </div>
@@ -1334,7 +1340,7 @@
 
 </div>
 
-<script src="app.js?v=986"></script>
+<script src="app.js?v=987"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">
@@ -1346,12 +1352,6 @@
     </div>
     <button class="pwa-banner-install" id="pwa-install-btn">Add</button>
     <button class="pwa-banner-dismiss" id="pwa-dismiss-btn" aria-label="Dismiss">✕</button>
-  </div>
-  <!-- iOS 3-step instructions (shown only on iPhone Safari) -->
-  <div class="pwa-ios-hint" id="pwa-ios-hint" style="display:none">
-    <div class="pwa-ios-step"><span class="pwa-ios-num">1</span><span>Tap <strong>📤</strong> in Safari's toolbar</span></div>
-    <div class="pwa-ios-step"><span class="pwa-ios-num">2</span><span>Scroll down and tap <strong>"Add to Home Screen"</strong></span></div>
-    <div class="pwa-ios-step"><span class="pwa-ios-num">3</span><span>Tap <strong>"Add"</strong> — done!</span></div>
   </div>
 </div>
 
@@ -1404,97 +1404,31 @@
   });
 })();
 
-// ── Install prompt logic ─────────────────────────────────
+// ── Android/Chrome install prompt (banner) ───────────────
 (function() {
+  var standalone = window.navigator.standalone === true
+                || window.matchMedia('(display-mode: standalone)').matches;
+  if (standalone) return;
+
+  var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (isIOS) return; // iOS Safari gets the home-screen card instead
+
   var banner     = document.getElementById('pwa-banner');
   var installBtn = document.getElementById('pwa-install-btn');
   var dismissBtn = document.getElementById('pwa-dismiss-btn');
-  var iosHint    = document.getElementById('pwa-ios-hint');
   var deferredEvt = null;
 
-  // Already installed as PWA — never show
-  var standalone = window.navigator.standalone === true
-                || window.matchMedia('(display-mode: standalone)').matches;
-
-  var isIOS    = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
-  var isSafari = isIOS && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(navigator.userAgent);
-
-  console.log('[PWA-DIAG] UA:', navigator.userAgent);
-  console.log('[PWA-DIAG] isIOS:', isIOS, '| isSafari:', isSafari, '| standalone:', standalone);
-
-  function dbg(status) {
-    var el = document.getElementById('pwa-debug-strip');
-    if (!el) return;
-    el.innerHTML =
-      '<b>isIOS:</b> ' + isIOS +
-      ' &nbsp;<b>isSafari:</b> ' + isSafari +
-      ' &nbsp;<b>standalone:</b> ' + standalone +
-      ' &nbsp;<b>visits:</b> ' + (localStorage.getItem('kesher_visit_count') || '0') +
-      '<br><b>status:</b> ' + status;
-  }
-
-  if (standalone) {
-    console.log('[PWA-DIAG] SUPPRESSED — already installed (standalone)');
-    dbg('SUPPRESSED — already installed (standalone)');
-    return;
-  }
+  var dismissed = localStorage.getItem('kesher_pwa_dismissed');
+  if (dismissed && Date.now() - parseInt(dismissed) < 7 * 864e5) return;
 
   function showBanner() {
-    console.log('[PWA-DIAG] showBanner() called — making banner visible');
-    dbg('BANNER SHOWN ✓');
-    if (isSafari) {
-      installBtn.style.display = 'none';
-      iosHint.style.display    = 'block';
-    }
     banner.classList.remove('pwa-banner-hidden');
     banner.classList.add('pwa-banner-visible');
   }
-
   function hideBanner() {
     banner.classList.remove('pwa-banner-visible');
     banner.classList.add('pwa-banner-hidden');
   }
-
-  // ── iOS Safari path ───────────────────────────────────
-  // Chrome/Firefox/Edge on iOS can't install PWAs — ignore them entirely.
-  // Show only to Safari users, on 2nd+ visit, suppressed 14 days after dismiss.
-  if (isSafari) {
-    var dismissed = localStorage.getItem('kesher_ios_dismissed');
-    console.log('[PWA-DIAG] kesher_ios_dismissed:', dismissed,
-      dismissed ? '| age (days): ' + ((Date.now() - parseInt(dismissed)) / 864e5).toFixed(1) : '');
-    if (dismissed && Date.now() - parseInt(dismissed) < 14 * 864e5) {
-      var daysAgo = ((Date.now() - parseInt(dismissed)) / 864e5).toFixed(1);
-      console.log('[PWA-DIAG] SUPPRESSED — dismissed within 14 days');
-      dbg('SUPPRESSED — dismissed ' + daysAgo + ' days ago (14-day window)');
-      return;
-    }
-
-    var rawCount = localStorage.getItem('kesher_visit_count');
-    var visits = parseInt(rawCount || '0') + 1;
-    localStorage.setItem('kesher_visit_count', visits);
-    console.log('[PWA-DIAG] visit count (before increment):', rawCount, '| now:', visits);
-
-    if (visits >= 2) {
-      console.log('[PWA-DIAG] visits >= 2 — scheduling showBanner in 3s');
-      dbg('visits=' + visits + ' — banner scheduled in 3s…');
-      setTimeout(showBanner, 3000);
-    } else {
-      console.log('[PWA-DIAG] SUPPRESSED — first visit only (visits=' + visits + '), need 2+');
-      dbg('SUPPRESSED — first visit (visits=' + visits + '), need 2+');
-    }
-
-    dismissBtn.addEventListener('click', function() {
-      hideBanner();
-      localStorage.setItem('kesher_ios_dismissed', Date.now().toString());
-    });
-    return;
-  }
-
-  // ── Android / Chrome desktop path ────────────────────
-  // (if we reach here on iOS, isSafari was false — likely Chrome/Firefox on iOS)
-  if (isIOS) dbg('iOS but NOT Safari (Chrome/Firefox/Edge on iOS) — no banner');
-  var dismissed = localStorage.getItem('kesher_pwa_dismissed');
-  if (dismissed && Date.now() - parseInt(dismissed) < 7 * 864e5) return;
 
   window.addEventListener('beforeinstallprompt', function(e) {
     e.preventDefault();
@@ -1519,10 +1453,18 @@
     localStorage.setItem('kesher_pwa_dismissed', Date.now().toString());
   });
 
-  window.addEventListener('appinstalled', function() {
-    hideBanner();
-    console.log('[PWA] installed successfully');
-  });
+  window.addEventListener('appinstalled', function() { hideBanner(); });
+})();
+
+// ── iOS Safari home-screen install card ──────────────────
+(function() {
+  var isIOS    = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+  var isSafari = isIOS && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(navigator.userAgent);
+  var standalone = window.navigator.standalone === true
+                || window.matchMedia('(display-mode: standalone)').matches;
+  if (isSafari && !standalone) {
+    document.getElementById('ios-install-card').style.display = 'block';
+  }
 })();
 </script>
 
