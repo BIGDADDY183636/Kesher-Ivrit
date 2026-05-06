@@ -96,6 +96,25 @@ body {
   justify-content: center;
 }
 
+/* Background star watermark — low-opacity, behind content */
+.home-star-bg {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 0;
+  overflow: hidden;
+}
+.home-star-bg::before {
+  content: '✡';
+  font-size: 340px;
+  color: rgba(255, 255, 255, 0.06);
+  line-height: 1;
+  user-select: none;
+}
+
 .home-container {
   position: relative;
   z-index: 2;
@@ -106,57 +125,31 @@ body {
   justify-content: center;
 }
 
-.home-eyebrow {
-  font-size: 0.65rem;
-  font-weight: 700;
-  letter-spacing: 0.14em;
-  text-transform: uppercase;
-  color: rgba(255, 255, 255, 0.5);
-  margin-bottom: 16px;
-}
-
 .home-hero {
   text-align: center;
-  padding: 80px 24px 80px;
-  max-width: 680px;
+  padding: 96px 28px 80px;
   width: 100%;
-}
-
-.logo-wrap { margin-bottom: 16px; }
-
-.star-of-david {
-  font-size: 4.5rem;
-  color: var(--white);
-  display: inline-block;
 }
 
 .hebrew-title {
   font-family: var(--font-heb);
-  font-size: clamp(2.8rem, 8vw, 5.5rem);
+  font-size: clamp(4.2rem, 13vw, 6rem);
   font-weight: 900;
   color: var(--white);
-  letter-spacing: 0.03em;
-  line-height: 1.1;
-  margin-bottom: 6px;
-  text-shadow: 0 4px 20px rgba(0,0,0,0.3);
+  letter-spacing: 0.02em;
+  line-height: 1.05;
+  margin-bottom: 10px;
   direction: rtl;
 }
 
 .english-title {
   font-family: var(--font-heb);
-  font-size: clamp(1.4rem, 4vw, 2.4rem);
-  font-weight: 300;
-  color: rgba(255,255,255,0.92);
-  letter-spacing: 0.25em;
-  text-transform: uppercase;
-  margin-bottom: 20px;
-}
-
-.tagline {
-  font-size: 1.05rem;
+  font-size: 0.78rem;
   font-weight: 400;
-  color: rgba(255, 255, 255, 0.82);
-  margin-bottom: 32px;
+  color: rgba(255,255,255,0.52);
+  letter-spacing: 0.32em;
+  text-transform: uppercase;
+  margin-bottom: 48px;
 }
 
 /* ═══ WORD OF THE DAY ═══ */
@@ -4364,25 +4357,27 @@ button, input, textarea, select { font-family: var(--font-eng); }
 
 /* ── Hero CTA button — gold depth ──────────────────────────── */
 .btn-start {
-  background: #ffffff;
-  color: #0038B8;
-  font-weight: 800;
-  font-size: 1.1rem;
-  letter-spacing: 0.01em;
-  border: none;
+  background: rgba(255,255,255,0.1);
+  color: #ffffff;
+  font-weight: 600;
+  font-size: 0.92rem;
+  letter-spacing: 0.02em;
+  border: 1px solid rgba(255,255,255,0.6);
   border-radius: 50px;
-  padding: 16px 40px;
-  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
-  transition: transform 0.12s, box-shadow 0.12s;
+  padding: 11px 28px;
+  box-shadow: none;
+  transition: background 0.15s, border-color 0.15s;
 }
 .btn-start:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 8px 32px rgba(0,0,0,0.24);
-  background: #F0F4FF;
+  background: rgba(255,255,255,0.2);
+  border-color: rgba(255,255,255,0.9);
+  transform: none;
+  box-shadow: none;
 }
 .btn-start:active {
-  transform: translateY(1px);
-  box-shadow: 0 2px 8px rgba(0,0,0,0.14);
+  background: rgba(255,255,255,0.08);
+  transform: none;
+  box-shadow: none;
 }
 
 /* ── Quiz / registration next button ───────────────────────── */
@@ -7992,23 +7987,23 @@ body { background: var(--ui-bg) !important; color: var(--ui-text) !important; }
 /* ── 31. My Class home button ─────────────────────────────────── */
 .btn-myclass-home {
   display: block;
-  margin: 12px auto 0;
-  background: rgba(255,255,255,0.12);
-  border: 1.5px solid rgba(255,255,255,0.35);
-  color: rgba(255,255,255,0.9);
-  padding: 11px 32px;
-  border-radius: 8px;
-  font-size: 0.9rem;
-  font-weight: 600;
+  margin: 18px auto 0;
+  background: none;
+  border: none;
+  color: rgba(255,255,255,0.52);
+  padding: 0;
+  font-size: 0.8rem;
+  font-weight: 500;
   cursor: pointer;
   font-family: var(--font-eng);
-  letter-spacing: 0.01em;
-  transition: background 0.15s, border-color 0.15s;
+  letter-spacing: 0.02em;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  transition: color 0.15s;
+  -webkit-tap-highlight-color: transparent;
 }
-.btn-myclass-home:hover {
-  background: rgba(255,255,255,0.2);
-  border-color: rgba(255,255,255,0.55);
-}
+.btn-myclass-home:hover { color: rgba(255,255,255,0.85); }
+.btn-myclass-home:active { transform: none; }
 
 /* ── 32. Chat user bar ───────────────────────────────────────── */
 .chat-user-bar {

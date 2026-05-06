@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=989" />
+  <link rel="stylesheet" href="style.css?v=990" />
 </head>
 <body>
 <div id="dt-shell">
@@ -464,6 +464,7 @@
      SCREEN 1: HOME
 ═══════════════════════════════════════════ -->
 <div id="screen-home" class="screen active">
+  <div class="home-star-bg" aria-hidden="true"></div>
   <!-- Badge moved to top-LEFT; gear icon occupies top-RIGHT (settings convention) -->
   <div id="home-user-badge" class="home-user-badge" style="display:none;">
     <span class="hub-avatar" id="hub-avatar">👤</span>
@@ -477,13 +478,8 @@
   </button>
   <div class="home-container">
     <div class="home-hero">
-      <div class="home-eyebrow">Hebrew Learning</div>
-      <div class="logo-wrap">
-        <div class="star-of-david-css" aria-label="Star of David"></div>
-      </div>
       <h1 class="hebrew-title">קשר עברית</h1>
       <h2 class="english-title">Kesher Ivrit</h2>
-      <p class="tagline">The language of our people. Finally yours.</p>
 
       <button class="btn-start" onclick="startOnboarding()">
         Start Learning — <span class="hebrew-inline">בּוֹא נִלְמַד!</span>
@@ -1340,7 +1336,7 @@
 
 </div>
 
-<script src="app.js?v=989"></script>
+<script src="app.js?v=990"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">
