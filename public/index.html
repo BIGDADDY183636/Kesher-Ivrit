@@ -6,7 +6,7 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <meta http-equiv="Pragma" content="no-cache" />
   <meta http-equiv="Expires" content="0" />
-  <title>Kesher Ivrit v9.46 | קשר עברית</title>
+  <title>Kesher Ivrit v9.47 | קשר עברית</title>
 
   <!-- ═══ PWA ═══ -->
   <link rel="manifest" href="/manifest.json" />
@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=983" />
+  <link rel="stylesheet" href="style.css?v=984" />
 </head>
 <body>
 <div id="dt-shell">
@@ -626,7 +626,7 @@
           <span class="cub-school" id="cub-school"></span>
         </div>
         <div class="cub-right">
-          <span class="cub-version">v9.46</span>
+          <span class="cub-version">v9.47</span>
           <button class="cub-restart-btn" onclick="newLesson()" title="New conversation">↺</button>
         </div>
       </div>
@@ -1329,7 +1329,7 @@
 
 </div>
 
-<script src="app.js?v=983"></script>
+<script src="app.js?v=984"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">
@@ -1342,9 +1342,11 @@
     <button class="pwa-banner-install" id="pwa-install-btn">Add</button>
     <button class="pwa-banner-dismiss" id="pwa-dismiss-btn" aria-label="Dismiss">✕</button>
   </div>
-  <!-- iOS-specific hint (shown instead of Install button on Safari) -->
+  <!-- iOS 3-step instructions (shown only on iPhone Safari) -->
   <div class="pwa-ios-hint" id="pwa-ios-hint" style="display:none">
-    Tap <span class="pwa-share-icon">⎋</span> then <strong>"Add to Home Screen"</strong>
+    <div class="pwa-ios-step"><span class="pwa-ios-num">1</span><span>Tap <strong>📤</strong> in Safari's toolbar</span></div>
+    <div class="pwa-ios-step"><span class="pwa-ios-num">2</span><span>Scroll down and tap <strong>"Add to Home Screen"</strong></span></div>
+    <div class="pwa-ios-step"><span class="pwa-ios-num">3</span><span>Tap <strong>"Add"</strong> — done!</span></div>
   </div>
 </div>
 
@@ -1399,28 +1401,22 @@
 
 // ── Install prompt logic ─────────────────────────────────
 (function() {
-  var STORAGE_KEY  = 'kesher_pwa_dismissed';
-  var DELAY_MS     = 30000;  // 30 seconds
-  var deferredEvt  = null;
-  var banner       = document.getElementById('pwa-banner');
-  var installBtn   = document.getElementById('pwa-install-btn');
-  var dismissBtn   = document.getElementById('pwa-dismiss-btn');
-  var iosHint      = document.getElementById('pwa-ios-hint');
+  var banner     = document.getElementById('pwa-banner');
+  var installBtn = document.getElementById('pwa-install-btn');
+  var dismissBtn = document.getElementById('pwa-dismiss-btn');
+  var iosHint    = document.getElementById('pwa-ios-hint');
+  var deferredEvt = null;
 
-  // Don't show if already running as installed PWA
-  var isStandalone = window.navigator.standalone === true ||
-                     window.matchMedia('(display-mode: standalone)').matches;
-  if (isStandalone) return;
+  // Already installed as PWA — never show
+  var standalone = window.navigator.standalone === true
+                || window.matchMedia('(display-mode: standalone)').matches;
+  if (standalone) return;
 
-  // Don't show if user dismissed within 7 days
-  var dismissed = localStorage.getItem(STORAGE_KEY);
-  if (dismissed && Date.now() - parseInt(dismissed) < 7 * 24 * 60 * 60 * 1000) return;
-
-  var isIOS = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+  var isIOS    = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+  var isSafari = isIOS && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(navigator.userAgent);
 
   function showBanner() {
-    if (isIOS) {
-      // iOS: hide the Install button, show tap-share hint
+    if (isSafari) {
       installBtn.style.display = 'none';
       iosHint.style.display    = 'block';
     }
@@ -1433,39 +1429,52 @@
     banner.classList.add('pwa-banner-hidden');
   }
 
-  // Android/Chrome: capture the native prompt
+  // ── iOS Safari path ───────────────────────────────────
+  // Chrome/Firefox/Edge on iOS can't install PWAs — ignore them entirely.
+  // Show only to Safari users, on 2nd+ visit, suppressed 14 days after dismiss.
+  if (isSafari) {
+    var dismissed = localStorage.getItem('kesher_ios_dismissed');
+    if (dismissed && Date.now() - parseInt(dismissed) < 14 * 864e5) return;
+
+    var visits = parseInt(localStorage.getItem('kesher_visit_count') || '0') + 1;
+    localStorage.setItem('kesher_visit_count', visits);
+
+    if (visits >= 2) setTimeout(showBanner, 3000);
+
+    dismissBtn.addEventListener('click', function() {
+      hideBanner();
+      localStorage.setItem('kesher_ios_dismissed', Date.now().toString());
+    });
+    return;
+  }
+
+  // ── Android / Chrome desktop path ────────────────────
+  var dismissed = localStorage.getItem('kesher_pwa_dismissed');
+  if (dismissed && Date.now() - parseInt(dismissed) < 7 * 864e5) return;
+
   window.addEventListener('beforeinstallprompt', function(e) {
     e.preventDefault();
     deferredEvt = e;
   });
 
-  // Show after 30 s
-  setTimeout(function() {
-    // For Android, we need the event. For iOS, just show.
-    if (isIOS || deferredEvt) showBanner();
-  }, DELAY_MS);
+  setTimeout(function() { if (deferredEvt) showBanner(); }, 30000);
 
-  // Install button (Android)
   installBtn.addEventListener('click', function() {
     hideBanner();
     if (deferredEvt) {
       deferredEvt.prompt();
       deferredEvt.userChoice.then(function(result) {
-        if (result.outcome === 'accepted') {
-          console.log('[PWA] user accepted install');
-        }
+        if (result.outcome === 'accepted') console.log('[PWA] user accepted install');
         deferredEvt = null;
       });
     }
   });
 
-  // Dismiss
   dismissBtn.addEventListener('click', function() {
     hideBanner();
-    localStorage.setItem(STORAGE_KEY, Date.now().toString());
+    localStorage.setItem('kesher_pwa_dismissed', Date.now().toString());
   });
 
-  // Hide once installed
   window.addEventListener('appinstalled', function() {
     hideBanner();
     console.log('[PWA] installed successfully');
