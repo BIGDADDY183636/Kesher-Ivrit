@@ -24,7 +24,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;500;600;700;800;900&family=Frank+Ruhl+Libre:wght@300;400;500;700;900&family=Heebo:wght@300;400;500;600;700;800&display=swap" rel="stylesheet" />
-  <link rel="stylesheet" href="style.css?v=988" />
+  <link rel="stylesheet" href="style.css?v=989" />
 </head>
 <body>
 <div id="dt-shell">
@@ -464,7 +464,6 @@
      SCREEN 1: HOME
 ═══════════════════════════════════════════ -->
 <div id="screen-home" class="screen active">
-  <div class="stars-bg"></div>
   <!-- Badge moved to top-LEFT; gear icon occupies top-RIGHT (settings convention) -->
   <div id="home-user-badge" class="home-user-badge" style="display:none;">
     <span class="hub-avatar" id="hub-avatar">👤</span>
@@ -473,10 +472,12 @@
       <div class="hub-school" id="hub-school"></div>
     </div>
   </div>
-  <button class="home-settings-btn" onclick="showSettings()" aria-label="Open settings">⚙️</button>
+  <button class="home-settings-btn" onclick="showSettings()" aria-label="Open settings">
+    <span></span>
+  </button>
   <div class="home-container">
-    <div class="flag-stripe top"></div>
     <div class="home-hero">
+      <div class="home-eyebrow">Hebrew Learning</div>
       <div class="logo-wrap">
         <div class="star-of-david-css" aria-label="Star of David"></div>
       </div>
@@ -494,7 +495,7 @@
       <div id="ios-install-card" class="ios-install-card" style="display:none;">
         <div class="iic-inner">
           <div class="iic-text">
-            <div class="iic-title">📲 Add Kesher to your phone</div>
+            <div class="iic-title">Add Kesher to your phone</div>
             <div class="iic-sub">Tap 📤 in Safari, then "Add to Home Screen"</div>
           </div>
           <button class="iic-dismiss" onclick="this.closest('.ios-install-card').style.display='none'" aria-label="Dismiss">✕</button>
@@ -529,7 +530,6 @@
         <button class="btn-reset" onclick="resetProgress()">Start Fresh</button>
       </div>
     </div>
-    <div class="flag-stripe bottom"></div>
   </div>
 </div>
 
@@ -1340,7 +1340,7 @@
 
 </div>
 
-<script src="app.js?v=988"></script>
+<script src="app.js?v=989"></script>
 
 <!-- ═══ PWA INSTALL BANNER ═══ -->
 <div id="pwa-banner" class="pwa-banner pwa-banner-hidden" role="dialog" aria-label="Install Kesher Ivrit">
