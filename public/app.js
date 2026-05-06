@@ -2070,6 +2070,7 @@ function saveProgress() {
 }
 
 function checkReturningUser() {
+  showIOSCardIfApplicable();
   if (!state.userProfile || !state.userProfile.name) return;
 
   document.getElementById('returning-user-section').style.display = 'block';
@@ -2116,6 +2117,15 @@ function checkStreak() {
     );
     saveProgress();
   }
+}
+
+function showIOSCardIfApplicable() {
+  var isIOS      = /iPhone|iPad|iPod/.test(navigator.userAgent) && !window.MSStream;
+  var isSafari   = isIOS && !/CriOS|FxiOS|EdgiOS|OPiOS/.test(navigator.userAgent);
+  var standalone = window.navigator.standalone === true
+                 || window.matchMedia('(display-mode: standalone)').matches;
+  var card = document.getElementById('ios-install-card');
+  if (card) card.style.display = (isSafari && !standalone) ? 'block' : 'none';
 }
 
 // ─── NAVIGATION ───────────────────────────────────────────
