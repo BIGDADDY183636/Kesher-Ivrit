@@ -4113,9 +4113,11 @@ function renderFillBlank(cId, c, container) {
     <div class="challenge-question">${escapeHtml(c.question)}</div>
     ${c.hint ? `<div class="challenge-hint">💡 Hint: ${escapeHtml(c.hint)}</div>` : ''}
     <div class="fill-row">
+      ${/* Mic feature hidden v9.43 — Whisper language detection bug, see /api/transcribe diag logs to debug. Re-enable by uncommenting this line.
       <button class="fill-mic-btn" id="mic-${cId}" onclick="toggleVoiceInput(${cId})"
         title="Speak your answer" aria-label="Voice input">🎤</button>
-      <input class="fill-input" id="fill-${cId}" placeholder="Type or speak your answer…"
+      */ ''}
+      <input class="fill-input" id="fill-${cId}" placeholder="Type your answer…"
         onkeydown="if(event.key==='Enter') answerFill(${cId})" autocomplete="off" />
       <button class="fill-submit" onclick="answerFill(${cId})">Check →</button>
     </div>
