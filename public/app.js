@@ -73,6 +73,7 @@ let state = {
   progress: {
     points: 0,
     wordsLearned: [],
+    tablesLearned: [],
     streak: 0,
     lastLessonDate: null,
     lessonsCompleted: 0,
@@ -2183,7 +2184,7 @@ function resetProgress() {
   state = {
     userProfile: null,
     messages: [],
-    progress: { points: 0, wordsLearned: [], streak: 0, lastLessonDate: null, lessonsCompleted: 0, feedbackGiven: 0, activityDays: [], topicStats: {} },
+    progress: { points: 0, wordsLearned: [], tablesLearned: [], streak: 0, lastLessonDate: null, lessonsCompleted: 0, feedbackGiven: 0, activityDays: [], topicStats: {} },
     curriculumProgress: { completedLessons: [], currentLesson: null },
     currentQuizStep: 0,
     quizAnswers: {},
@@ -3502,7 +3503,8 @@ async function sendToMorah(messages) {
     _cacheResp(rawContent);
 
     // Extract metadata
-    var wordsData = extractWordsLearned(rawContent);
+    var wordsData  = extractWordsLearned(rawContent);
+    var tablesData = extractTablesLearned(rawContent);
     var skipMatches = rawContent.matchAll(/\[SKIP:\s*([^\]]+)\]/gi);
     for (var sm of skipMatches) {
       var topic = sm[1].trim();
@@ -3518,7 +3520,8 @@ async function sendToMorah(messages) {
     saveProgress();
 
     appendMessage('morah', cleanContent, wordsData);
-    if (wordsData.length > 0) addWordsToProgress(wordsData);
+    if (wordsData.length  > 0) addWordsToProgress(wordsData);
+    if (tablesData.length > 0) addTablesToProgress(tablesData);
 
     updateStreak();
     _rateLimitStrikes = 0;  // successful response — reset backoff
@@ -3568,6 +3571,64 @@ function extractWordsLearned(content) {
     return JSON.parse(match[1]);
   } catch (e) {
     return [];
+  }
+}
+
+function extractTablesLearned(raw) {
+  // Work on the TEACH block where tables and 📊 TABLE: labels live
+  var teachMatch = raw.match(/\[TEACH\]([\s\S]*?)\[\/TEACH\]/);
+  var teach = teachMatch
+    ? teachMatch[1]
+    : raw.replace(/📚 WORDS LEARNED:.*$/s, '').replace(/\[SKIP:[^\]]*\]/gi, '');
+
+  var tables = [];
+  var lines = teach.split('\n');
+
+  for (var i = 0; i < lines.length; i++) {
+    var labelMatch = lines[i].match(/^📊 TABLE:\s*(.+)$/);
+    if (!labelMatch) continue;
+
+    var title = labelMatch[1].trim();
+
+    // Scan backwards past blank lines to find the preceding pipe table
+    var end = i - 1;
+    while (end >= 0 && lines[end].trim() === '') end--;
+    if (end < 0 || !lines[end].trim().startsWith('|')) continue;
+
+    // Collect the full contiguous table block
+    var start = end;
+    while (start > 0 && lines[start - 1].trim().startsWith('|')) start--;
+
+    var tableLines = lines.slice(start, end + 1).map(function(l) { return l.trim(); });
+
+    // Drop separator rows (|---|---|  or  |:--|:--|)
+    var rows = tableLines.filter(function(l) { return !/^\|[\s|:\-]+\|?$/.test(l); });
+    if (rows.length < 2) continue; // need header + at least 1 data row
+
+    // Parse each row into cell arrays
+    var parsed = rows.map(function(row) {
+      return row.split('|').slice(1, -1).map(function(c) { return c.trim(); });
+    });
+
+    tables.push({ title: title, headers: parsed[0], rows: parsed.slice(1), ts: Date.now() });
+  }
+
+  return tables;
+}
+
+function addTablesToProgress(tables) {
+  if (!tables || !tables.length) return;
+  var added = 0;
+  tables.forEach(function(t) {
+    var exists = state.progress.tablesLearned.some(function(e) { return e.title === t.title; });
+    if (!exists) {
+      state.progress.tablesLearned.push(t);
+      added++;
+    }
+  });
+  if (added > 0) {
+    saveProgress();
+    console.log('[NOTEBOOK] Saved ' + added + ' grammar table(s):', tables.map(function(t) { return t.title; }).join(', '));
   }
 }
 
@@ -4582,6 +4643,7 @@ function formatMessage(text) {
     .replace(/\[TEACH\]/g, '').replace(/\[\/TEACH\]/g, '')
     .replace(/\[CHALLENGE\][\s\S]*?\[\/CHALLENGE\]/g, '')
     .replace(/📚 WORDS LEARNED:.*/s, '')
+    .replace(/^📊 TABLE:.*$/gm, '')
     .trim();
 
   // If prose text and a pipe-table header landed on the same line

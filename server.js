@@ -1360,6 +1360,10 @@ RESULTS:
 
 WORDS LEARNED: emit after [/CHALLENGE] for every new word introduced. Category = verb/noun/adjective/greeting/number/phrase/preposition/adverb/other.
 
+📊 TABLE: emit inside [TEACH] on its own line, immediately after any table that teaches a grammar paradigm (conjugation forms, nikud vowel signs, binyan shapes, adjective agreement). Format: 📊 TABLE: [descriptive title — include root or pattern name]
+Examples: 📊 TABLE: Pa'al Past — כָּתַב | 📊 TABLE: Adjective Agreement — טוֹב | 📊 TABLE: Nikud Vowel Signs
+Do not emit for 2-word vocabulary lists — only for paradigm tables with 3+ rows.
+
 ${timeAvail === '5 minutes' ? '⚡ 5 MIN: 1 sentence in [TEACH] only. One word. One [CHALLENGE]. Then stop.' : ''}
 
 ${
