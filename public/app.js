@@ -26,6 +26,9 @@ function toggleDarkMode() {
 // ─── ASK ANYTHING MODE ───────────────────────────────────
 var _qaMode = false;
 
+// ─── NOTEBOOK ────────────────────────────────────────────
+var notebookTab = 'words';
+
 function enterQAMode() {
   _qaMode = true;
   var banner = document.getElementById('qa-mode-banner');
@@ -3620,6 +3623,7 @@ function addTablesToProgress(tables) {
   if (!tables || !tables.length) return;
   var added = 0;
   tables.forEach(function(t) {
+    // TODO: title-only dedup — a later table with the same name but different content will be silently dropped
     var exists = state.progress.tablesLearned.some(function(e) { return e.title === t.title; });
     if (!exists) {
       state.progress.tablesLearned.push(t);
@@ -5305,27 +5309,47 @@ function filterNotebook(query) {
   renderNotebook(query.toLowerCase().trim());
 }
 
+function switchNotebookTab(tab) {
+  notebookTab = tab;
+  document.getElementById('nb-tab-words').className = 'nb-tab' + (tab === 'words' ? ' nb-tab-active' : '');
+  document.getElementById('nb-tab-grammar').className = 'nb-tab' + (tab === 'grammar' ? ' nb-tab-active' : '');
+  document.getElementById('notebook-search').value = '';
+  renderNotebook('');
+}
+
+function containsHebrew(str) {
+  return /[֐-׿]/.test(str || '');
+}
+
 function renderNotebook(query) {
-  const words = state.progress.wordsLearned;
-  const filtered = query
-    ? words.filter(w =>
-        (w.hebrew || '').includes(query) ||
-        (w.transliteration || '').toLowerCase().includes(query) ||
-        (w.english || '').toLowerCase().includes(query))
+  if (notebookTab === 'grammar') {
+    renderGrammarTab(query);
+    return;
+  }
+  renderWordsTab(query);
+}
+
+function renderWordsTab(query) {
+  var words = state.progress.wordsLearned;
+  var filtered = query
+    ? words.filter(function(w) {
+        return (w.hebrew || '').includes(query) ||
+               (w.transliteration || '').toLowerCase().includes(query) ||
+               (w.english || '').toLowerCase().includes(query);
+      })
     : words;
 
   document.getElementById('notebook-sub').textContent =
     words.length + ' word' + (words.length !== 1 ? 's' : '') + ' learned';
 
-  // Group by category
-  const groups = {};
+  var groups = {};
   filtered.forEach(function(w) {
-    const cat = w.category || 'other';
+    var cat = w.category || 'other';
     if (!groups[cat]) groups[cat] = [];
     groups[cat].push(w);
   });
 
-  const body = document.getElementById('notebook-body');
+  var body = document.getElementById('notebook-body');
   if (!filtered.length) {
     body.innerHTML = '<div class="notebook-empty">' +
       (query ? 'No words matching "' + escapeHtml(query) + '"' : 'No words yet — start a lesson!') +
@@ -5333,7 +5357,7 @@ function renderNotebook(query) {
     return;
   }
 
-  let html = '';
+  var html = '';
   CATEGORY_ORDER.forEach(function(cat) {
     if (!groups[cat] || !groups[cat].length) return;
     html += '<div class="nb-category">';
@@ -5348,6 +5372,44 @@ function renderNotebook(query) {
         '</div>';
     });
     html += '</div></div>';
+  });
+  body.innerHTML = html;
+}
+
+function renderGrammarTab(query) {
+  var all = (state.progress.tablesLearned || []).slice().sort(function(a, b) {
+    return (b.ts || 0) - (a.ts || 0);
+  });
+  var tables = query
+    ? all.filter(function(t) { return (t.title || '').toLowerCase().includes(query); })
+    : all;
+  document.getElementById('notebook-sub').textContent =
+    all.length + ' table' + (all.length !== 1 ? 's' : '') + ' captured';
+  var body = document.getElementById('notebook-body');
+  if (!tables.length) {
+    body.innerHTML = '<div class="notebook-empty">' +
+      (query ? 'No tables matching "' + escapeHtml(query) + '"'
+             : 'No grammar tables yet — Morah will add them as you learn.') +
+      '</div>';
+    return;
+  }
+  var html = '';
+  tables.forEach(function(t) {
+    html += '<div class="nb-grammar-entry">';
+    html += '<div class="nb-cat-title">' + escapeHtml(t.title || '') + '</div>';
+    html += '<div class="msg-table-wrap"><table class="msg-table"><thead><tr>';
+    (t.headers || []).forEach(function(h) {
+      html += '<th' + (containsHebrew(h) ? ' class="tbl-heb"' : '') + '>' + escapeHtml(h) + '</th>';
+    });
+    html += '</tr></thead><tbody>';
+    (t.rows || []).forEach(function(row, ri) {
+      html += '<tr' + (ri % 2 === 0 ? ' class="msg-row-even"' : '') + '>';
+      row.forEach(function(cell) {
+        html += '<td' + (containsHebrew(cell) ? ' class="tbl-heb"' : '') + '>' + escapeHtml(cell) + '</td>';
+      });
+      html += '</tr>';
+    });
+    html += '</tbody></table></div></div>';
   });
   body.innerHTML = html;
 }
