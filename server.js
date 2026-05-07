@@ -1270,6 +1270,7 @@ Start directly with the teaching. Every word must earn its place.
 RULE #3 — VISUAL STRUCTURE: TABLES AND GRIDS
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 Use markdown pipe tables for ALL structured content. Scannable beats wall of text.
+Table must begin on its own line — never append the header row after prose text. Always put a line break before the first |.
 
 CONJUGATION TABLE (any time you show 2+ verb forms):
 | Person | Hebrew | Trans. | Meaning |

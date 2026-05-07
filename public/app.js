@@ -4584,6 +4584,14 @@ function formatMessage(text) {
     .replace(/📚 WORDS LEARNED:.*/s, '')
     .trim();
 
+  // If prose text and a pipe-table header landed on the same line
+  // (e.g. "Here are the pronouns: | Hebrew | Trans |"), split them so
+  // the table header starts on its own line where the parser can detect it.
+  // Requires 2+ pipes after the split point to avoid false-positives on
+  // single-pipe "or" separators like "כָּתַב | כָּתַבְתִּי".
+  clean = clean.replace(/^([^|\n]+)\|((?:[^|\n]*\|){2,}[^|\n]*)$/gm,
+    function(m, pre, rest) { return pre.trimEnd() + '\n|' + rest; });
+
   const lines = clean.split('\n');
   let html = '';
   let i = 0;
